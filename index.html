@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Relational Trainer</title>
+<style>
+  :root{
+    --ink:#0d1017; --slate:#151a22; --slate2:#1b2230; --line:#242c39;
+    --bone:#e8eaed; --ash:#8b96a6; --dim:#5c6675;
+    --steel:#83a0f2; --jade:#5fd0a6; --rose:#e0888a; --amber:#e2b15f;
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--ink); color:var(--bone); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; }
+  body{ min-height:100vh; padding:22px 16px 40px; }
+  .wrap{ max-width:660px; margin:0 auto; }
+
+  /* top bar */
+  .top{ display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+    padding-bottom:14px; border-bottom:1px solid var(--line); }
+  .brand{ font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash); font-weight:600; }
+  .brand b{ color:var(--bone); font-weight:700; }
+  .stats{ display:flex; gap:18px; font-family:var(--mono); }
+  .stat{ text-align:right; }
+  .stat .k{ display:block; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+  .stat .v{ display:block; font-size:15px; color:var(--bone); margin-top:2px; }
+  #stLevel{ color:var(--steel); }
+
+  /* timer */
+  #timerbar{ height:3px; background:var(--line); border-radius:3px; margin:12px 0 0; overflow:hidden; }
+  #timerfill{ height:100%; width:0%; background:var(--amber); transition:width .1s linear; }
+
+  /* card */
+  #card{ margin-top:22px; }
+  .cardhead{ display:flex; align-items:baseline; gap:12px; margin-bottom:16px; }
+  #typeTag{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; font-weight:700;
+    color:var(--steel); border:1px solid color-mix(in srgb, var(--steel) 40%, transparent);
+    padding:4px 9px; border-radius:999px; white-space:nowrap; }
+  #typeHint{ font-size:13.5px; color:var(--ash); line-height:1.45; }
+
+  #setup{ font-family:var(--mono); font-size:12.5px; color:var(--ash); background:var(--slate);
+    border:1px solid var(--line); border-radius:8px; padding:9px 12px; margin-bottom:16px; line-height:1.6; }
+
+  #premises{ display:flex; flex-direction:column; gap:9px; margin-bottom:6px; }
+  .premise{ font-family:var(--serif); font-size:19px; line-height:1.5; color:var(--bone);
+    background:var(--slate); border:1px solid var(--line); border-left:2px solid var(--dim);
+    border-radius:8px; padding:12px 15px; animation:rise .16s ease both; }
+  .premise.prose{ font-size:16.5px; line-height:1.8; border-left-color:var(--steel); }
+
+  .studybar{ margin-top:18px; }
+  .primary{ font-family:var(--sans); font-size:15px; font-weight:600; color:var(--ink);
+    background:var(--steel); border:none; border-radius:9px; padding:12px 20px; cursor:pointer; }
+  .primary:hover{ filter:brightness(1.07); }
+  .primary:focus-visible{ outline:2px solid var(--bone); outline-offset:2px; }
+
+  #question{ font-family:var(--sans); font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ash); font-weight:600; margin:22px 0 12px; }
+
+  #options{ display:flex; flex-direction:column; gap:10px; }
+  .opt{ display:flex; align-items:center; gap:13px; width:100%; text-align:left; cursor:pointer;
+    background:var(--slate); border:1px solid var(--line); border-radius:10px; padding:14px 15px;
+    color:var(--bone); animation:rise .16s ease both; }
+  .opt:hover{ border-color:var(--steel); background:var(--slate2); }
+  .opt:focus-visible{ outline:2px solid var(--steel); outline-offset:2px; }
+  .opt .badge{ flex:none; width:24px; height:24px; border-radius:6px; font-family:var(--mono);
+    font-size:13px; display:flex; align-items:center; justify-content:center;
+    background:var(--slate2); color:var(--ash); border:1px solid var(--line); }
+  .opt .opttext{ font-family:var(--serif); font-size:17.5px; line-height:1.4; }
+  .opt:disabled{ cursor:default; }
+  .opt.correct{ border-color:var(--jade); background:color-mix(in srgb, var(--jade) 12%, var(--slate)); }
+  .opt.correct .badge{ background:var(--jade); color:var(--ink); border-color:var(--jade); }
+  .opt.wrong{ border-color:var(--rose); background:color-mix(in srgb, var(--rose) 12%, var(--slate)); }
+  .opt.wrong .badge{ background:var(--rose); color:var(--ink); border-color:var(--rose); }
+  .opt.muted{ opacity:.5; }
+
+  .peekbar{ margin-top:12px; }
+  .ghost{ font-family:var(--sans); font-size:13px; color:var(--ash); background:transparent;
+    border:1px solid var(--line); border-radius:8px; padding:8px 13px; cursor:pointer; }
+  .ghost:hover{ color:var(--bone); border-color:var(--ash); }
+  .ghost:focus-visible{ outline:2px solid var(--steel); outline-offset:2px; }
+
+  #feedback{ margin-top:20px; padding-top:18px; border-top:1px solid var(--line); }
+  .verdict{ font-size:16px; font-weight:700; margin-bottom:7px; }
+  .verdict.ok{ color:var(--jade); }
+  .verdict.no{ color:var(--rose); }
+  .verdict.timeup{ color:var(--amber); }
+  #explain{ font-family:var(--serif); font-size:15.5px; line-height:1.6; color:var(--ash); margin-bottom:16px; }
+
+  /* hints */
+  .hints{ margin-top:26px; font-family:var(--mono); font-size:11px; color:var(--dim);
+    display:flex; gap:16px; flex-wrap:wrap; }
+  .hints b{ color:var(--ash); font-weight:400; }
+
+  /* settings */
+  .settings{ margin-top:22px; border-top:1px solid var(--line); padding-top:12px; }
+  #setToggle{ background:none; border:none; color:var(--ash); font-family:var(--sans); font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; cursor:pointer; padding:0; }
+  #setToggle:hover{ color:var(--bone); }
+  #setPanel{ display:none; margin-top:14px; }
+  #setPanel.open{ display:block; }
+  .setgroup{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--steel);
+    font-weight:700; margin:4px 0 12px; }
+  .setgroup.second{ margin-top:20px; border-top:1px solid var(--line); padding-top:16px; }
+  .note{ font-size:11.5px; color:var(--dim); }
+  .row{ display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:14px; color:var(--ash); }
+  .row label{ min-width:150px; }
+  select{ font-family:var(--sans); font-size:14px; background:var(--slate); color:var(--bone);
+    border:1px solid var(--line); border-radius:7px; padding:6px 9px; }
+  input[type=checkbox]{ width:16px; height:16px; accent-color:var(--steel); }
+
+  .hidden{ display:none !important; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand"><b>Relational</b> Trainer</div>
+      <div class="stats">
+        <div class="stat"><span class="k">Level</span><span class="v" id="stLevel">1</span></div>
+        <div class="stat"><span class="k">Accuracy</span><span class="v" id="stAcc">&ndash;</span></div>
+        <div class="stat"><span class="k">Streak</span><span class="v" id="stStreak">0</span></div>
+      </div>
+    </div>
+
+    <div id="timerbar" class="hidden"><div id="timerfill"></div></div>
+
+    <div id="card">
+      <div class="cardhead">
+        <span id="typeTag">&nbsp;</span>
+        <span id="typeHint"></span>
+      </div>
+
+      <div id="setup" class="hidden"></div>
+
+      <div id="premises"></div>
+
+      <div id="studyBar" class="studybar">
+        <button id="readyBtn" class="primary" type="button">Ready &mdash; hide premises</button>
+      </div>
+
+      <div id="question" class="hidden">Which statement must be true?</div>
+
+      <div id="options"></div>
+
+      <div id="peekBar" class="peekbar hidden">
+        <button id="peekBtn" class="ghost" type="button">Show premises (peek)</button>
+      </div>
+
+      <div id="feedback" class="hidden">
+        <div id="verdict" class="verdict"></div>
+        <div id="explain"></div>
+        <button id="nextBtn" class="primary" type="button">Next</button>
+      </div>
+    </div>
+
+    <div class="hints">
+      <span><b>Enter / Space</b> ready &amp; next</span>
+      <span><b>1&ndash;4</b> choose</span>
+      <span><b>P</b> peek</span>
+    </div>
+
+    <div class="settings">
+      <button id="setToggle" type="button" aria-expanded="false">Settings</button>
+      <div id="setPanel">
+        <div class="setgroup">Difficulty</div>
+        <div class="row">
+          <label for="focusSel">Focus type</label>
+          <select id="focusSel">
+            <option value="">All types (mixed)</option>
+            <option value="totalOrder">Ranking</option>
+            <option value="partialOrder">Nesting</option>
+            <option value="setQuant">Categories</option>
+            <option value="metric">Space</option>
+            <option value="cyclic">Ring</option>
+            <option value="equivalence">Grouping</option>
+            <option value="network">Network</option>
+            <option value="bipartite">Matching</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="arSel">Arity (elements)</label>
+          <select id="arSel">
+            <option value="0">Auto</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+          </select>
+          <span class="note">snaps to what each type can build</span>
+        </div>
+        <div class="row">
+          <label for="prSel">Premises</label>
+          <select id="prSel">
+            <option value="0">Auto</option><option value="3">3</option><option value="4">4</option>
+            <option value="5">5</option><option value="6">6</option><option value="7">7</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="timerSel">Time per item</label>
+          <select id="timerSel">
+            <option value="0">Off</option><option value="20">20 seconds</option><option value="30">30 seconds</option>
+            <option value="45">45 seconds</option><option value="60">60 seconds</option><option value="90">90 seconds</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="keepChk">Keep premises visible</label>
+          <input type="checkbox" id="keepChk">
+          <span class="note">off = held from memory (the real training)</span>
+        </div>
+
+        <div class="setgroup second">Perturbations &mdash; harder</div>
+        <div class="row">
+          <label for="scrChk">Scramble premise order</label>
+          <input type="checkbox" id="scrChk">
+          <span class="note">breaks the read-in-order chain</span>
+        </div>
+        <div class="row">
+          <label for="maskChk">Arithmetic masking</label>
+          <input type="checkbox" id="maskChk">
+          <span class="note">a couple of names become sums to evaluate</span>
+        </div>
+        <div class="row">
+          <label for="proseChk">Prose passages</label>
+          <input type="checkbox" id="proseChk">
+          <span class="note">premises hidden in text with distractors</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ===== validated engine core (verbatim from _assembled_core.js) =====
+// ===== ASSEMBLED CORE (prefix-isolated helpers) =====
+// ============================================================
+// LEAN SHELL — rebuild core. Skeleton dispatch + engine.
+// This is the foundation: state, the 8-type interface, the engine loop,
+// and the validation harness pattern. Generators plug into TYPES[].
+// Built as testable JS first; wraps into HTML once validated.
+// ============================================================
+
+// ---------- STATE (minimal; config is level-driven, not user-set) ----------
+var S = {
+  mode: "train",          // "train" | "diagnostic"
+  level: 1,
+  timer: 40,
+  streak: 0, lastDay: "", daysTrained: 0, diagDone: false,
+  stats: {}
+};
+
+// ---------- RNG (seedable for reproducible validation) ----------
+var _seed = 12345;
+function rnd(){
+  _seed |= 0; _seed = (_seed + 0x6D2B79F5) | 0;
+  var t = Math.imul(_seed ^ (_seed >>> 15), 1 | _seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function rint(n){ return Math.floor(rnd()*n); }
+function setSeed(x){ _seed=x; }
+function pick(a){ return a[rint(a.length)]; }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=rint(i+1); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+
+// ---------- THE SKELETON: every structural type implements this interface ----------
+// type = {
+//   name,
+//   sample(nElems, nPrem) -> { elements:[...], premises:[...], model:<ground truth> }
+//   truthFn(model, conclusion) -> bool
+//   enumerate(elements, premises) -> [all models consistent with premises]
+//   conclusionSpace(elements, model) -> [candidate conclusions]
+//   render(premiseOrConclusion, surface) -> string
+// }
+// The ENGINE below is type-agnostic: it works for any type implementing this.
+
+var TYPES = {};   // populated by generator modules
+
+// ---------- THE ENGINE (one path, serves all types) ----------
+// Produces a generative item: 4 candidate conclusions, exactly ONE forced.
+function buildItem(typeName, nElems, nPrem){
+  var T = TYPES[typeName];
+  if(!T) throw new Error("no type "+typeName);
+  for(var attempt=0; attempt<200; attempt++){
+    var s = T.sample(nElems, nPrem);
+    if(!s) continue;
+    // enumerate all models consistent with the premises
+    var models = T.enumerate(s.elements, s.premises);
+    if(models.length < 2) continue;           // need multi-model (genuine reasoning)
+    // find candidate conclusions: exactly one FORCED (true in all models),
+    // three UNDETERMINED (true in some, false in others).
+    var cands = T.conclusionSpace(s.elements, s.premises, models);
+    var forced = [], undet = [];
+    for(var i=0;i<cands.length;i++){
+      var c = cands[i];
+      var tv = models.map(function(m){ return T.truthFn(m, c); });
+      var allTrue = tv.every(function(x){return x;});
+      var allFalse = tv.every(function(x){return !x;});
+      if(allTrue) forced.push(c);
+      else if(!allFalse) undet.push(c);       // true in some, false in some = undetermined
+    }
+    // INFERENCE MUST BE REQUIRED. A conclusion identical to a stated premise is
+    // trivially "forced" -- it is true in every model because it was asserted, not
+    // derived. Measured across the 8 types this was 57% of all items (bipartite
+    // 100%, metric 86%, cyclic 81%): the solver could answer by matching text
+    // against the premise list without building any model at all.
+    // The original validators never caught it because they only asked "is exactly
+    // one option forced?", and a restated premise satisfies that.
+    var premKeys = {};
+    s.premises.forEach(function(p){ premKeys[JSON.stringify(p)] = 1; });
+    forced = forced.filter(function(c){ return !premKeys[JSON.stringify(c)]; });
+    undet  = undet.filter(function(c){ return !premKeys[JSON.stringify(c)]; });
+    if(forced.length>=1 && undet.length>=3){
+      // check no redundant premise: removing any premise must change the model set
+      if(!premisesAllNecessary(T, s)) continue;
+      var options = shuffle([forced[0]].concat(shuffle(undet).slice(0,3)));
+      var correctIdx = options.indexOf(forced[0]);
+      return { type:typeName, elements:s.elements, premises:s.premises,
+               model:s.model, options:options, correctIdx:correctIdx, nPrem:s.premises.length };
+    }
+  }
+  return null;   // couldn't build a valid item at this spec
+}
+
+// premise necessity: every premise must constrain (removing it grows the model set)
+function premisesAllNecessary(T, s){
+  var full = T.enumerate(s.elements, s.premises).length;
+  for(var i=0;i<s.premises.length;i++){
+    var without = s.premises.slice(0,i).concat(s.premises.slice(i+1));
+    var n = T.enumerate(s.elements, without).length;
+    if(n === full) return false;   // this premise didn't constrain anything -> redundant
+  }
+  return true;
+}
+
+// export for node testing
+
+// ---- generators ----
+// --- type_totalorder.js ---
+// TOTAL ORDER type — implements the skeleton interface.
+// Model = a strict linear ordering of elements (a permutation). Premises constrain it.
+// This is the clean re-implementation of the old genWeb, against the new interface.
+var rint=rint, pick=pick, shuffle=shuffle;
+
+// A model is an assignment of distinct ranks 0..n-1 to elements (a permutation).
+// Premises are relations: {r:"lt", a, b} meaning rank(a) < rank(b), etc.
+
+function TO_allPerms(els){
+  if(els.length<=1) return [els.slice()];
+  var out=[];
+  for(var i=0;i<els.length;i++){
+    var rest=els.slice(0,i).concat(els.slice(i+1));
+    TO_allPerms(rest).forEach(function(p){ out.push([els[i]].concat(p)); });
+  }
+  return out;
+}
+function TO_rankOf(model, x){ return model.indexOf(x); }   // model is array in rank order
+
+function TO_truthFn(model, c){
+  var ra=TO_rankOf(model,c.a), rb=TO_rankOf(model,c.b);
+  if(c.r==="lt") return ra<rb;
+  if(c.r==="gt") return ra>rb;
+  if(c.r==="adj") return Math.abs(ra-rb)===1;
+  if(c.r==="btw") return (TO_rankOf(model,c.m)>Math.min(ra,rb)) && (TO_rankOf(model,c.m)<Math.max(ra,rb));
+  return false;
+}
+function TO_enumerate(els, premises){
+  // all TO_permutations consistent with every premise
+  return TO_allPerms(els).filter(function(m){
+    return premises.every(function(p){ return TO_truthFn(m, p); });
+  });
+}
+function TO_sample(nElems, nPrem){
+  var els=[]; for(var i=0;i<nElems;i++) els.push("e"+i);
+  // pick a random ground-truth ordering, then emit premises true in it
+  var truth=shuffle(els);
+  var prem=[], tries=0;
+  while(prem.length<nPrem && tries++<60){
+    var a=pick(els), b=pick(els); if(a===b) continue;
+    var ra=truth.indexOf(a), rb=truth.indexOf(b);
+    var cand = ra<rb? {r:"lt",a:a,b:b} : {r:"lt",a:b,b:a};
+    // avoid duplicate premises
+    if(!prem.some(function(p){return p.r===cand.r&&p.a===cand.a&&p.b===cand.b;})) prem.push(cand);
+  }
+  return { elements:els, premises:prem, model:truth };
+}
+function TO_conclusionSpace(els, premises, models){
+  // candidate conclusions: lt/gt/adj/btw over random element pairs/triples
+  var cands=[];
+  for(var i=0;i<els.length;i++) for(var j=0;j<els.length;j++){
+    if(i===j) continue;
+    cands.push({r:"lt",a:els[i],b:els[j]});
+    cands.push({r:"adj",a:els[i],b:els[j]});
+  }
+  return cands;
+}
+function TO_render(x, surface){
+  var w={lt:"is less than",gt:"is greater than",adj:"is adjacent to",btw:"is between"};
+  if(x.r==="btw") return x.m+" is between "+x.a+" and "+x.b;
+  return x.a+" "+w[x.r]+" "+x.b;
+}
+
+TYPES["totalOrder"]={ name:"totalOrder", sample:TO_sample, truthFn:TO_truthFn,
+  enumerate:TO_enumerate, conclusionSpace:TO_conclusionSpace, render:TO_render };
+
+
+// --- type_partialorder.js ---
+// PARTIAL ORDER type — nesting/forest with INCOMPARABILITY (no linear embedding).
+// Model = a forest: each element has a parent (or null=root). x < y means x is nested inside y.
+// Key: two elements can be incomparable (neither contains the other) — a REAL answer.
+var rint=rint, pick=pick, shuffle=shuffle, rnd=rnd;
+
+// model: {parent: {el: parentEl-or-null}}
+function PO_ancestors(model, x){
+  var out=[], cur=model.parent[x];
+  while(cur!==null && cur!==undefined){ out.push(cur); cur=model.parent[cur]; }
+  return out;
+}
+function PO_truthFn(model, c){
+  if(c.r==="in")  return PO_ancestors(model,c.a).indexOf(c.b)>=0;         // a inside b (any depth)
+  if(c.r==="din") return model.parent[c.a]===c.b;                       // a directly inside b
+  if(c.r==="sep"){ // incomparable: neither contains the other
+    return PO_ancestors(model,c.a).indexOf(c.b)<0 && PO_ancestors(model,c.b).indexOf(c.a)<0;
+  }
+  if(c.r==="dep") return PO_ancestors(model,c.a).length > PO_ancestors(model,c.b).length; // deeper
+  return false;
+}
+// PO_enumerate all forests over els consistent with premises (bounded: small n)
+function PO_allForests(els){
+  // each element's parent is null or one of the other elements, with no cycles
+  var results=[];
+  function rec(idx, parent){
+    if(idx===els.length){
+      // validate acyclic
+      var ok=true;
+      for(var i=0;i<els.length && ok;i++){
+        var seen={}, cur=els[i];
+        while(cur!==null && cur!==undefined){
+          if(seen[cur]){ ok=false; break; } seen[cur]=1; cur=parent[cur];
+        }
+      }
+      if(ok) results.push({parent:Object.assign({},parent)});
+      return;
+    }
+    var e=els[idx];
+    var choices=[null].concat(els.filter(function(x){return x!==e;}));
+    for(var k=0;k<choices.length;k++){ parent[e]=choices[k]; rec(idx+1,parent); }
+  }
+  rec(0,{});
+  return results;
+}
+function PO_enumerate(els, premises){
+  return PO_allForests(els).filter(function(m){
+    return premises.every(function(p){ return PO_truthFn(m,p); });
+  });
+}
+function PO_sample(nElems, nPrem){
+  var els=[]; for(var i=0;i<nElems;i++) els.push("n"+i);
+  // build a random forest as ground truth
+  var parent={};
+  var order=shuffle(els);
+  order.forEach(function(e,i){
+    // parent is null or an earlier element (keeps acyclic), ~50% chance nested
+    if(i===0 || rnd()<0.4) parent[e]=null;
+    else parent[e]=order[rint(i)];
+  });
+  var truth={parent:parent};
+  // emit premises true in truth: mix of in/din/sep/dep
+  var prem=[], tries=0;
+  var rels=["in","din","sep","dep"];
+  while(prem.length<nPrem && tries++<80){
+    var a=pick(els), b=pick(els); if(a===b) continue;
+    var r=pick(rels);
+    var cand={r:r,a:a,b:b};
+    if(PO_truthFn(truth,cand) && !prem.some(function(p){return p.r===r&&p.a===a&&p.b===b;})) prem.push(cand);
+  }
+  return { elements:els, premises:prem, model:truth };
+}
+function PO_conclusionSpace(els, premises, models){
+  var cands=[];
+  for(var i=0;i<els.length;i++) for(var j=0;j<els.length;j++){
+    if(i===j) continue;
+    cands.push({r:"in",a:els[i],b:els[j]});
+    cands.push({r:"sep",a:els[i],b:els[j]});
+  }
+  return cands;
+}
+function PO_render(x){
+  var w={in:"is inside",din:"is directly inside",sep:"is separate from",dep:"is deeper than"};
+  return x.a+" "+w[x.r]+" "+x.b;
+}
+TYPES["partialOrder"]={ name:"partialOrder", sample:PO_sample, truthFn:PO_truthFn,
+  enumerate:PO_enumerate, conclusionSpace:PO_conclusionSpace, render:PO_render };
+
+// --- type_setquant.js ---
+// SET / QUANTIFIER type — categorical syllogistic reasoning (all/some/no/some-not).
+// Model = an assignment of each element to a subset of "minterms" (Venn regions) that is
+// non-empty where required. We model n categories over a domain of individuals via which
+// of the 2^n region-combinations are inhabited.
+var rint=rint, pick=pick, shuffle=shuffle, rnd=rnd;
+
+// Represent a model as a bitmask over 2^n minterms: bit m set = that region is inhabited.
+// premise/conclusion {q, a, b} with q in {A,E,I,O}: A=all a are b, E=no a are b,
+// I=some a are b, O=some a are not b. a,b are category indices.
+function SQ_holds(model, p, n){
+  var M=1<<n;
+  for(var m=0;m<M;m++){
+    if(!((model>>m)&1)) continue;             // region m not inhabited
+    var inA=(m>>p.a)&1, inB=(m>>p.b)&1;
+    if(p.q==="A" && inA && !inB) return false; // all A are B: no A-and-not-B
+    if(p.q==="E" && inA && inB) return false;  // no A are B: no A-and-B
+  }
+  // existential: I needs some A&B inhabited; O needs some A&not-B inhabited
+  if(p.q==="I"||p.q==="O"){
+    var found=false;
+    for(var m2=0;m2<M;m2++){
+      if(!((model>>m2)&1)) continue;
+      var a2=(m2>>p.a)&1,b2=(m2>>p.b)&1;
+      if(p.q==="I"&&a2&&b2) found=true;
+      if(p.q==="O"&&a2&&!b2) found=true;
+    }
+    if(!found) return false;
+  }
+  return true;
+}
+function SQ_truthFn(model, c){ return SQ_holds(model, c, model._n); }
+function SQ_enumerate(els, premises){
+  var n=els.length;                            // els are category indices as strings
+  var nn=parseInt(els[els.length-1].slice(1))+1; // count categories
+  // Actually track n explicitly:
+  var ncat = els.length;
+  var M=1<<ncat;
+  var models=[];
+  var TOTAL=1<<M;                              // all subsets of minterms (2^(2^n)) — cap ncat<=3
+  for(var mask=1; mask<TOTAL; mask++){
+    var mdl=mask; mdl._n=ncat;
+    // wrap as object carrying _n
+    var obj={mask:mask,_n:ncat};
+    // define truth over obj by temporarily
+    var ok=premises.every(function(p){ return SQ_holdsMask(mask,p,ncat); });
+    if(ok) models.push({mask:mask,_n:ncat});
+  }
+  return models;
+}
+function SQ_holdsMask(mask,p,n){
+  var M=1<<n;
+  for(var m=0;m<M;m++){ if(!((mask>>m)&1))continue; var a=(m>>p.a)&1,b=(m>>p.b)&1;
+    if(p.q==="A"&&a&&!b)return false; if(p.q==="E"&&a&&b)return false; }
+  if(p.q==="I"||p.q==="O"){ var f=false;
+    for(var m2=0;m2<M;m2++){ if(!((mask>>m2)&1))continue; var a2=(m2>>p.a)&1,b2=(m2>>p.b)&1;
+      if(p.q==="I"&&a2&&b2)f=true; if(p.q==="O"&&a2&&!b2)f=true; } if(!f)return false; }
+  return true;
+}
+// redefine SQ_truthFn to use mask form
+SQ_truthFn=function(model,c){ return SQ_holdsMask(model.mask,c,model._n); };
+
+function SQ_sample(nElems, nPrem){
+  var ncat=Math.min(3, Math.max(2,nElems));    // syllogism: 2-3 categories
+  var els=[]; for(var i=0;i<ncat;i++) els.push("C"+i);
+  // pick a random inhabited model, emit true premises
+  var M=1<<ncat; var mask=0;
+  for(var m=0;m<M;m++){ if(rnd()<0.5) mask|=(1<<m); }
+  if(mask===0) mask=1;
+  var qs=["A","E","I","O"];
+  var prem=[],tries=0;
+  while(prem.length<nPrem && tries++<80){
+    var a=rint(ncat), b=rint(ncat); if(a===b) continue;
+    var q=pick(qs); var cand={q:q,a:a,b:b};
+    if(SQ_holdsMask(mask,cand,ncat) && !prem.some(function(p){return p.q===q&&p.a===a&&p.b===b;})) prem.push(cand);
+  }
+  return { elements:els, premises:prem, model:{mask:mask,_n:ncat} };
+}
+function SQ_conclusionSpace(els, premises, models){
+  var ncat=els.length, cands=[], qs=["A","E","I","O"];
+  for(var a=0;a<ncat;a++) for(var b=0;b<ncat;b++){ if(a===b)continue;
+    qs.forEach(function(q){ cands.push({q:q,a:a,b:b}); }); }
+  return cands;
+}
+function SQ_render(x){
+  var C=["A","B","C","D"];
+  var t={A:"All "+C[x.a]+" are "+C[x.b], E:"No "+C[x.a]+" are "+C[x.b],
+         I:"Some "+C[x.a]+" are "+C[x.b], O:"Some "+C[x.a]+" are not "+C[x.b]};
+  return t[x.q];
+}
+TYPES["setQuant"]={ name:"setQuant", sample:SQ_sample, truthFn:SQ_truthFn,
+  enumerate:SQ_enumerate, conclusionSpace:SQ_conclusionSpace, render:SQ_render };
+
+// --- type_metric.js ---
+// METRIC / DISTANCE type — reasoning in a coordinate SPACE (non-linear at 2D+).
+// Model = fixed coordinates for each element. Premises/conclusions are distance comparisons.
+// "a is closer to b than to c" etc. The space is GIVEN (a map), so unlike other types the
+// "model" is fixed by the map — the reasoning is deriving distance relations, and multi-model
+// arises from PARTIAL information (premises reveal some distances, conclusion asks about others).
+//
+// KEY DESIGN: to make it a genuine reasoning task (not just "read the map"), we HIDE coordinates
+// and give only a subset of pairwise distance-comparisons as premises; the solver must derive
+// what other comparisons are forced by the metric axioms (triangle inequality + given orderings).
+// But pure metric reasoning from partial comparisons is subtle. Simpler valid approach:
+// present the actual map positions abstractly and require multi-step distance derivation.
+//
+// We use the CONCRETE MAP approach: coordinates are the ground truth; premises state a subset
+// of true distance-comparisons; the model space = all coordinate assignments consistent with
+// the stated comparisons; a conclusion is forced iff true under all consistent assignments.
+// To keep enumeration tractable, we discretize: elements live on a small integer grid, and we
+// MT_enumerate assignments consistent with the premise comparisons.
+
+var rint=rint, pick=pick, shuffle=shuffle, rnd=rnd;
+
+function MT_dist2(p,q){ var dx=p[0]-q[0], dy=p[1]-q[1]; return dx*dx+dy*dy; } // squared (compare-safe)
+
+// A "comparison" premise: {a, b, c} meaning dist(a,b) < dist(a,c)  (a is closer to b than to c)
+function MT_compHolds(coords, p){
+  return MT_dist2(coords[p.a],coords[p.b]) < MT_dist2(coords[p.a],coords[p.c]);
+}
+function MT_truthFn(model, c){ return MT_compHolds(model.coords, c); }
+
+// Enumerate: assign each element to a cell of a small grid; keep assignments where all premises
+// hold. Grid is small (e.g. 4x4) and nElems small, but 16^n explodes; so we FIX a ground-truth
+// map and MT_enumerate only assignments that PERMUTE among a candidate position set. Practical
+// approach: the model is essentially fixed by the map; multi-model comes from symmetry.
+// Cleaner: we MT_enumerate over a fixed small set of P candidate positions assigned injectively.
+function MT_enumerate(els, premises){
+  var P = MT_model_positions;                     // candidate positions (module-level, set by MT_sample)
+  var results=[];
+  function assign(i, used, coords){
+    if(i===els.length){
+      if(premises.every(function(p){return MT_compHolds(coords,p);})) results.push({coords:Object.assign({},coords)});
+      return;
+    }
+    for(var k=0;k<P.length;k++){
+      if(used[k]) continue;
+      used[k]=1; coords[els[i]]=P[k];
+      assign(i+1,used,coords);
+      used[k]=0; delete coords[els[i]];
+    }
+  }
+  assign(0,{},{});
+  return results;
+}
+var MT_model_positions=[];
+
+function MT_sample(nElems, nPrem){
+  var els=[]; for(var i=0;i<nElems;i++) els.push("x"+i);
+  // create candidate positions: nElems + a couple extra so assignment isn't unique -> multi-model
+  var P=[]; var need=nElems+2;
+  var used={};
+  while(P.length<need){
+    var x=rint(5), y=rint(5), MT_key=x+","+y;
+    if(!used[MT_key]){ used[MT_key]=1; P.push([x,y]); }
+  }
+  MT_model_positions=P;
+  // ground truth: assign els to first nElems positions (shuffled)
+  var perm=shuffle(P).slice(0,nElems);
+  var coords={}; els.forEach(function(e,i){ coords[e]=perm[i]; });
+  // emit premises: true distance-comparisons in ground truth
+  var prem=[], tries=0;
+  while(prem.length<nPrem && tries++<100){
+    var a=pick(els), b=pick(els), c=pick(els);
+    if(a===b||a===c||b===c) continue;
+    var cand={a:a,b:b,c:c};
+    // ensure strict (no ties)
+    if(MT_dist2(coords[a],coords[b])===MT_dist2(coords[a],coords[c])) continue;
+    // orient so premise is TRUE
+    if(!MT_compHolds(coords,cand)) cand={a:a,b:c,c:b};
+    if(!prem.some(function(p){return p.a===cand.a&&p.b===cand.b&&p.c===cand.c;})) prem.push(cand);
+  }
+  return { elements:els, premises:prem, model:{coords:coords} };
+}
+function MT_conclusionSpace(els, premises, models){
+  var cands=[];
+  for(var i=0;i<els.length;i++)for(var j=0;j<els.length;j++)for(var k=0;k<els.length;k++){
+    if(i===j||i===k||j===k) continue;
+    cands.push({a:els[i],b:els[j],c:els[k]});
+  }
+  return cands;
+}
+function MT_render(x){ return x.a+" is closer to "+x.b+" than to "+x.c; }
+
+TYPES["metric"]={ name:"metric", sample:MT_sample, truthFn:MT_truthFn,
+  enumerate:MT_enumerate, conclusionSpace:MT_conclusionSpace, render:MT_render,
+  _setPositions:function(P){MT_model_positions=P;} };
+
+// --- type_cyclic.js ---
+// CYCLIC ORDER type — positions on a ring (days, months, color wheel, pitch classes).
+// Model = an assignment of elements to distinct positions on a ring of size N.
+// Relations use RING-DISTANCE = min(cw, ccw). Non-linear: no first/last, wrapping.
+// Multi-model arises because premises constrain relative positions but not absolute rotation/reflection.
+var rint=rint, pick=pick, shuffle=shuffle, rnd=rnd;
+
+var CY_RING_N = 12;   // set per item by CY_sample
+
+function CY_ringDist(pa, pb, n){ var d=Math.abs(pa-pb); return Math.min(d, n-d); }
+function CY_cwDist(from, to, n){ return ((to-from)%n+n)%n; }   // steps clockwise from->to
+
+// relations:
+//  {r:"closer", a, b, c}  : CY_ringDist(a,b) < CY_ringDist(a,c)   (a is closer to b than to c on the ring)
+//  {r:"cwadj",  a, b}     : b is exactly 1 step clockwise from a
+//  {r:"opp",    a, b}     : a and b are diametrically opposite (only for even n)
+function CY_truthFn(model, c){
+  var pos=model.pos, n=model.n;
+  if(c.r==="closer") return CY_ringDist(pos[c.a],pos[c.b],n) < CY_ringDist(pos[c.a],pos[c.c],n);
+  if(c.r==="cwadj")  return CY_cwDist(pos[c.a],pos[c.b],n)===1;
+  if(c.r==="opp")    return CY_ringDist(pos[c.a],pos[c.b],n)===n/2;
+  return false;
+}
+// CY_enumerate: assign els to distinct ring positions. To keep tractable AND capture the real
+// multi-model structure (rotation/reflection symmetry), we fix element0 at position 0 (kills
+// rotation) and CY_enumerate the rest over remaining positions. Reflection still gives multi-model.
+function CY_enumerate(els, premises){
+  var n=CY_RING_N, results=[];
+  var positions=[]; for(var i=0;i<n;i++) positions.push(i);
+  // fix first element at 0 to remove rotational duplicates (keeps reflection -> still multi-model)
+  var used={}; used[0]=1; var pos={}; pos[els[0]]=0;
+  (function assignRest(i){
+    if(i===els.length){ if(premises.every(function(p){return CY_truthFn({pos:pos,n:n},p);})) results.push({pos:Object.assign({},pos),n:n}); return; }
+    for(var k=0;k<n;k++){ if(used[k])continue; used[k]=1; pos[els[i]]=k; assignRest(i+1); used[k]=0; delete pos[els[i]]; }
+  })(1);
+  return results;
+}
+function CY_sample(nElems, nPrem){
+  CY_RING_N = pick([7,12,12,8]);                  // days / months|color|pitch / compass
+  var n=CY_RING_N;
+  if(nElems>n) nElems=n;
+  var els=[]; for(var i=0;i<nElems;i++) els.push("r"+i);
+  // ground truth: distinct random positions, element0 at 0 (matches CY_enumerate convention)
+  var posList=shuffle(function(){var a=[];for(var i=0;i<n;i++)a.push(i);return a;}());
+  var pos={}; pos[els[0]]=0;
+  var avail=posList.filter(function(p){return p!==0;});
+  for(var i=1;i<nElems;i++) pos[els[i]]=avail[i-1];
+  var truth={pos:pos,n:n};
+  // emit premises: mostly "closer" (rich), some cwadj
+  var prem=[], tries=0;
+  while(prem.length<nPrem && tries++<100){
+    var typ = rnd()<0.8? "closer":"cwadj";
+    if(typ==="closer"){
+      var a=pick(els),b=pick(els),c=pick(els);
+      if(a===b||a===c||b===c) continue;
+      if(CY_ringDist(pos[a],pos[b],n)===CY_ringDist(pos[a],pos[c],n)) continue; // no ties
+      var cand={r:"closer",a:a,b:b,c:c};
+      if(!CY_truthFn(truth,cand)) cand={r:"closer",a:a,b:c,c:b};
+      if(!prem.some(function(p){return p.r==="closer"&&p.a===cand.a&&p.b===cand.b&&p.c===cand.c;})) prem.push(cand);
+    } else {
+      var x=pick(els),y=pick(els); if(x===y)continue;
+      var cand2={r:"cwadj",a:x,b:y};
+      if(CY_truthFn(truth,cand2) && !prem.some(function(p){return p.r==="cwadj"&&p.a===x&&p.b===y;})) prem.push(cand2);
+    }
+  }
+  return { elements:els, premises:prem, model:truth };
+}
+function CY_conclusionSpace(els){
+  var cands=[];
+  for(var i=0;i<els.length;i++)for(var j=0;j<els.length;j++)for(var k=0;k<els.length;k++){
+    if(i===j||i===k||j===k)continue; cands.push({r:"closer",a:els[i],b:els[j],c:els[k]});
+  }
+  return cands;
+}
+function CY_render(x){
+  if(x.r==="closer") return x.a+" is closer to "+x.b+" than to "+x.c+" (around the ring)";
+  if(x.r==="cwadj")  return x.b+" is one step clockwise from "+x.a;
+  if(x.r==="opp")    return x.a+" is opposite "+x.b;
+  return "?";
+}
+TYPES["cyclic"]={ name:"cyclic", sample:CY_sample, truthFn:CY_truthFn,
+  enumerate:CY_enumerate, conclusionSpace:CY_conclusionSpace, render:CY_render };
+
+// --- type_equivalence.js ---
+// EQUIVALENCE / GROUPING type — flat partition into same-kind classes.
+// Model = an assignment of each element to a class label. Relation "same" is symmetric+transitive.
+// NOT nesting (that's partial order). "A and B are the same kind" / "A and C are different kinds."
+// Multi-model: premises give some same/different facts; solver derives forced same/different by
+// the equivalence-closure (transitivity of same, and same+different implying different).
+var rint=rint, pick=pick, shuffle=shuffle, rnd=rnd;
+
+// model: {cls: {el: classId}}
+function EQ_truthFn(model, c){
+  var same = model.cls[c.a]===model.cls[c.b];
+  return c.r==="same" ? same : !same;   // r: "same" | "diff"
+}
+// EQ_enumerate: all EQ_partitions of els consistent with premises.
+// generate all set-EQ_partitions (restricted growth strings), filter by premises.
+function EQ_partitions(els){
+  var res=[], n=els.length, code=new Array(n).fill(0);
+  function rec(i, maxUsed){
+    if(i===n){ 
+      var cls={}; for(var k=0;k<n;k++) cls[els[k]]=code[k];
+      res.push({cls:cls}); return;
+    }
+    for(var v=0; v<=maxUsed+1 && v<n; v++){ code[i]=v; rec(i+1, Math.max(maxUsed, v)); }
+  }
+  rec(0,-1);
+  return res;
+}
+function EQ_enumerate(els, premises){
+  return EQ_partitions(els).filter(function(m){ return premises.every(function(p){return EQ_truthFn(m,p);}); });
+}
+function EQ_sample(nElems, nPrem){
+  var els=[]; for(var i=0;i<nElems;i++) els.push("g"+i);
+  // ground truth: random partition into 2-3 classes
+  var nClasses=pick([2,2,3]);
+  var cls={}; els.forEach(function(e){ cls[e]=rint(nClasses); });
+  var truth={cls:cls};
+  var prem=[], tries=0;
+  while(prem.length<nPrem && tries++<80){
+    var a=pick(els), b=pick(els); if(a===b) continue;
+    var r = cls[a]===cls[b] ? "same":"diff";
+    var cand={r:r,a:a,b:b};
+    if(!prem.some(function(p){return p.a===cand.a&&p.b===cand.b || (p.a===cand.b&&p.b===cand.a);})) prem.push(cand);
+  }
+  return { elements:els, premises:prem, model:truth };
+}
+function EQ_conclusionSpace(els){
+  var cands=[];
+  for(var i=0;i<els.length;i++)for(var j=i+1;j<els.length;j++){
+    cands.push({r:"same",a:els[i],b:els[j]});
+    cands.push({r:"diff",a:els[i],b:els[j]});
+  }
+  return cands;
+}
+function EQ_render(x){ return x.a+(x.r==="same"?" is the same kind as ":" is a different kind from ")+x.b; }
+TYPES["equivalence"]={ name:"equivalence", sample:EQ_sample, truthFn:EQ_truthFn,
+  enumerate:EQ_enumerate, conclusionSpace:EQ_conclusionSpace, render:EQ_render };
+
+// --- type_network.js ---
+// NETWORK / GRAPH type — connection with no ordering; cycles allowed. Non-linear, no axis.
+// Model = an undirected graph (which pairs are NW_connected). Relations concern CONNECTION and
+// REACHABILITY (path exists), which is multi-step reasoning.
+// Multi-model: premises assert SOME edges present and SOME absent; unstated pairs are free,
+// so reachability of a given pair may be forced (true in all completions), impossible (false in
+// all), or undetermined (depends on the free edges).
+var rint=rint, pick=pick, shuffle=shuffle, rnd=rnd;
+
+function NW_key(a,b){ return a<b ? a+"|"+b : b+"|"+a; }
+// model: {edges: Set-like object of present edges} over a FULL specification (ground truth)
+function NW_connected(model, a, b){ return !!model.edges[NW_key(a,b)]; }
+function NW_reachable(model, els, a, b){
+  // BFS over present edges
+  var seen={}, stack=[a]; seen[a]=1;
+  while(stack.length){
+    var cur=stack.pop();
+    if(cur===b) return true;
+    for(var i=0;i<els.length;i++){ var o=els[i];
+      if(o!==cur && model.edges[NW_key(cur,o)] && !seen[o]){ seen[o]=1; stack.push(o); }
+    }
+  }
+  return false;
+}
+function NW_truthFn(model, c){
+  if(c.r==="conn")   return NW_connected(model, c.a, c.b);
+  if(c.r==="noconn") return !NW_connected(model, c.a, c.b);
+  if(c.r==="reach")  return NW_reachable(model, model._els, c.a, c.b);
+  if(c.r==="unreach")return !NW_reachable(model, model._els, c.a, c.b);
+  return false;
+}
+// NW_enumerate: premises fix some edges present (E+) and some absent (E-). Free pairs vary.
+// Enumerate all completions over the FREE pairs. Cap: nElems small so #free pairs manageable.
+function NW_enumerate(els, premises){
+  var allPairs=[];
+  for(var i=0;i<els.length;i++)for(var j=i+1;j<els.length;j++) allPairs.push([els[i],els[j]]);
+  var fixed={};   // NW_key -> true/false
+  premises.forEach(function(p){
+    if(p.r==="conn") fixed[NW_key(p.a,p.b)]=true;
+    if(p.r==="noconn") fixed[NW_key(p.a,p.b)]=false;
+  });
+  var free=allPairs.filter(function(pr){ return !(NW_key(pr[0],pr[1]) in fixed); });
+  var results=[];
+  var F=free.length;
+  if(F>16) return [];   // guard against blowup (shouldn't happen at small n)
+  for(var mask=0; mask<(1<<F); mask++){
+    var edges=Object.assign({},fixed);
+    for(var b=0;b<F;b++){ edges[NW_key(free[b][0],free[b][1])] = !!((mask>>b)&1); }
+    // reachability premises must also hold
+    var model={edges:edges,_els:els};
+    if(premises.every(function(p){ return NW_truthFn(model,p); })) results.push(model);
+  }
+  return results;
+}
+function NW_sample(nElems, nPrem){
+  var els=[]; for(var i=0;i<nElems;i++) els.push("v"+i);
+  // ground truth: random sparse-ish graph
+  var edges={};
+  for(var i=0;i<els.length;i++)for(var j=i+1;j<els.length;j++){ if(rnd()<0.4) edges[NW_key(els[i],els[j])]=true; }
+  var truth={edges:edges,_els:els};
+  // premises: mix of conn / noconn (edge facts). Keep them edge-facts so NW_enumerate is well-defined.
+  var prem=[], tries=0;
+  while(prem.length<nPrem && tries++<100){
+    var a=pick(els),b=pick(els); if(a===b)continue;
+    var present=!!edges[NW_key(a,b)];
+    var cand = present? {r:"conn",a:a,b:b} : {r:"noconn",a:a,b:b};
+    if(!prem.some(function(p){return NW_key(p.a,p.b)===NW_key(a,b);})) prem.push(cand);
+  }
+  return { elements:els, premises:prem, model:truth };
+}
+function NW_conclusionSpace(els){
+  var cands=[];
+  for(var i=0;i<els.length;i++)for(var j=0;j<els.length;j++){ if(i===j)continue;
+    cands.push({r:"reach",a:els[i],b:els[j]});
+    cands.push({r:"unreach",a:els[i],b:els[j]});
+  }
+  return cands;
+}
+function NW_render(x){
+  if(x.r==="conn")   return x.a+" is directly NW_connected to "+x.b;
+  if(x.r==="noconn") return x.a+" is NOT directly NW_connected to "+x.b;
+  if(x.r==="reach")  return "you can get from "+x.a+" to "+x.b;
+  if(x.r==="unreach")return "you canNOT get from "+x.a+" to "+x.b;
+  return "?";
+}
+TYPES["network"]={ name:"network", sample:NW_sample, truthFn:NW_truthFn,
+  enumerate:NW_enumerate, conclusionSpace:NW_conclusionSpace, render:NW_render };
+
+// --- type_bipartite.js ---
+// BIPARTITE / MATCHING type — two disjoint sets L and R; relations only ACROSS the sets.
+// Model = a matching (assignment) between L and R. Premises = constraints (positive: L_i matched
+// to R_j; negative: L_i NOT matched to R_j). Conclusions = forced assignments.
+// This is the logic-grid-puzzle structure. Hardest to generate validly. Multi-model from
+// partial constraints; forced conclusion = an assignment true in every valid completion.
+var rint=rint, pick=pick, shuffle=shuffle, rnd=rnd;
+
+// model: {match: {L_i -> R_j}}  a bijection L->R (assume |L|=|R|=k)
+function BP_truthFn(model, c){
+  if(c.r==="is")  return model.match[c.a]===c.b;    // a (in L) is matched to b (in R)
+  if(c.r==="not") return model.match[c.a]!==c.b;
+  return false;
+}
+// BP_enumerate all bijections L->R consistent with premises
+function BP_permutations(arr){
+  if(arr.length<=1) return [arr.slice()];
+  var out=[];
+  for(var i=0;i<arr.length;i++){ var rest=arr.slice(0,i).concat(arr.slice(i+1));
+    BP_permutations(rest).forEach(function(p){ out.push([arr[i]].concat(p)); }); }
+  return out;
+}
+function BP_enumerate(els, premises){
+  // els encodes both sets: first half L, second half R (by convention set in BP_sample via els._split)
+  var split=els._split;
+  var Lset=els.slice(0,split), Rset=els.slice(split);
+  if(Lset.length!==Rset.length) return [];
+  var perms=BP_permutations(Rset);
+  var results=[];
+  perms.forEach(function(perm){
+    var match={}; Lset.forEach(function(l,i){ match[l]=perm[i]; });
+    var m={match:match};
+    if(premises.every(function(p){ return BP_truthFn(m,p); })) results.push(m);
+  });
+  return results;
+}
+function BP_sample(nElems, nPrem){
+  var k=Math.max(3, Math.min(4, Math.floor(nElems/2)+1));   // set size 3-4
+  var L=[], R=[];
+  for(var i=0;i<k;i++){ L.push("L"+i); R.push("R"+i); }
+  var els=L.concat(R); els._split=k;
+  // ground-truth matching
+  var perm=shuffle(R);
+  var match={}; L.forEach(function(l,i){ match[l]=perm[i]; });
+  var truth={match:match};
+  // premises: mix of positive (is) and negative (not) facts true in truth
+  var prem=[], tries=0;
+  while(prem.length<nPrem && tries++<100){
+    var l=pick(L), r=pick(R);
+    var isMatch = match[l]===r;
+    // bias toward negatives (they constrain without giving away) but include some positives
+    var cand;
+    if(isMatch && rnd()<0.5) cand={r:"is",a:l,b:r};
+    else if(!isMatch) cand={r:"not",a:l,b:r};
+    else continue;
+    if(!prem.some(function(p){return p.r===cand.r&&p.a===cand.a&&p.b===cand.b;})) prem.push(cand);
+  }
+  return { elements:els, premises:prem, model:truth };
+}
+function BP_conclusionSpace(els){
+  var split=els._split, L=els.slice(0,split), R=els.slice(split);
+  var cands=[];
+  L.forEach(function(l){ R.forEach(function(r){ cands.push({r:"is",a:l,b:r}); cands.push({r:"not",a:l,b:r}); }); });
+  return cands;
+}
+function BP_render(x){
+  return x.a+(x.r==="is"?" is matched to ":" is NOT matched to ")+x.b;
+}
+TYPES["bipartite"]={ name:"bipartite", sample:BP_sample, truthFn:BP_truthFn,
+  enumerate:BP_enumerate, conclusionSpace:BP_conclusionSpace, render:BP_render };
+
+// ===== app layer =====
+// ============================================================
+// APP LAYER  (pure logic, no DOM)  — sits on top of the validated core.
+//   - invented pronounceable names (no world-knowledge shortcut)
+//   - level -> (type, arity, premises) from the calibrated ENVELOPE,
+//     with manual overrides snapped to the nearest buildable combo
+//   - SAFE rendering: reuse each type's proven base render, then substitute
+//     element tokens (\b-bounded, collision-free) + 3 cosmetic fixes.
+//   - three OPT-IN perturbations, all pure DISPLAY transforms that cannot
+//     change which option is forced:
+//       scramble  — reorder the premise chain (order is irrelevant to truth)
+//       mask      — relabel a couple of identities as varying arithmetic
+//       prose     — embed premises among relational distractors (extraction)
+//   - a synchronous state machine (no setTimeout reveal-chains)
+// ============================================================
+
+function _shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function _pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+// ---------- invented names ----------
+var NAME_POOL = (function(){
+  var onsets = ["b","d","f","g","h","k","l","m","n","p","r","s","t","v","z",
+                "br","dr","fr","gr","kr","pr","tr","bl","cl","fl","gl","pl","sl",
+                "sk","sp","st","sn","sm","th","sh","ch","vr","kl"];
+  var vowels = ["a","e","i","o","u","ae","ei","ou","ia","au"];
+  var codas  = ["","n","l","r","s","k","th","sk","nd","rn","ll","ss","m","ph"];
+  var seen = {}, out = [];
+  for(var i=0;i<onsets.length;i++){
+    for(var j=0;j<vowels.length;j++){
+      for(var k=0;k<codas.length;k++){
+        var w = onsets[i]+vowels[j]+codas[k];
+        if(w.length<3 || w.length>6) continue;
+        if(/(.)\1\1/.test(w)) continue;
+        if(!seen[w]){ seen[w]=1; out.push(w.charAt(0).toUpperCase()+w.slice(1)); }
+      }
+    }
+  }
+  return out;
+})();
+function drawNames(n){ return _shuffle(NAME_POOL).slice(0, n); }
+
+// ---------- level -> spec ----------
+var ENVELOPE = {
+  totalOrder : [[4,4],[5,5],[5,6]],
+  partialOrder:[[4,4],[4,5],[5,5],[5,6],[5,7]],
+  setQuant   : [[3,3],[3,4],[3,5],[3,6]],
+  metric     : [[4,4],[4,5],[4,6],[5,5],[5,6],[5,7]],
+  cyclic     : [[4,4],[4,5],[5,5],[5,6],[5,7]],   // a3p3 empirically DEAD
+  equivalence:[[4,4],[5,5],[5,6]],
+  network    : [[4,4],[4,5],[5,5],[5,6],[5,7]],
+  bipartite  : [[3,2],[4,2],[5,2]]
+};
+var ALL_TYPES = ["totalOrder","partialOrder","setQuant","metric","cyclic","equivalence","network","bipartite"];
+
+// perturbation eligibility (setQuant/metric excluded: fixed phrasing doesn't survive)
+var MASKABLE  = { totalOrder:1, partialOrder:1, cyclic:1, equivalence:1, network:1, bipartite:1 };
+var PROSEABLE = { totalOrder:1, partialOrder:1, cyclic:1, equivalence:1, network:1, bipartite:1 };
+
+var TYPE_LABEL = {
+  totalOrder:"Ranking", partialOrder:"Nesting", setQuant:"Categories", metric:"Space",
+  cyclic:"Ring", equivalence:"Grouping", network:"Network", bipartite:"Matching"
+};
+var TYPE_HINT = {
+  totalOrder:"Everything sits in one straight ranking.",
+  partialOrder:"Things nest inside one another; some pairs are simply unrelated.",
+  setQuant:"Statements about whole categories: all / some / none.",
+  metric:"Points sit in a space; \u201ccloser\u201d means nearer in that space.",
+  cyclic:"Positions sit on a ring that wraps around, like a clock face.",
+  equivalence:"Things fall into groups; same group = same kind.",
+  network:"Nodes joined by links; you may travel along any chain of links.",
+  bipartite:"Two separate groups; each member of one pairs with exactly one of the other."
+};
+
+var _bag = [];
+function nextType(){
+  if(_bag.length===0) _bag = _shuffle(ALL_TYPES);
+  return _bag.pop();
+}
+function resetBag(){ _bag = []; }
+
+function tierFor(type, level){
+  var env = ENVELOPE[type];
+  return Math.min(env.length-1, Math.floor((level-1)/Math.max(1, Math.ceil(20/env.length))));
+}
+// nearest ENVELOPE entry to a manually requested (arity, premises)
+function snapEnvelope(type, A, P){
+  var env = ENVELOPE[type], best=null, bd=Infinity;
+  env.forEach(function(ap){
+    var d = (A?Math.abs(ap[0]-A):0)*2 + (P?Math.abs(ap[1]-P):0);
+    if(d<bd){ bd=d; best=ap; }
+  });
+  return best;
+}
+
+// ---------- arithmetic masking ----------
+var ALIAS_VALUES=[6,8,9,12,14,15,16,18,20,21,24,27,28,32,35,36,40,42,45];
+function aliasExprs(v){
+  var out=[];
+  for(var k=1;k<=5;k++){ if(v-k>1) out.push((v-k)+"+"+k); out.push((v+k)+"\u2212"+k); }
+  for(var p=2;p<=7;p++){ if(v%p===0 && v/p>1) out.push(p+"\u00d7"+(v/p)); }
+  for(var q=2;q<=4;q++) out.push((v*q)+"\u00f7"+q);
+  var pw={4:"2\u00b2",8:"2\u00b3",9:"3\u00b2",16:"4\u00b2",25:"5\u00b2",27:"3\u00b3",36:"6\u00b2"};
+  if(pw[v]) out.push(pw[v]);
+  if(!out.length) out.push(String(v));
+  return out;
+}
+
+// ---------- scramble (reorder the premise chain) ----------
+function scramblePremises(arr, pct){
+  if(arr.length<3) return arr.slice();
+  var p = Math.max(0, Math.min(100, pct===undefined?100:pct))/100;
+  if(p<=0) return arr.slice();
+  var shuf = arr.map(function(_,i){ return i; });
+  for(var i=shuf.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)),t=shuf[i];shuf[i]=shuf[j];shuf[j]=t; }
+  var keep = Math.round((1-p)*(arr.length-1));   // restore this many adjacencies
+  for(var k=0;k<keep;k++){
+    var pos=Math.floor(Math.random()*(shuf.length-1));
+    var want=shuf[pos]+1, at=shuf.indexOf(want);
+    if(at<0) continue;
+    var tmp=shuf[pos+1]; shuf[pos+1]=want; shuf[at]=tmp;
+  }
+  return shuf.map(function(i){ return arr[i]; });
+}
+
+// ---------- prose (embed premises among relational distractors) ----------
+var PROSE_OPEN=[
+  "The committee\u2019s notes were disorganised, but a few things were clear.",
+  "From the report, several details stood out.",
+  "The survey write-up buried the useful parts in the middle.",
+  "Reading back through the file, this much was established.",
+  "The interview transcript was rambling, but contained the following.",
+  "Notes from the site visit, lightly edited:"
+];
+var PROSE_FILLER=[
+  "The weather that week was unremarkable.",
+  "Funding for the follow-up had not yet been approved.",
+  "Two of the original participants had withdrawn by then.",
+  "The equipment was recalibrated the previous Tuesday.",
+  "Nobody could agree on the format of the final write-up.",
+  "A footnote mentioned an earlier draft that was never circulated.",
+  "The room was booked for another group immediately afterwards.",
+  "The archive copy was missing its first two pages."
+];
+var PROSE_DECOY=[
+  "The northern depot ships to the southern one, though never the reverse.",
+  "Whatever the second auditor concluded, the third disagreed with it.",
+  "The older wing was built before the annexe but after the original hall.",
+  "Neither of the two contractors had worked with the other before.",
+  "The blue folder was filed under the same code as the green one."
+];
+function _cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+function proseRender(lines, density){
+  density = (density===undefined) ? 0.5 : Math.max(0, Math.min(1, density));
+  var nFill = Math.round(density * Math.max(2, lines.length));
+  var pool=[];
+  for(var i=0;i<nFill;i++){
+    pool.push(Math.random()<0.55 ? _pick(PROSE_FILLER) : _pick(PROSE_DECOY));
+  }
+  var seen={}, fill=[];
+  pool.forEach(function(s){ if(!seen[s]){ seen[s]=1; fill.push(s); } });
+  var out=[], fi=0, li=0, total=lines.length+fill.length;
+  for(var k=0;k<total;k++){
+    var takeReal = (fi>=fill.length) || (li<lines.length && Math.random()<lines.length/(lines.length+fill.length-fi));
+    if(takeReal && li<lines.length) out.push(_cap(lines[li++])+".");
+    else if(fi<fill.length) out.push(fill[fi++]);
+  }
+  while(li<lines.length) out.push(_cap(lines[li++])+".");
+  return _pick(PROSE_OPEN)+" "+out.join(" ");
+}
+
+// ---------- SAFE rendering ----------
+function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); }
+
+// token descriptor map: token -> {word:"Name"}  OR  {exprs:[...]} (masked)
+function buildTokenMap(item, doMask){
+  var tokens, ncat;
+  if(item.type==="setQuant"){
+    ncat = (item.model && item.model._n) ? item.model._n : (item.elements?item.elements.length:2);
+    tokens = ["A","B","C","D"].slice(0, ncat);
+    doMask = false;   // setQuant never masked
+  } else {
+    tokens = item.elements.slice();
+  }
+  var map = {};
+  if(doMask){
+    var maskCount = Math.max(1, Math.min(tokens.length-1, 2));
+    var order = _shuffle(tokens);
+    var maskedSet = {}; order.slice(0, maskCount).forEach(function(t){ maskedSet[t]=1; });
+    var vals = _shuffle(ALIAS_VALUES).slice(0, maskCount), vi=0;
+    var names = drawNames(tokens.length), wi=0;
+    tokens.forEach(function(t){
+      if(maskedSet[t]) map[t] = { exprs: aliasExprs(vals[vi++]) };
+      else            map[t] = { word: names[wi++] };
+    });
+  } else {
+    var nm = drawNames(tokens.length);
+    tokens.forEach(function(t,i){ map[t] = { word: nm[i] }; });
+  }
+  return map;
+}
+
+function substitute(str, map){
+  var keys = Object.keys(map).sort(function(a,b){ return b.length-a.length; });
+  for(var i=0;i<keys.length;i++){
+    var desc = map[keys[i]];
+    var re = new RegExp("\\b"+escapeReg(keys[i])+"\\b","g");
+    if(desc.word!==undefined){
+      str = str.replace(re, desc.word);
+    } else {
+      str = str.replace(re, (function(d){ return function(){ return "("+_pick(d.exprs)+")"; }; })(desc));
+    }
+  }
+  return str;
+}
+function cosmetic(str){
+  str = str.replace(/NW_connected/g,"connected");
+  str = str.replace(/canNOT/g,"cannot");
+  str = str.replace(/ NOT /g," not ");
+  str = str.replace(/\s+/g," ").trim();
+  return str;
+}
+function renderObj(item, obj, map){ return cosmetic(substitute(TYPES[item.type].render(obj), map)); }
+
+// build the display-ready view of an item, applying opt-in perturbations
+function displayItem(item, opts){
+  opts = opts || {};
+  var doMask  = !!opts.mask  && !!MASKABLE[item.type];
+  var doProse = !!opts.prose && !!PROSEABLE[item.type];
+  var map = buildTokenMap(item, doMask);
+
+  var premises = item.premises.map(function(p){ return renderObj(item, p, map); });
+  var options  = item.options.map(function(o){ return renderObj(item, o, map); });
+
+  // scramble the premise chain
+  var premOut = (opts.scramble && premises.length>=3) ? scramblePremises(premises, 100) : premises;
+
+  // prose
+  var prose = doProse ? proseRender(premOut, 0.5) : null;
+
+  // setup line (suppressed under prose so extraction is real)
+  var setup = "";
+  if(!doProse){
+    if(item.type==="bipartite"){
+      var split = item.elements._split;
+      if(doMask){
+        setup = "Two groups of "+split+"; each member pairs with exactly one across.";
+      } else {
+        var names = item.elements.map(function(t){ return map[t].word; });
+        setup = "Group 1: "+names.slice(0,split).join(", ")+"   \u2022   Group 2: "+names.slice(split).join(", ");
+      }
+    } else if(item.type==="cyclic"){
+      var n = (item.model && item.model.n) ? item.model.n : "";
+      setup = n ? ("A ring of "+n+" positions.") : "";
+    }
+  }
+
+  return {
+    type: item.type, typeLabel: TYPE_LABEL[item.type], hint: TYPE_HINT[item.type],
+    setup: setup,
+    premises: doProse ? [] : premOut,
+    prose: prose,
+    premisesPlain: premises,     // pre-scramble/pre-prose, for verification
+    options: options, correctIdx: item.correctIdx,
+    masked: doMask, prosed: doProse
+  };
+}
+
+// build an item for a level, honouring manual type/arity/premises overrides
+function makeItem(level, opts){
+  opts = opts || {};
+  for(var t=0;t<8;t++){
+    var type = opts.focusType || nextType();
+    var env = ENVELOPE[type];
+    var ap = env[tierFor(type, level)];
+    var A = ap[0], P = ap[1];
+    if(opts.arity)    A = opts.arity;
+    if(opts.premises) P = opts.premises;
+    var snapped = (opts.arity || opts.premises) ? snapEnvelope(type, A, P) : ap;
+    var it = buildItem(type, snapped[0], snapped[1]);
+    if(it) return it;
+    it = buildItem(type, env[0][0], env[0][1]);   // retry easiest for this type
+    if(it) return it;
+  }
+  return buildItem("setQuant",3,3) || buildItem("totalOrder",4,4);
+}
+
+// ---------- state machine ----------
+function initState(){
+  return { level:1, phase:"study", item:null, view:null,
+    answered:0, correct:0, streak:0, bestStreak:0, corrInRow:0, wrongInRow:0,
+    peeked:false, lastIdx:-1, lastCorrect:null, history:[] };
+}
+function loadItem(st, opts){
+  st.item = makeItem(st.level, opts);
+  st.view = displayItem(st.item, opts);
+  st.phase = "study"; st.peeked=false; st.lastIdx=-1; st.lastCorrect=null;
+  return st;
+}
+function toAnswer(st){ if(st.phase==="study") st.phase="answer"; return st; }
+function submit(st, idx){
+  if(st.phase!=="answer") return st;
+  if(idx<0 || idx>=st.view.options.length) return st;
+  var ok = (idx === st.view.correctIdx);
+  st.answered++; if(ok) st.correct++;
+  st.streak = ok ? st.streak+1 : 0;
+  if(st.streak>st.bestStreak) st.bestStreak = st.streak;
+  if(ok){ st.corrInRow++; st.wrongInRow=0; if(st.corrInRow>=3 && st.level<20){ st.level++; st.corrInRow=0; } }
+  else  { st.wrongInRow++; st.corrInRow=0; if(st.wrongInRow>=2 && st.level>1){ st.level--; st.wrongInRow=0; } }
+  st.history.push({ level:st.level, type:st.item.type, correct:ok, peeked:st.peeked });
+  st.lastIdx = idx; st.lastCorrect = ok; st.phase = "feedback";
+  return st;
+}
+function advance(st, opts){ if(st.phase!=="feedback") return st; return loadItem(st, opts); }
+function peek(st){ if(st.phase==="answer") st.peeked = true; return st; }
+
+if(typeof module!=="undefined" && module.exports){
+  module.exports = { NAME_POOL:NAME_POOL, ENVELOPE:ENVELOPE, ALL_TYPES:ALL_TYPES,
+    MASKABLE:MASKABLE, PROSEABLE:PROSEABLE, snapEnvelope:snapEnvelope,
+    scramblePremises:scramblePremises, aliasExprs:aliasExprs, proseRender:proseRender,
+    makeItem:makeItem, displayItem:displayItem,
+    initState:initState, loadItem:loadItem, toAnswer:toAnswer, submit:submit,
+    advance:advance, peek:peek, resetBag:resetBag };
+}
+
+// ===== ui layer =====
+// ============================================================
+// UI LAYER — reads/writes the tested state machine, no reveal-chains.
+// Every phase change is synchronous on a click or keypress. The only
+// timer is a single guarded interval, cleared before every transition.
+// ============================================================
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+  function show(node, on){ if(node) node.classList.toggle("hidden", !on); }
+
+  var KEY = "rrt_clean_v1";
+  var mem = {};
+  var store = {
+    get:function(){ try{ var s=localStorage.getItem(KEY); return s?JSON.parse(s):null; }catch(e){ return mem[KEY]||null; } },
+    set:function(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){ mem[KEY]=o; } }
+  };
+
+  var App = {
+    st: initState(),
+    // difficulty settings
+    focusType: "",     // "" = mixed
+    mArity: 0,         // 0 = auto
+    mPrem: 0,          // 0 = auto
+    timerSecs: 0,      // 0 = off
+    keepVisible: false,
+    // perturbations
+    scramble: false, mask: false, prose: false,
+    // runtime
+    tHandle: null, deadline: 0, timedOut: false,
+    sess: { answered:0, correct:0 },
+    life: { answered:0, correct:0, days:0, lastDay:"" }
+  };
+
+  function num(v, d){ return (typeof v==="number" && isFinite(v)) ? v : d; }
+  (function restore(){
+    var s = store.get();
+    if(s){
+      if(typeof s.level==="number") App.st.level = Math.min(20, Math.max(1, s.level));
+      if(typeof s.bestStreak==="number") App.st.bestStreak = s.bestStreak;
+      App.focusType   = typeof s.focusType==="string" ? s.focusType : "";
+      App.mArity      = num(s.mArity,0); App.mPrem = num(s.mPrem,0);
+      App.timerSecs   = num(s.timerSecs,0);
+      App.keepVisible = !!s.keepVisible;
+      App.scramble = !!s.scramble; App.mask = !!s.mask; App.prose = !!s.prose;
+      App.life.answered = num(s.lifeAnswered,0); App.life.correct = num(s.lifeCorrect,0);
+      App.life.days = num(s.daysTrained,0); App.life.lastDay = s.lastDay||"";
+    }
+    var today = new Date().toDateString();
+    if(App.life.lastDay !== today){ App.life.days += 1; App.life.lastDay = today; }
+  })();
+
+  function save(){
+    store.set({
+      level: App.st.level, bestStreak: App.st.bestStreak,
+      focusType: App.focusType, mArity: App.mArity, mPrem: App.mPrem,
+      timerSecs: App.timerSecs, keepVisible: App.keepVisible,
+      scramble: App.scramble, mask: App.mask, prose: App.prose,
+      lifeAnswered: App.life.answered, lifeCorrect: App.life.correct,
+      daysTrained: App.life.days, lastDay: App.life.lastDay
+    });
+  }
+
+  // build the options object the engine reads (live, so settings apply next item)
+  function opts(){
+    return {
+      focusType: App.focusType || null,
+      arity: App.mArity || 0,
+      premises: App.mPrem || 0,
+      scramble: App.scramble, mask: App.mask, prose: App.prose
+    };
+  }
+
+  // ---- timer ----
+  function clearTimer(){
+    if(App.tHandle){ clearInterval(App.tHandle); App.tHandle = null; }
+    var f=$("timerfill"); if(f) f.style.width="0%";
+    show($("timerbar"), false);
+  }
+  function startTimer(){
+    clearTimer();
+    if(App.timerSecs<=0) return;
+    App.deadline = Date.now() + App.timerSecs*1000;
+    show($("timerbar"), true);
+    $("timerfill").style.width = "100%";
+    App.tHandle = setInterval(function(){
+      var rem = App.deadline - Date.now();
+      var frac = Math.max(0, rem)/(App.timerSecs*1000);
+      var f=$("timerfill"); if(f) f.style.width=(frac*100).toFixed(1)+"%";
+      if(rem<=0){ clearTimer(); onTimeUp(); }
+    }, 100);
+  }
+
+  // ---- transitions ----
+  function newItem(){ clearTimer(); App.timedOut=false; loadItem(App.st, opts()); render(); }
+  function onReady(){ if(App.st.phase!=="study") return; toAnswer(App.st); render(); startTimer(); }
+  function onAnswer(idx){
+    if(App.st.phase!=="answer") return;
+    clearTimer();
+    var wasCorrect = (idx === App.st.view.correctIdx);
+    submit(App.st, idx);
+    App.sess.answered++; if(wasCorrect) App.sess.correct++;
+    App.life.answered++; if(wasCorrect) App.life.correct++;
+    save(); render();
+  }
+  function onTimeUp(){
+    if(App.st.phase!=="answer") return;
+    var wrong = (App.st.view.correctIdx + 1) % App.st.view.options.length;
+    submit(App.st, wrong); App.timedOut=true;
+    App.sess.answered++; App.life.answered++;
+    save(); render();
+  }
+  function onNext(){ if(App.st.phase!=="feedback") return; newItem(); }
+  function onPeek(){ if(App.st.phase!=="answer") return; peek(App.st); render(); }
+
+  // ---- rendering ----
+  function pct(n,d){ return d>0 ? Math.round(100*n/d)+"%" : "\u2013"; }
+
+  function render(){
+    var st = App.st, v = st.view;
+    $("stLevel").textContent  = st.level;
+    $("stAcc").textContent    = pct(App.sess.correct, App.sess.answered);
+    $("stStreak").textContent = st.streak + (st.bestStreak ? (" / "+st.bestStreak) : "");
+
+    $("typeTag").textContent  = v.typeLabel;
+    $("typeHint").textContent = v.hint;
+    if(v.setup){ $("setup").textContent = v.setup; show($("setup"), true); } else show($("setup"), false);
+
+    var premisesVisible = (st.phase==="study") || (st.phase==="feedback") || App.keepVisible || st.peeked;
+
+    var pc = $("premises"); clear(pc);
+    if(premisesVisible){
+      if(v.prose){
+        var pr = document.createElement("div"); pr.className = "premise prose"; pr.textContent = v.prose; pc.appendChild(pr);
+      } else {
+        v.premises.forEach(function(text){ var d=document.createElement("div"); d.className="premise"; d.textContent=text; pc.appendChild(d); });
+      }
+    }
+    show(pc, premisesVisible);
+
+    show($("studyBar"), st.phase==="study");
+
+    var answering = (st.phase==="answer" || st.phase==="feedback");
+    show($("question"), answering);
+    var oc = $("options"); clear(oc);
+    if(answering){
+      v.options.forEach(function(text, i){
+        var b=document.createElement("button"); b.className="opt"; b.type="button";
+        var badge=document.createElement("span"); badge.className="badge"; badge.textContent=(i+1);
+        var span=document.createElement("span"); span.className="opttext"; span.textContent=text;
+        b.appendChild(badge); b.appendChild(span);
+        if(st.phase==="feedback"){
+          b.disabled=true;
+          if(i===v.correctIdx) b.classList.add("correct");
+          else if(!App.timedOut && i===st.lastIdx) b.classList.add("wrong");
+          else b.classList.add("muted");
+        } else {
+          b.onclick = (function(k){ return function(){ onAnswer(k); }; })(i);
+        }
+        oc.appendChild(b);
+      });
+    }
+    show($("options"), answering);
+
+    show($("peekBar"), st.phase==="answer" && !premisesVisible);
+
+    if(st.phase==="feedback"){
+      var verdict=$("verdict");
+      if(App.timedOut){ verdict.textContent="Time up"; verdict.className="verdict timeup"; }
+      else if(st.lastCorrect){ verdict.textContent="Correct"; verdict.className="verdict ok"; }
+      else { verdict.textContent="Not quite"; verdict.className="verdict no"; }
+      $("explain").textContent =
+        "Only \u201c" + v.options[v.correctIdx] + "\u201d must be true given every premise. " +
+        "The other three could each be true or false \u2014 the premises don\u2019t pin them down.";
+      show($("feedback"), true);
+    } else show($("feedback"), false);
+  }
+
+  // ---- keyboard ----
+  document.addEventListener("keydown", function(e){
+    if(e.metaKey || e.ctrlKey || e.altKey) return;
+    var tag=(e.target&&e.target.tagName)||"";
+    if(tag==="SELECT"||tag==="INPUT"||tag==="TEXTAREA") return;
+    var st=App.st;
+    if(st.phase==="study"){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); onReady(); } }
+    else if(st.phase==="answer"){
+      if(e.key>="1"&&e.key<="4"){ e.preventDefault(); onAnswer(parseInt(e.key,10)-1); }
+      else if(e.key==="p"||e.key==="P"){ e.preventDefault(); onPeek(); }
+    } else if(st.phase==="feedback"){
+      if(e.key==="Enter"||e.key===" "||e.key==="n"||e.key==="N"){ e.preventDefault(); onNext(); }
+    }
+  });
+
+  // ---- controls ----
+  function selVal(id){ var el=$(id); return el?el.value:""; }
+  function initControls(){
+    // difficulty
+    var focus=$("focusSel"); focus.value=App.focusType;
+    focus.onchange=function(){ App.focusType=focus.value; save(); };
+    var ar=$("arSel"); ar.value=String(App.mArity);
+    ar.onchange=function(){ App.mArity=parseInt(ar.value,10)||0; save(); };
+    var pr=$("prSel"); pr.value=String(App.mPrem);
+    pr.onchange=function(){ App.mPrem=parseInt(pr.value,10)||0; save(); };
+    var t=$("timerSel"); t.value=String(App.timerSecs);
+    t.onchange=function(){ App.timerSecs=parseInt(t.value,10)||0; save(); };
+    var k=$("keepChk"); k.checked=App.keepVisible;
+    k.onchange=function(){ App.keepVisible=k.checked; save(); if(App.st.phase==="answer") render(); };
+    // perturbations
+    var sc=$("scrChk"); sc.checked=App.scramble; sc.onchange=function(){ App.scramble=sc.checked; save(); };
+    var mk=$("maskChk"); mk.checked=App.mask; mk.onchange=function(){ App.mask=mk.checked; save(); };
+    var ps=$("proseChk"); ps.checked=App.prose; ps.onchange=function(){ App.prose=ps.checked; save(); };
+
+    var toggle=$("setToggle");
+    toggle.onclick=function(){ var p=$("setPanel"); var open=p.classList.toggle("open"); toggle.setAttribute("aria-expanded", open?"true":"false"); };
+
+    $("readyBtn").onclick=onReady;
+    $("peekBtn").onclick=onPeek;
+    $("nextBtn").onclick=onNext;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){ initControls(); newItem(); });
+})();
+
+</script>
+</body>
+</html>
