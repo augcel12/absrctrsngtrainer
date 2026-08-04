@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<title>Relational Trainer</title>
 <!--
   Relational Trainer — Comparison family slice
   Arity ladder: Binary (order) -> Ternary (betweenness) -> Quaternary (span comparison)
@@ -5,6 +12,8 @@
   Persistence uses window.storage (Claude artifact) with localStorage fallback,
   so this file is portable to a plain static site later.
 -->
+</head>
+<body>
 <div id="app">
   <div class="frame">
     <header class="topbar">
@@ -100,7 +109,7 @@
       </div>
       <div class="ctl">
         <span class="ctl-label">stimuli</span>
-        <button class="fam" data-stm="glyphs">gly</button>
+        <button class="fam" data-stm="glyphs" id="stmGly">gly</button>
         <button class="fam" data-stm="words">wrd</button>
       </div>
       <div class="ctl">
@@ -132,7 +141,7 @@
         <button class="toggle" id="mixToggle">off</button>
       </div>
       <div class="ctl">
-        <span class="ctl-label">prose extraction</span>
+        <span class="ctl-label">prose extraction <i class="wip">work in progress</i></span>
         <button class="toggle" id="proseToggle">off</button>
       </div>
       <div class="ctl">
@@ -191,17 +200,21 @@
 
 <style>
   :root{
-    --bg:#161922; --panel:#1d212c; --panel-2:#232838;
-    --ink:#e9e6dd; --muted:#8b91a1; --faint:#565d6e;
-    --amber:#e6b667; --amber-dim:#7a6236;
-    --ok:#68b79a; --no:#d3776b; --line:#2b3040;
+    /* OpenQuant game room: near-black page, charcoal card, warm cream ink */
+    --bg:#121212; --panel:#2c2c2e; --panel-2:#242426;
+    --ink:#f7f1e6; --muted:#9a9aa0; --faint:#6e6e73;
+    --amber:#6f6ceb; --amber-dim:#3b3a7a;            /* --amber = accent (indigo) */
+    --accent:#6f6ceb; --accent-soft:rgba(111,108,235,.12);
+    --accent-line:rgba(111,108,235,.45); --accent-deep:#a5a3f5;
+    --ok:#5fbf9b; --no:#e0736c; --line:#3d3d40;
+    --shadow:none;
     --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
     --ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   }
   *{box-sizing:border-box}
   #app{
     font-family:var(--ui); color:var(--ink);
-    background:radial-gradient(120% 120% at 50% -10%,#1b1f2b 0%,var(--bg) 55%);
+    background:var(--bg);
     min-height:100%; padding:28px 18px; display:flex; justify-content:center;
   }
   .frame{width:100%; max-width:560px}
@@ -226,10 +239,10 @@
     -webkit-tap-highlight-color:transparent;transition:all .12s}
   .modebtn b{display:block;font-size:14px;color:var(--ink);margin-bottom:2px}
   .modebtn .msub{font-size:10px;color:var(--faint);letter-spacing:.02em}
-  .modebtn.active{border-color:var(--amber);background:rgba(230,182,103,.12)}
+  .modebtn.active{border-color:var(--amber);background:rgba(111,108,235,.14)}
   .modebtn.active b{color:var(--amber)}
   .levelpanel{width:100%;margin-bottom:14px;padding:14px;border:1px solid var(--amber-dim);
-    border-radius:12px;background:rgba(230,182,103,.05)}
+    border-radius:12px;background:rgba(111,108,235,.06)}
   .lp-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
   .lp-lvl{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--amber);line-height:1}
   .lp-lvl small{font-size:12px;color:var(--faint);font-weight:400}
@@ -246,7 +259,7 @@
   .lp-streak{font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:10px;
     letter-spacing:.04em}
   .lp-result{font-size:12px;color:var(--amber);margin-top:8px;padding:8px;border-radius:8px;
-    background:rgba(230,182,103,.08);line-height:1.4}
+    background:rgba(111,108,235,.10);line-height:1.4}
   .lp-diag{width:100%;margin-top:10px;padding:10px;font-family:var(--mono);font-size:12px;
     background:var(--panel-2);color:var(--muted);border:1px solid var(--line);border-radius:9px;
     cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -258,12 +271,12 @@
   .preset:active{border-color:var(--amber);color:var(--amber)}
   .preset b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
   .preset .psub{font-size:10px;color:var(--faint);letter-spacing:.02em}
-  .preset.active{border-color:var(--amber);background:rgba(230,182,103,.10)}
+  .preset.active{border-color:var(--amber);background:rgba(111,108,235,.12)}
   .preset.active b{color:var(--amber)}
   .drawer-head{display:flex;align-items:center;justify-content:space-between;
     padding:2px 2px 12px;border-bottom:1px solid var(--line);margin-bottom:14px}
   .drawer-title{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
-  .drawer-close{font-family:var(--mono);font-size:13px;background:var(--amber);color:#12151d;
+  .drawer-close{font-family:var(--mono);font-size:13px;background:var(--amber);color:#1a1a1c;
     border:none;border-radius:8px;padding:9px 20px;cursor:pointer;font-weight:600}
   .hud{display:none;
     grid-template-columns:repeat(5,1fr); gap:1px;
@@ -307,12 +320,12 @@
     background:var(--panel-2); color:var(--ink); border:1px solid var(--line);
     cursor:pointer; transition:transform .07s, background .1s, border-color .1s;
     -webkit-tap-highlight-color:transparent; user-select:none}
-  .ans:hover{background:#2a3042; border-color:#39415a}
+  .ans:hover{background:var(--line); border-color:var(--line)}
   .ans:active{transform:translateY(1px)}
   .ans kbd{font-family:var(--mono); font-size:12px; color:var(--faint);
     border:1px solid var(--line); border-radius:4px; padding:1px 5px; margin:0 4px}
-  .ans.flash-ok{background:rgba(104,183,154,.16); border-color:var(--ok)}
-  .ans.flash-no{background:rgba(211,119,107,.16); border-color:var(--no)}
+  .ans.flash-ok{background:rgba(95,191,155,.14); border-color:var(--ok)}
+  .ans.flash-no{background:rgba(224,115,108,.14); border-color:var(--no)}
 
   .verdict{height:22px; margin-top:14px; text-align:center; font-size:14px;
     font-family:var(--mono); letter-spacing:.02em; color:var(--muted)}
@@ -326,15 +339,15 @@
   .exp-lab{min-width:30px;text-align:right;font-size:19px}
   .exp-track{position:relative;flex:1;height:22px;background:var(--bg);border-radius:5px;
     border:1px solid var(--line);overflow:hidden}
-  .exp-band{position:absolute;top:0;bottom:0;background:rgba(230,182,103,.20);
+  .exp-band{position:absolute;top:0;bottom:0;background:rgba(111,108,235,.22);
     border-left:1px dashed var(--amber-dim);border-right:1px dashed var(--amber-dim)}
-  .exp-fix{position:absolute;top:0;bottom:0;background:rgba(104,183,154,.28)}
+  .exp-fix{position:absolute;top:0;bottom:0;background:rgba(95,191,155,.30)}
   .exp-note{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.5;font-family:var(--ui)}
   .exp-note b{color:var(--amber);font-weight:600}
   .cforest{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:flex-start}
-  .cbox{border:1px solid #39415a;border-radius:8px;padding:6px 7px;background:rgba(255,255,255,.035);
+  .cbox{border:1px solid var(--line);border-radius:8px;padding:6px 7px;background:rgba(255,255,255,.03);
     display:inline-flex;flex-direction:column;align-items:center;gap:5px}
-  .cbox.chi{border-color:var(--amber);background:rgba(230,182,103,.10)}
+  .cbox.chi{border-color:var(--amber);background:rgba(111,108,235,.12)}
   .ckids{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
   .expgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:11px 0 4px}
   @media(max-width:440px){ .expgrid{grid-template-columns:1fr} }
@@ -351,7 +364,7 @@
   .prose .word{color:var(--muted)}
   .op{color:var(--amber);font-family:var(--mono);padding:0 5px;font-weight:600}
   .xctl{display:flex;flex-direction:column;gap:10px;padding:12px;margin-top:4px;
-    border:1px solid var(--amber-dim);border-radius:10px;background:rgba(230,182,103,.05)}
+    border:1px solid var(--amber-dim);border-radius:10px;background:rgba(111,108,235,.06)}
   .xhint{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);
     margin-bottom:2px}
   .prem .op, .prose .op{font-size:1.05em}
@@ -412,7 +425,7 @@
   .fam.active{color:var(--amber); border-color:var(--amber-dim)}
   .step,.toggle,.lvl,.fam{font-family:var(--mono); background:var(--panel-2); color:var(--ink);
     border:1px solid var(--line); border-radius:6px; cursor:pointer; padding:4px 9px; font-size:13px}
-  .step:hover,.toggle:hover,.lvl:hover{border-color:#39415a}
+  .step:hover,.toggle:hover,.lvl:hover{border-color:var(--line)}
   .toggle{min-width:52px}
   .toggle.on{color:var(--amber); border-color:var(--amber-dim)}
   .arity-jump{margin-left:auto}
@@ -439,16 +452,16 @@
     padding:13px 14px;cursor:pointer;text-align:left;
     -webkit-tap-highlight-color:transparent;user-select:none;
     transition:border-color .1s, background .1s}
-  .stmtbtn:hover{border-color:#39415a}
-  .stmtbtn.flash-ok{border-color:var(--ok);background:rgba(104,183,154,.16)}
-  .stmtbtn.flash-no{border-color:var(--no);background:rgba(211,119,107,.16)}
+  .stmtbtn:hover{border-color:var(--line)}
+  .stmtbtn.flash-ok{border-color:var(--ok);background:rgba(95,191,155,.14)}
+  .stmtbtn.flash-no{border-color:var(--no);background:rgba(224,115,108,.14)}
   .stmtbtn .idx{font-size:11px;color:var(--faint);min-width:14px}
   @media (max-width:440px){ .optwrap{grid-template-columns:repeat(5,1fr);gap:5px} }
   .optbtn{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;cursor:pointer;padding:3px}
-  .optbtn:hover{border-color:#39415a}
+  .optbtn:hover{border-color:var(--line)}
   .optbtn .mcell{border:none;background:none;width:100%}
-  .optbtn.flash-ok{border-color:var(--ok);background:rgba(104,183,154,.16)}
-  .optbtn.flash-no{border-color:var(--no);background:rgba(211,119,107,.16)}
+  .optbtn.flash-ok{border-color:var(--ok);background:rgba(95,191,155,.14)}
+  .optbtn.flash-no{border-color:var(--no);background:rgba(224,115,108,.14)}
 
   @media (max-width:440px){
     .hud-val{font-size:15px} .prem{font-size:16px; gap:4px 10px; padding:8px 11px} .question{font-size:17px}
@@ -461,9 +474,106 @@
     border-radius:16px 16px 0 0; box-shadow:0 -12px 40px rgba(0,0,0,.5);
     padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));gap:10px 12px} .arity-jump{margin-left:0}
   }
-.tok-mask{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:.92em;color:#ffd479;background:rgba(255,212,121,.10);
-  border:1px solid rgba(255,212,121,.35);border-radius:6px;padding:1px 6px;margin:0 2px;}
+.tok-mask{display:inline-block;font-family:var(--mono);
+  font-size:.92em;color:var(--accent-deep);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:8px;padding:2px 8px;margin:0 2px;}
+
+  /* ---------- OpenQuant game-room look: sharp, compact, high type contrast ---------- */
+  #app{ -webkit-font-smoothing:antialiased; padding:14px 10px 28px; }
+
+  /* one card, small radius, thin hairline, no shadow */
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:10px;
+         box-shadow:none; padding:0 18px 18px; overflow:hidden; }
+
+  /* full-bleed dividers: run edge to edge, so the card reads CUT not padded */
+  .card > .premises{ padding-top:22px; }
+  .legend{ border-top:1px solid var(--line); margin:22px -18px 0; padding:12px 18px 0;
+           color:var(--faint); text-align:center; font-size:12px; letter-spacing:0; }
+
+  /* TYPE CONTRAST: big centered stimulus vs small muted chrome */
+  .prem{ background:var(--panel-2); border:1px solid var(--line); border-radius:7px;
+         text-align:left; font-size:14.5px; line-height:1.4; padding:8px 11px;
+         color:var(--ink); font-weight:400; }
+  .premises{ display:flex; flex-direction:column; gap:5px; }
+  .prem .word{ color:var(--muted); font-size:13px; }
+  .prem .rel{ color:var(--accent-deep); font-weight:600; }
+  .tok-word{ color:var(--ink); font-weight:500; font-size:1em; letter-spacing:0; }
+  .tok-vor{ opacity:.95; }
+
+  /* one large void beneath the stimulus, then tightly-packed options */
+  /* answers: ONE hairline list card, not four boxes.
+     Visual row ~36px; tap target kept >=44px via min-height (Parhi 9.6mm plateau,
+     WCAG 2.5.5 / Apple 44pt / Material 48dp). */
+  .answers{ display:flex; flex-direction:column; gap:0; margin-top:20px;
+            border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .ans{ display:flex; align-items:center; gap:11px; width:100%; min-height:44px;
+        padding:9px 12px; background:transparent; border:0;
+        border-top:1px solid rgba(255,255,255,.055); border-radius:0;
+        color:var(--ink); font-size:15px; line-height:1.35; text-align:left;
+        box-shadow:none; font-weight:400; }
+  .ans:first-child{ border-top:0; }
+  .ans kbd{ flex:none; min-width:19px; text-align:center; font:600 12px var(--mono);
+            color:var(--faint); background:transparent;
+            border:1px solid rgba(255,255,255,.10); border-radius:4px; padding:1px 0; }
+  @media (hover:hover){ .ans:hover{ background:rgba(255,255,255,.04); } }
+  .ans.sel,.ans[aria-pressed="true"]{ background:var(--accent-soft); }
+  .ans.sel kbd{ color:var(--accent-deep); border-color:var(--accent-line); }
+
+  /* chrome: plain sentence-case gray, no letterspacing, no uppercase drama */
+  .ctl-label{ color:var(--muted); font-weight:400; letter-spacing:0;
+              text-transform:none; font-size:12px; }
+  .ctl{ gap:6px; }
+  .toggle.on{ color:var(--accent-deep); border-color:var(--accent-line);
+              background:var(--accent-soft); }
+  .ctl-val,.sval,.legend,.tok-mask{ font-variant-numeric:tabular-nums; }
+  .tok-mask{ border-radius:6px; }
+
+  /* ---------- sectioned menu ---------- */
+  .msec{ border-top:1px solid var(--line); }
+  .msec-h{ width:100%; display:flex; align-items:center; justify-content:space-between;
+    background:none; border:none; color:var(--ink); font-family:var(--ui); font-size:13px;
+    padding:12px 2px; cursor:pointer; }
+  .msec-h .chev{ color:var(--faint); transition:transform .15s; }
+  .msec.open .msec-h .chev{ transform:rotate(90deg); }
+  .msec-b{ display:none; padding:2px 0 14px; }
+  .msec.open .msec-b{ display:block; }
+  .msec-note{ font-size:11px; color:var(--faint); margin-top:8px; line-height:1.5; }
+  .famhost{ display:flex; flex-wrap:wrap; gap:6px; }
+  .fam-x{ min-width:44px; }
+  .fam-x.on{ color:var(--accent-deep); border-color:var(--accent-line); background:var(--accent-soft); }
+  .fam-x.blocked{ opacity:.34; cursor:not-allowed; }
+  .info{ font-size:13px; line-height:1.6; color:var(--muted); }
+  .info p{ margin:0 0 10px; }
+  .info b{ color:var(--ink); font-weight:600; }
+  .wip{ font-style:normal; font-size:10px; color:var(--faint); border:1px solid var(--line);
+        border-radius:4px; padding:1px 5px; margin-left:6px; vertical-align:middle; }
+
+  /* ---------- stats panel ---------- */
+  .sp-btn{ position:fixed; top:10px; right:10px; z-index:40; width:32px; height:32px;
+    min-height:32px; border:1px solid var(--line); border-radius:7px; background:var(--panel);
+    color:var(--muted); font-size:14px; line-height:1; cursor:pointer; }
+  .sp-btn:hover{ color:var(--ink); border-color:var(--accent-line); }
+  .sp{ position:fixed; top:50px; right:10px; z-index:41; width:252px; padding:12px 13px 13px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    font-size:12px; color:var(--muted); box-shadow:0 8px 28px rgba(0,0,0,.45); }
+  .sp.hid{ display:none; }
+  .sp-h{ display:flex; justify-content:space-between; align-items:center;
+    color:var(--ink); font-size:12px; letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; }
+  .sp-x{ background:none; border:0; color:var(--faint); font-size:17px; cursor:pointer; padding:0 2px; }
+  .sp-row{ display:flex; justify-content:space-between; padding:3px 0; font-variant-numeric:tabular-nums; }
+  .sp-row b{ color:var(--ink); font-weight:600; }
+  .sp-t{ margin:13px 0 2px; color:var(--ink); font-size:11.5px; }
+  .sp-note{ color:var(--faint); font-size:10.5px; margin-bottom:5px; line-height:1.4; }
+  .sp-total{ display:flex; justify-content:space-between; margin-top:11px; padding-top:9px;
+    border-top:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .sp-total b{ color:var(--accent-deep); font-weight:600; }
+  .nodata{ color:var(--faint); font-size:10.5px; padding:8px 0; }
+  .info-h{ color:var(--ink); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    margin:16px 0 8px; padding-top:12px; border-top:1px solid var(--line); }
+  .glo{ list-style:none; padding:0; margin:0; }
+  .glo li{ font-size:12.5px; line-height:1.5; color:var(--muted); margin-bottom:8px; padding-left:0; }
+  .glo b{ color:var(--ink); font-weight:600; }
+  .glo i{ color:var(--accent-deep); font-style:normal; }
 </style>
 
 <script>
@@ -509,7 +619,7 @@
     var hue=(slot*47)%360;                            // 47 is coprime with 360 -> spread hues
     var shape=TOKSHAPE[slot%TOKSHAPE.length];
     var letter=TOKLET[slot%TOKLET.length];
-    var fill="hsl("+hue+",68%,58%)";
+    var fill="hsl("+hue+",16%,64%)";   // muted: shape + letter still disambiguate
     var body="";
     if(shape==="circle")        body='<circle cx="32" cy="32" r="27" fill="'+fill+'"/>';
     else if(shape==="square")   body='<rect x="7" y="7" width="50" height="50" rx="7" fill="'+fill+'"/>';
@@ -520,7 +630,7 @@
     return '<svg viewBox="0 0 64 64" width="'+size+'" height="'+size+'" style="vertical-align:middle;flex:none">'
       +body
       +'<text x="32" y="41" text-anchor="middle" font-size="26" font-weight="700" '
-      +'font-family="ui-monospace,monospace" fill="#12151d">'+letter+'</text></svg>';
+      +'font-family="ui-monospace,monospace" fill="#1b1b1d">'+letter+'</text></svg>';
   }
   function stimulusSet(n){
     var out=[];
@@ -605,7 +715,16 @@
 
   var curFam="comparison", curAr="II";
   var ROM={binary:"II",ternary:"III",quaternary:"IV",quinary:"V"};
-  var FAMSUP={web:["binary","ternary","quaternary","quinary"],contain:["binary","ternary","quaternary","quinary"],syllogism:["binary","ternary"]};
+  var FAMSUP={web:["binary","ternary","quaternary","quinary"],contain:["binary","ternary","quaternary","quinary"],syllogism:["binary","ternary"],
+    spatial:["binary","ternary","quaternary","quinary"],analogy:["binary","ternary","quaternary","quinary"],
+    matrix:["binary","ternary","quaternary","quinary"],lst:["binary","ternary","quaternary","quinary"],
+    distinction:["binary","ternary","quaternary","quinary"],compound:["binary","ternary","quaternary","quinary"]};
+  // Which families can produce 4-option generative items. The rest are TRUE/FALSE only,
+  // so enabling them while gen-mode is on is a genuine incompatibility, not a preference.
+  var FAM_MC={web:1,contain:1,syllogism:1,matrix:1,lst:1,spatial:1,analogy:1,distinction:1,compound:1};
+  var FAM_TF_ONLY={};   // none: all families produce 4-option items
+  var FAM_LABEL={web:"order",contain:"nest",syllogism:"cats",spatial:"dir",analogy:"analogy",matrix:"matrix",lst:"latin",distinction:"group",compound:"compound"};
+  var FAM_BETA={spatial:1,analogy:1,matrix:1,lst:1,distinction:1,compound:1};
 
   /* ---------- generators (return {premises:[display], question:{display}, answer:bool}) ---------- */
   var ARITY = { binary:2, ternary:3, quaternary:4 };
@@ -710,6 +829,30 @@
     var askSame = rng()<0.5;
     var stmt={type:"sgn", x:order[i1], y:order[i2], same:askSame};
     var ans = (sign[stmt.x]===sign[stmt.y])===askSame;
+    if(S.gen){
+      // GENERATIVE: four same/differ claims over different pairs; exactly one holds.
+      var trues=[], falses=[], seenS={};
+      for(var a1=0;a1<N;a1++) for(var b1=0;b1<N;b1++){
+        if(a1===b1) continue;
+        var xx=order[a1], yy=order[b1], kk=[xx,yy].sort().join("|");
+        [true,false].forEach(function(sm){
+          var kk2=kk+"|"+sm; if(seenS[kk2]) return; seenS[kk2]=1;
+          var st2={type:"sgn",x:xx,y:yy,same:sm};
+          ((sign[xx]===sign[yy])===sm ? trues : falses).push(st2);
+        });
+      }
+      trues=shuffle(trues); falses=shuffle(falses);
+      if(trues.length>=1 && falses.length>=3){
+        var cd=[trues[0]].concat(falses.slice(0,3));
+        var od=shuffle([0,1,2,3]), sh=[], cid=0;
+        od.forEach(function(oi,ix){ if(oi===0) cid=ix; sh.push(cd[oi]); });
+        return { _fam:"distinction", premises:prem.map(sgnView),
+          question:{lead:"Which claim is TRUE?", html:""},
+          options:sh.map(function(st3){ return {html:sgnQ(st3).html}; }),
+          statementMode:true, correctIdx:cid, answer:true,
+          _sgnPrem:prem,_stmt:trues[0],_ts:ts,_sign:sign };
+      }
+    }
     return { _fam:"distinction", premises:prem.map(sgnView), question:sgnQ(stmt), answer:ans, _sgnPrem:prem, _stmt:stmt, _ts:ts, _sign:sign };
   }
 
@@ -754,6 +897,23 @@
         while(gg<100&&shown.join()===sv.join());
         if(shown.join()===sv.join()){ shown=sv.slice(); shown[0]=shown[0]===1?-1:1; } }
       var views=prem.map(dirView); if(S.scramble) shuffle(views);
+      if(S.gen){
+        // GENERATIVE: the true direction vector plus 3 distinct wrong vectors.
+        var cands=[sv.slice()], seenV={}; seenV[sv.join()]=1; var gv=0;
+        while(cands.length<4 && gv++<400){
+          var v2=randVec(D); if(seenV[v2.join()]) continue;
+          seenV[v2.join()]=1; cands.push(v2);
+        }
+        if(cands.length===4){
+          var ordv=shuffle([0,1,2,3]), shownV=[], civ=0;
+          ordv.forEach(function(oi,ix){ if(oi===0) civ=ix; shownV.push(cands[oi]); });
+          return { premises:views,
+            question:{lead:"Which direction is FORCED?", html:""},
+            options:shownV.map(function(v3){ return {html:dirQ({x:x,y:y,v:v3}).html}; }),
+            statementMode:true, correctIdx:civ, answer:true,
+            _prem:prem,_stmt:{x:x,y:y,v:sv},_ts:ts,_D:D };
+        }
+      }
       return { premises:views, question:dirQ({x:x,y:y,v:shown}), answer:askTrue,
                _prem:prem,_stmt:{x:x,y:y,v:shown},_ts:ts,_D:D };
     }
@@ -794,6 +954,7 @@
     }
     return (p.q==="A"||p.q==="E");
   }
+  var SYLQ={A:0,E:0,I:0,O:0};   // running correct-conclusion quantifier balance
   function genSyllogism(pcount, terms){
     var n=Math.min(4, Math.max(3, pcount+1)); // finite-model bound: 3-4 predicates
     var ts=terms.slice(0,n), M=1<<n, TOT=1<<M, Q=["A","E","I","O"];
@@ -817,14 +978,25 @@
       var cands=[];
       for(var x=0;x<n;x++)for(var y=0;y<n;y++) if(x!==y) Q.forEach(function(q){cands.push({q:q,i:x,j:y,a:ts[x],b:ts[y]});});
       shuffle(cands);
+      // Collect ALL entailed conclusions, then order to BALANCE the A/E/I/O mix.
+      // Taking the first entailed candidate skewed the answer to "Some" ~86% of the
+      // time (particular quantifiers are entailed far more often in finite models),
+      // making "always pick Some" beat reasoning. Balancing kills that leak.
+      var entailed=[];
       for(var c=0;c<cands.length;c++){
-        var st=cands[c];
-        if(prem.some(function(p){return p.q===st.q&&p.i===st.i&&p.j===st.j;})) continue;
-        if(Math.abs(st.i-st.j)<2 && rng()<0.7) continue; // bias to transitive spans
-        var t2=0,f2=0,u=false;
-        for(var mI=0;mI<models.length;mI++){ if(sylTruth(models[mI],st,n)) t2++; else f2++; if(t2&&f2){u=true;break;} }
-        if(u) continue;
-        if(t2===0) continue;                       // generative needs an ENTAILED conclusion
+        var stc=cands[c];
+        if(prem.some(function(p){return p.q===stc.q&&p.i===stc.i&&p.j===stc.j;})) continue;
+        if(Math.abs(stc.i-stc.j)<2 && rng()<0.7) continue; // bias to transitive spans
+        var tt=0,ff=0,uu=false;
+        for(var mI=0;mI<models.length;mI++){ if(sylTruth(models[mI],stc,n)) tt++; else ff++; if(tt&&ff){uu=true;break;} }
+        if(uu) continue;
+        if(tt===0) continue;                       // generative needs an ENTAILED conclusion
+        entailed.push(stc);
+      }
+      entailed.forEach(function(e){ e._k = (SYLQ[e.q]||0) + Math.random()*0.5; });
+      entailed.sort(function(p,q){ return p._k - q._k; });   // under-represented quantifier first
+      for(var ei=0; ei<entailed.length; ei++){
+        var st=entailed[ei];
         // build lures: candidates true in SOME models, false in others
         var lures=[], seenL={};
         for(var lc=0; lc<cands.length && lures.length<3; lc++){
@@ -842,6 +1014,7 @@
           seenL[key]=1; lures.push(cd);
         }
         if(lures.length===3){
+          SYLQ[st.q]=(SYLQ[st.q]||0)+1;
           var opts=[st].concat(lures);
           var ord=shuffle([0,1,2,3]), shown=[], ci=0;
           ord.forEach(function(oi,ix){ if(oi===0) ci=ix; shown.push(opts[oi]); });
@@ -852,10 +1025,6 @@
                   statementMode:true, correctIdx:ci, answer:true,
                   _prem:prem,_stmt:st,_ts:ts,_n:n,_opts:shown};
         }
-        continue;                                   // no lures -> try another conclusion
-        var views=prem.map(synView); if(S.scramble) shuffle(views);
-        return {_fam:"syllogism", premises:views, question:{lead:"Does this follow?", html:synView(st).html}, answer:t2>0,
-                _prem:prem,_stmt:st,_ts:ts,_n:n};
       }
     }
     var pr2=[]; for(var i2=0;i2<n-1;i2++) pr2.push({q:"A",i:i2,j:i2+1,a:ts[i2],b:ts[i2+1]});
@@ -870,6 +1039,45 @@
     var rank={}; order.forEach(function(t,i){rank[t]=i;});
     var prem=[]; for(var i=0;i<N-1;i++) prem.push({type:"cmp",hi:order[i+1],lo:order[i]});
     var views=prem.map(cmpView); if(S.scramble) shuffle(views);
+    if(S.gen){
+      // GENERATIVE analogy: given A:B, pick the pair with the SAME direction and the
+      // SAME rank gap. Direction alone is guessable, so the gap must match too --
+      // that forces reading positions off the order, not just "bigger/smaller".
+      // try several base pairs: a maximal gap has no second pair that matches it,
+      // so pick a base whose gap is actually reproducible elsewhere in the order.
+      var basePairs=[];
+      for(var bi=0;bi<ts.length;bi++) for(var bj=0;bj<ts.length;bj++){
+        if(bi!==bj) basePairs.push([ts[bi],ts[bj]]);
+      }
+      basePairs=shuffle(basePairs);
+      for(var bp=0; bp<basePairs.length; bp++){
+      var A=basePairs[bp][0], B=basePairs[bp][1];
+      var gapAB = rank[A]-rank[B];
+      if(gapAB!==0){
+        var right=null, wrong=[], seenP={};
+        for(var ii=0; ii<ts.length; ii++) for(var jj=0; jj<ts.length; jj++){
+          if(ii===jj) continue;
+          var C=ts[ii], Dt=ts[jj], key=C+"|"+Dt;
+          if(seenP[key]) continue; seenP[key]=1;
+          if(C===A&&Dt===B) continue;
+          var g2=rank[C]-rank[Dt];
+          if(g2===gapAB){ if(!right) right={c:C,d:Dt}; }
+          else wrong.push({c:C,d:Dt});
+        }
+        wrong=shuffle(wrong);
+        if(right && wrong.length>=3){
+          var cand2=[right].concat(wrong.slice(0,3));
+          var ord2=shuffle([0,1,2,3]), shown2=[], ci2=0;
+          ord2.forEach(function(oi,ix){ if(oi===0) ci2=ix; shown2.push(cand2[oi]); });
+          return {premises:views,
+            question:{lead:"Complete the analogy \u2014 "+"same direction and same distance as "+
+              tok(A)+' <span class="rel">:</span> '+tok(B), html:""},
+            options:shown2.map(function(pr2){ return {html: tok(pr2.c)+'<span class="rel">:</span>'+tok(pr2.d)}; }),
+            statementMode:true, correctIdx:ci2, answer:true, _prem:prem,_ts:ts};
+        }
+      }
+      }
+    }
     var f=shuffle(ts.slice()).slice(0,4);
     var same = Math.sign(rank[f[0]]-rank[f[1]])===Math.sign(rank[f[2]]-rank[f[3]]);
     return {premises:views, question:{lead:"Same relation?",
@@ -891,6 +1099,35 @@
     while(g2++<50 && s1.hi===s2.hi && s1.lo===s2.lo) s2=pickStmt();
     var t1=rank[s1.hi]>rank[s1.lo], t2=rank[s2.hi]>rank[s2.lo];
     var ops={and:t1&&t2, or:t1||t2, xor:t1!==t2}, names=Object.keys(ops), op=names[rand(3)];
+    if(S.gen){
+      // GENERATIVE compound: four AND/OR/XOR compounds over comparison pairs;
+      // exactly one is entailed. Forces evaluating BOTH conjuncts and the connective.
+      function cHTML(a,b,o){ return tok(a.hi)+'<span class="rel">&gt;</span>'+tok(a.lo)
+        +'<span class="word">\u2009'+o.toUpperCase()+'\u2009</span>'
+        +tok(b.hi)+'<span class="rel">&gt;</span>'+tok(b.lo); }
+      var tC=[], fC=[], gg2=0, cSeen={};
+      while(gg2++<300 && (tC.length<1 || fC.length<3)){
+        var a2=pickStmt(), b2=pickStmt();
+        if(a2.hi===b2.hi && a2.lo===b2.lo) continue;
+        var r1=rank[a2.hi]>rank[a2.lo], r2=rank[b2.hi]>rank[b2.lo];
+        var vals={and:r1&&r2, or:r1||r2, xor:r1!==r2};
+        var nm=["and","or","xor"][rand(3)];
+        var item={a:a2,b:b2,o:nm,v:vals[nm]};
+        var ik=a2.hi+">"+a2.lo+"|"+nm+"|"+b2.hi+">"+b2.lo;
+        if(cSeen[ik]) continue; cSeen[ik]=1;          // no duplicate option text
+        (item.v? tC : fC).push(item);
+      }
+      if(tC.length>=1 && fC.length>=3){
+        var cc=[tC[0]].concat(shuffle(fC).slice(0,3));
+        var oc=shuffle([0,1,2,3]), sc=[], cic=0;
+        oc.forEach(function(oi,ix){ if(oi===0) cic=ix; sc.push(cc[oi]); });
+        return {_fam:"compound", _order:order, premises:views,
+          question:{lead:"Which compound is TRUE?", html:""},
+          options:sc.map(function(it2){ return {html:cHTML(it2.a,it2.b,it2.o)}; }),
+          statementMode:true, correctIdx:cic, answer:true,
+          _prem:prem,_s1:tC[0].a,_s2:tC[0].b,_op:tC[0].o,_ts:ts};
+      }
+    }
     return {_fam:"compound", _order:order, premises:views, question:{lead:"Does the compound follow?",
       html: tok(s1.hi)+'<span class="rel">&gt;</span>'+tok(s1.lo)
         +'<span class="word">\u2009'+op.toUpperCase()+'\u2009</span>'
@@ -973,6 +1210,7 @@
     if(st.r==="rng5") return {html: tok(st.a)+W(K.within)+tok(st.b)+tok(st.c)+tok(st.d)+tok(st.e)};
     return {html: W("(gap")+tok(st.a)+W("\u2013")+tok(st.b)+W("\u2212 gap")+tok(st.c)+W("\u2013")+tok(st.d)+W(")")+'<span class="rel">&gt;</span>'+W("gap")+tok(st.c)+W("\u2013")+tok(st.e)};
   }
+  function wQ(st){ return {lead:"Does this follow?", html:(S.notation==="words"? wView(st).html : wViewSym(st).html)}; }
   function genWeb(pcount, terms, ar){
     var need = ar==="quinary"?5 : ar==="quaternary"?4 : ar==="ternary"?3 : 2;
     var cap = need>=5? 6:6;
@@ -1114,9 +1352,15 @@
                     : ar==="ternary"? ["btw","clsr","gap","lt","adj","eq"]
                     : ["lt","adj","eq","btw","clsr"];
           var LMAX = (ar==="quinary")?400:3000;
+          // PASS 1 draws lures of the SAME relation type as the answer, so all four
+          // options share a surface form. Without this the answer was uniquely the
+          // shortest option ~61% of the time (binary), and "pick the short one" beat
+          // reasoning. Pass 2 relaxes only if 3 same-shape lures can't be found.
+          var samePass=true;
           while(lures.length<3 && lg++<LMAX){
+            if(samePass && lg>Math.floor(LMAX*0.7)) samePass=false;
             var q2=shuffle(cts.slice());
-            var rr=POOLR[rand(POOLR.length)];
+            var rr= samePass? stmt.r : POOLR[rand(POOLR.length)];
             var cand = (rr==="dd")? {r:rr,a:q2[0],b:q2[1],c:q2[2],d:q2[3],e:q2[4]}
                      : (rr==="rng5")? {r:rr,a:q2[0],b:q2[1],c:q2[2],d:q2[3],e:q2[4]}
                      : (rr==="gap"||rr==="sum4")? {r:rr,a:q2[0],b:q2[1],c:q2[2],d:q2[3]}
@@ -1132,6 +1376,14 @@
             seenL[ck]=1; lures.push(cand);
           }
           if(lures.length===3){
+            // LENGTH-LEAK GUARD: the rendered length of the correct statement must not
+            // be a strict min/max among the four, or "pick the shortest/longest" beats
+            // reasoning. Reject and rebuild when it is an outlier.
+            var _rl=function(o){ return wView(o).html.replace(/<[^>]*>/g,"").length; };
+            var _lc=_rl(stmt), _ll=lures.map(_rl);
+            var _strictMin = _ll.every(function(x){ return x>_lc; });
+            var _strictMax = _ll.every(function(x){ return x<_lc; });
+            if((_strictMin||_strictMax) && att<38) continue;   // relax only very late
             var opts=[stmt].concat(lures);
             var ord=shuffle([0,1,2,3]), shown=[], ci=0;
             ord.forEach(function(oi,ix){ if(oi===0) ci=ix; shown.push(opts[oi]); });
@@ -1142,7 +1394,14 @@
               _prem:prem,_stmt:stmt,_ts:ts,_n:n,_k:k,_nec:nec,_mc:mAll.length,_chk:chunkOK,_opts:shown};
           }
         }
-        continue;   // generative-only: no true/false fallback
+        if(!S.gen){
+          // TRUE/FALSE path. cls is already "T" or "F" here ("U" was skipped above),
+          // and every filter (necessity, chunkOK, non-restating) has already passed,
+          // so the truth value is inherited from the verified classification.
+          return {premises:views, question:wQ(stmt), answer:(cls==="T"),
+            _prem:prem,_stmt:stmt,_ts:ts,_n:n,_k:k,_nec:nec,_mc:mAll.length,_chk:chunkOK};
+        }
+        continue;   // generative mode: no true/false fallback
       }
     }
     // NO degenerate fallback: an item that misses spec must never be served.
@@ -1409,14 +1668,14 @@
       }
       if(tier>=2){ active.forEach(function(a5){ cands.push(mut(correct,[a5])); }); } // minimal single-channel violations
       var guard=0;
-      while(opts.length<5 && guard++<120){
+      while(opts.length<4 && guard++<120){
         var v2 = cands.length? cands.shift() : mut(correct,[tier===1? rand(5) : active[rand(active.length)]]);
         var k2=v2.join("-");
         if(used[k2]) continue;
         used[k2]=1; opts.push(v2);
       }
-      if(opts.length<5) continue;
-      var order=shuffle([0,1,2,3,4]), shown=[], cIdx=0;
+      if(opts.length<4) continue;
+      var order=shuffle([0,1,2,3]), shown=[], cIdx=0;
       order.forEach(function(oi,i){ if(oi===0) cIdx=i; shown.push(opts[oi]); });
       var gridH='<div class="mgrid">';
       for(var r3=0;r3<3;r3++) for(var c3=0;c3<3;c3++){
@@ -1439,12 +1698,12 @@
     }
     var fcor=fvals[2][2].slice(), fused={}, fopts=[fcor.slice()]; fused[fcor.join("-")]=1;
     var fg=0;
-    while(fopts.length<5 && fg++<120){
+    while(fopts.length<4 && fg++<120){
       var fv=fcor.slice(); var fa=rand(5), fd=fa===4?8:3;
       fv[fa]=(fv[fa]+1+rand(fd-1))%fd;
       var fk=fv.join("-"); if(fused[fk]) continue; fused[fk]=1; fopts.push(fv);
     }
-    var ford=shuffle([0,1,2,3,4]), fsh=[], fci=0;
+    var ford=shuffle([0,1,2,3]), fsh=[], fci=0;
     ford.forEach(function(oi,i){ if(oi===0) fci=i; fsh.push(fopts[oi]); });
     var fgrid='<div class="mgrid">';
     for(var fr3=0;fr3<3;fr3++) for(var fc3=0;fc3<3;fc3++){
@@ -1665,7 +1924,7 @@
     if(maskMap && maskMap[t]) return maskRender(t);
     if(/^[a-z]{3,5}$/.test(t)){                    // nonsense word
       var h=0; for(var i=0;i<t.length;i++) h=(h*131+t.charCodeAt(i))>>>0;
-      return '<span class="tok tok-word" style="color:hsl('+(h%360)+',70%,74%)">'+t+'</span>';
+      return '<span class="tok tok-word">'+t+'</span>';
     }
     return '<span class="tok tok-vor">'+tokenSVG(t, 36)+'</span>';
   }
@@ -1697,7 +1956,7 @@
   /* ---------- state ---------- */
   var S = {
     arity:"binary", premises:6, timer:45, mask:false, maskCount:2, stair:false, autoprog:false, scramble:true, m180:true, wmSeq:false, wmHold:false, compact:false, gen:true, skins:true, pi:false, mixAr:false, prose:true, notation:"words", /* generative-only */
-    families:{web:true,contain:true,syllogism:true},
+    families:{web:true,contain:true,syllogism:true,spatial:false,analogy:false,matrix:false,lst:false,distinction:false,compound:false},
     stims:{glyphs:true,words:true},
     dims:2, seed:"", stats:{}, activePreset:null, mode:"sandbox", arityOverride:null, level:1, lvlFramesSingle:false, dayStreak:0, lastDay:"", daysTrained:0, diagDone:false, diag:false, xfer:false, premSeq:3, premCard:4, xLoArity:"binary", xHiArity:"ternary",
     best:{binary:0, ternary:0, quaternary:0, quinary:0}
@@ -1813,7 +2072,7 @@
     var saved = await store.get("relTrainer.v3");
     if(saved) Object.assign(S, saved);
     if(S.timer>45) S.timer=45;
-    S.gen=true;                    // generative-only build
+    S.gen=true;                    // 4-option generative only; true/false removed
     if(!saved){                    // first run -> most-transferable configuration
       S.skins=true; S.prose=true; S.notation="words"; S.pi=false; S.mixAr=false;
     }
@@ -1825,8 +2084,235 @@
     S.stats=S.stats||{}; setSeed(S.seed||"");
     wire();
     syncUI();
+    buildMenu();
+    mountPanel();
     next();
   }
+
+  // ============================================================
+  // MENU ARCHITECTURE — General / Frames / Info / Beta.
+  // Existing control nodes are MOVED into sections rather than re-authored,
+  // so every existing event binding and syncUI() reference stays valid.
+  // ============================================================
+  var SECTIONS=[
+    // active load dials you touch most
+    {key:"difficulty", title:"Difficulty", open:true,
+     ids:["premDown","xBandBtn","dimDown","timeDown","mixToggle","autoToggle"]},
+    // which structures appear
+    {key:"frames", title:"Frames", open:true, families:true},
+    // presentation transforms that DO NOT change the logic (surface, not structure)
+    {key:"surface", title:"Surface", open:false,
+     ids:["scrToggle","skinToggle","notationToggle","compactToggle","piToggle","stmGly"]},
+    // newer / rougher modes
+    {key:"beta", title:"Beta", open:false,
+     ids:["maskToggle","maskDn","wmSeqToggle","wmHoldToggle","psqDown","pcDown","proseToggle"]},
+    // reference
+    {key:"info", title:"Info", open:false, info:true},
+    // utilities
+    {key:"data", title:"Data", open:false,
+     ids:["seedBtn","expBtn","statsBtn"]}
+  ];
+
+  function ctlOf(id){ var el=document.getElementById(id); if(!el) return null;
+    var n=el; while(n && n!==document.body && !(n.className&&String(n.className).indexOf("ctl")>=0)) n=n.parentNode;
+    return (n&&n!==document.body)? n : el.parentNode; }
+
+  function famBtnHTML(f){
+    return '<button class="fam fam-x" data-famx="'+f+'" title="'+f+'">'+(FAM_LABEL[f]||f)+'</button>';
+  }
+
+  // A family is BLOCKED when the current config cannot produce its items.
+  function famBlockReason(f){
+    if(FAMSUP[f] && FAMSUP[f].indexOf(S.arity)<0) return "no "+S.arity+" form \u2014 use "+FAMSUP[f].join("/");
+    if(f==="spatial" && (S.dims<2||S.dims>4)) return "needs 2\u20134 dimensions";
+    return null;
+  }
+  function enabledFams(){ return Object.keys(S.families).filter(function(k){return S.families[k];}); }
+
+  function paintFamilies(){
+    var host=document.getElementById("famHost"); if(!host) return;
+    host.innerHTML="";
+    Object.keys(FAMSUP).forEach(function(f){
+      var b=document.createElement("button");
+      b.className="fam fam-x"+(S.families[f]?" on":"");
+      b.textContent=FAM_LABEL[f]||f;
+      var reason=famBlockReason(f);
+      if(reason){ b.classList.add("blocked"); b.title=reason; b.disabled=!S.families[f]; }
+      else b.title=f+(FAM_BETA[f]?" (beta)":"");
+      b.onclick=function(){
+        if(famBlockReason(f) && !S.families[f]) return;         // cannot enable an incompatible frame
+        if(S.families[f] && enabledFams().length===1) return;   // keep at least one
+        S.families[f]=!S.families[f]; save(); syncUI(); paintFamilies(); next();
+      };
+      host.appendChild(b);
+    });
+    // auto-disable any enabled family the current config just invalidated
+    var changed=false;
+    enabledFams().forEach(function(f){
+      if(famBlockReason(f) && enabledFams().length>1){ S.families[f]=false; changed=true; }
+    });
+    if(changed){ save(); paintFamilies(); }
+  }
+
+  var INFO_HTML =
+    '<div class="info">'
+    +'<p><b>What the task is.</b> Premises fix a hidden structure \u2014 an order, a nesting, a grouping, a mapping. Exactly one option is <i>forced</i>: it must hold in every arrangement the premises allow. The other three are consistent but not entailed \u2014 each could be true or false. Find the one that cannot fail.</p>'
+    +'<p><b>How to reason.</b> Don\u2019t test options one at a time against your memory of the text. Build the structure, then read the answer off it. Where the premises leave something undecided, hold <i>every</i> arrangement at once and keep only what survives all of them. Nothing outside the premises exists \u2014 the listed items are the whole world, and no two share a position.</p>'
+    +'<p><b>Why the surface is arbitrary.</b> Tokens are nonsense words or abstract glyphs on purpose. Real-world meaning would give a shortcut; stripping it forces you to reason from structure alone. The same is true across frames: the clothing changes, the reasoning does not.</p>'
+    +'<div class="info-h">The frames</div>'
+    +'<ul class="glo">'
+    +'<li><b>Order</b> \u2014 everything sits on one line (lighter/earlier/lower\u2026). Binary = "X below Y"; ternary = betweenness; quaternary = compare two gaps.</li>'
+    +'<li><b>Nesting</b> \u2014 a containment hierarchy: things sit inside one another, some pairs unrelated. "inside", "directly inside", "more deeply nested than".</li>'
+    +'<li><b>Categories</b> \u2014 classical syllogism over classes: <i>All / Some / No / Some\u2026not</i>. Combine the quantified statements to see what must follow.</li>'
+    +'<li><b>Direction</b> \u2014 vectors in space/time (west\u2013east, south\u2013north, below\u2013above, earlier\u2013later). Chain the directions to fix the one that is forced.</li>'
+    +'<li><b>Analogy</b> \u2014 A : B :: C : ? \u2014 pick the pair with the <i>same direction and the same distance</i> on the hidden order.</li>'
+    +'<li><b>Matrix</b> \u2014 a 3\u00d73 grid whose rows and columns obey rules over shape / fill / count / orientation. Infer the missing cell.</li>'
+    +'<li><b>Latin square</b> \u2014 each symbol appears exactly once per row and once per column; deduce the hidden cell from that constraint.</li>'
+    +'<li><b>Grouping</b> \u2014 items fall into two hidden classes; decide whether two of them share a class (same) or not (different).</li>'
+    +'<li><b>Compound</b> \u2014 two comparisons joined by <i>and / or / xor</i>. You must evaluate both parts <i>and</i> the connective.</li>'
+    +'</ul>'
+    +'<div class="info-h">Symbols &amp; syntax</div>'
+    +'<ul class="glo">'
+    +'<li><b>&gt; &lt;</b> \u2014 order/comparison, when notation is set to symbols instead of words ("A &gt; B" = A is above/greater on the axis).</li>'
+    +'<li><b>gap A\u2013B</b> \u2014 the distance between two positions; a quaternary item may ask you to compare "gap A\u2013B" with "gap C\u2013D".</li>'
+    +'<li><b>between / closer\u2026than</b> \u2014 three-place relations that cannot be reduced to two separate reads; the whole triple must be held together.</li>'
+    +'<li><b>All / Some / No</b> \u2014 category quantifiers (Categories frame). "Some A are not B" is the negative particular.</li>'
+    +'<li><b>and / or / xor</b> \u2014 logical connectives (Compound). <i>xor</i> = exactly one of the two parts is true.</li>'
+    +'<li><b>( 7\u00d75 )</b> \u2014 with <b>identity masking</b> on (Beta), a couple of tokens are shown as arithmetic that evaluates to their identity, and the expression changes each mention \u2014 you must compute it, not match the string.</li>'
+    +'</ul>'
+    +'<div class="info-h">Controls</div>'
+    +'<p><b>Difficulty</b> sets load \u2014 premises, arity band, dimensions, timer. <b>Frames</b> chooses which structures appear (incompatible ones grey out with the reason). <b>Surface</b> holds presentation options that change how an item looks but never what\u2019s true \u2014 scramble, skins, notation, compact, interference. <b>Beta</b> holds rougher modes (masking, working-memory hold/sequence, prose). <b>Data</b> has seed and export.</p>'
+    +'<p><b>Modes.</b> <b>Sandbox</b> is free play at whatever config you set. <b>Leveled</b> is the governed climb that auto-advances as you sustain accuracy. Premises appear first; continue and they hide, so the structure is held in mind \u2014 peek if you must, but holding it is the training.</p>'
+    +'</div>';
+
+  function buildMenu(){
+    var host=document.getElementById("manualConfig"); if(!host || host.getAttribute("data-sectioned")) return;
+    var frag=document.createDocumentFragment();
+    SECTIONS.forEach(function(sec){
+      var wrap=document.createElement("section"); wrap.className="msec";
+      var head=document.createElement("button"); head.className="msec-h"; head.type="button";
+      head.innerHTML='<span>'+sec.title+'</span><span class="chev">\u203a</span>';
+      var body=document.createElement("div"); body.className="msec-b";
+      wrap.appendChild(head); wrap.appendChild(body);
+      if(sec.open){ wrap.classList.add("open"); }
+      head.onclick=function(){ wrap.classList.toggle("open"); };
+      if(sec.families){
+        var fh=document.createElement("div"); fh.id="famHost"; fh.className="famhost"; body.appendChild(fh);
+        var note=document.createElement("div"); note.className="msec-note";
+        note.textContent="Greyed frames are incompatible with the current settings \u2014 hover for the reason.";
+        body.appendChild(note);
+      } else if(sec.info){
+        body.innerHTML=INFO_HTML;
+      } else {
+        sec.ids.forEach(function(id){ var c=ctlOf(id); if(c && c.parentNode!==body) body.appendChild(c); });
+      }
+      frag.appendChild(wrap);
+    });
+    // anything not claimed by a section stays below, so nothing is lost
+    host.appendChild(frag);
+    host.setAttribute("data-sectioned","1");
+    paintFamilies();
+  }
+
+
+  // ============================================================
+  // DAILY TRACKING + STATS PANEL
+  // Difficulty index = time pressure x arity x premise count, so the daily
+  // curve reflects the load actually carried, not just items completed.
+  // ============================================================
+  var SESSION={ start:Date.now(), n:0, c:0 };
+  function arityN(a){ return a==="quinary"?5 : a==="quaternary"?4 : a==="ternary"?3 : 2; }
+  function diffIndex(){
+    var ar=arityN(S.arity);
+    var pr=Math.max(1,S.premises||4);
+    // tighter timer => more pressure; no timer => 1.0
+    var tp = (S.timer && S.timer>0) ? (1 + Math.max(0, (60-S.timer))/60) : 1;
+    return Math.round(((ar*1.6) + (pr*0.7)) * tp * 10)/10;
+  }
+  function logDay(correct, elapsed){
+    S.daily = S.daily || {};
+    var k=todayStr(), d=S.daily[k] || (S.daily[k]={n:0,c:0,ms:0,dsum:0});
+    d.n++; if(correct) d.c++;
+    d.ms += Math.max(0, Math.min(120, elapsed||0))*1000;
+    d.dsum += diffIndex();
+    SESSION.n++; if(correct) SESSION.c++;
+    save();
+  }
+  function fmtHM(ms){
+    var m=Math.round(ms/60000);
+    if(m<60) return m+"m";
+    return Math.floor(m/60)+"h "+(m%60)+"m";
+  }
+  function sparkline(vals, w, h, accent){
+    if(!vals.length) return '<div class="nodata">no data yet</div>';
+    var mx=Math.max.apply(null, vals.concat([0.001])), n=vals.length;
+    var bw = n? (w/n) : w;
+    var bars = vals.map(function(v,i){
+      var bh = Math.max(1, (v/mx)*(h-2));
+      return '<rect x="'+(i*bw+0.7).toFixed(1)+'" y="'+(h-bh).toFixed(1)+'" width="'+Math.max(1,bw-1.4).toFixed(1)+
+             '" height="'+bh.toFixed(1)+'" rx="1" fill="'+accent+'"></rect>';
+    }).join("");
+    return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none">'+bars+'</svg>';
+  }
+  function renderPanel(){
+    var el=document.getElementById("statsPanel"); if(!el) return;
+    S.daily=S.daily||{};
+    var keys=Object.keys(S.daily).sort(function(a,b){
+      var pa=a.split("-"),pb=b.split("-");
+      return new Date(+pa[0],+pa[1]-1,+pa[2]) - new Date(+pb[0],+pb[1]-1,+pb[2]);
+    });
+    var last=keys.slice(-21);
+    var diffs=last.map(function(k){ var d=S.daily[k]; return d.n? d.dsum/d.n : 0; });
+    var mins =last.map(function(k){ return S.daily[k].ms/60000; });
+    var totalMs=keys.reduce(function(t,k){ return t+S.daily[k].ms; },0);
+    var sessMin=(Date.now()-SESSION.start)/60000;
+    var sessAcc=SESSION.n? Math.round(100*SESSION.c/SESSION.n) : null;
+    el.innerHTML =
+      '<div class="sp-h"><span>Session</span><button class="sp-x" id="spClose">\u00d7</button></div>'
+      +'<div class="sp-row"><span>accuracy</span><b>'+(sessAcc===null?"\u2013":sessAcc+"%")+'</b></div>'
+      +'<div class="sp-row"><span>items</span><b>'+SESSION.n+'</b></div>'
+      +'<div class="sp-row"><span>length</span><b>'+(sessMin<1?"<1m":Math.round(sessMin)+"m")+'</b></div>'
+      +'<div class="sp-t">Daily difficulty</div>'
+      +'<div class="sp-note">mean load per item \u2014 arity \u00d7 premises \u00d7 time pressure</div>'
+      +sparkline(diffs, 220, 46, "var(--accent)")
+      +'<div class="sp-t">Time per day</div>'
+      +sparkline(mins, 220, 40, "rgba(255,255,255,.32)")
+      +'<div class="sp-total"><span>cumulative</span><b>'+fmtHM(totalMs)+'</b></div>';
+    var x=document.getElementById("spClose");
+    if(x) x.onclick=function(){ togglePanel(false); };
+  }
+  function togglePanel(on){
+    var el=document.getElementById("statsPanel"); if(!el) return;
+    var show = (on===undefined)? el.classList.contains("hid") : on;
+    el.classList.toggle("hid", !show);
+    if(show) renderPanel();
+  }
+  function mountPanel(){
+    if(document.getElementById("statsPanel")) return;
+    var host=document.getElementById("app")||document.body;
+    var btn=document.createElement("button");
+    btn.id="spBtn"; btn.className="sp-btn"; btn.type="button"; btn.title="Session stats";
+    btn.textContent="\u25A6";
+    btn.onclick=function(){ togglePanel(); };
+    var panel=document.createElement("div");
+    panel.id="statsPanel"; panel.className="sp hid";
+    host.appendChild(btn); host.appendChild(panel);
+  }
+
+  // running true/false polarity tracker
+  var TFB={t:0,f:0};
+  function tfSkew(ans){
+    var tot=TFB.t+TFB.f;
+    if(tot>=8){
+      var rate=TFB.t/tot;
+      if(ans===true  && rate>0.58) return true;    // too many trues already
+      if(ans===false && rate<0.42) return true;    // too many falses already
+    }
+    if(ans) TFB.t++; else TFB.f++;
+    if(TFB.t+TFB.f>60){ TFB.t=Math.round(TFB.t/2); TFB.f=Math.round(TFB.f/2); }
+    return false;
+  }
+
   function todayStr(){
     var d=new Date();
     return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
@@ -1919,8 +2405,14 @@
   }
   function setMode(m){
     S.mode=m;
+    // Sandbox and autoprogression are now mutually exclusive: Sandbox is free-config
+    // and never climbs; Leveled IS the governed climb (auto-advance on).
     if(m==="leveled"){
+      S.autoprog=true;
       applyLevel(S.level||1);   // enter current level, drive config
+    } else {
+      S.autoprog=false;         // free play — your config stays put
+      streak=0;
     }
     save(); syncUI(); deferNext();
   }
@@ -2012,7 +2504,7 @@
   // ---- training presets: each encodes a full configuration ----
   function applyPreset(name){
     // shared baseline
-    S.gen=true; S.scramble=true;
+    S.scramble=true;   // presets no longer force answer format; that is a user setting
     S.xfer=false;                              // any non-transfer preset exits transfer mode
     if(name==="frontier"){
       // maximal reasoning load at your edge; extraction friction OFF so the strain is
@@ -2383,12 +2875,26 @@
     while(!g && tries++ < 40){                 // higher ceiling: minimum-premise arities are hard to hit
       var tset = itemTerms(Math.max(10, S.premises+4));
       buildMaskMap(tset);                       // identity masking: relabel a few terms as arithmetic
-      g = fam==="web"?     genWeb(S.premises, tset, ar)
-        : fam==="contain"? genContain(S.premises, tset, ar)
-        :                  genSyllogism(S.premises, tset);
+      g = fam==="web"?         genWeb(S.premises, tset, ar)
+        : fam==="contain"?     genContain(S.premises, tset, ar)
+        : fam==="syllogism"?   genSyllogism(S.premises, tset)
+        : fam==="spatial"?     genSpatial(S.premises, tset)
+        : fam==="analogy"?     genAnalogy(S.premises, tset)
+        : fam==="matrix"?      genMatrix(S.premises, tset, ar)
+        : fam==="lst"?         genLST(S.premises, tset, ar)
+        : fam==="distinction"? genDistinction(S.premises, tset)
+        : fam==="compound"?    genCompound(S.premises, tset)
+        :                      genWeb(S.premises, tset, ar);
       if(g){                                  // reject silent off-spec items
         var pc = g._prem? g._prem.length : (g._cprem? g._cprem.length : null);
         if(pc!==null && pc!==S.premises) g=null;
+      }
+      // TRUE/FALSE POLARITY BALANCE. Some families (contain) answer "false" far more
+      // often than "true"; unbalanced polarity makes a constant guess beat reasoning.
+      // Reject an over-represented polarity while attempts remain, so the running
+      // true-rate is pulled toward 50% without touching any generator's logic.
+      if(g && g.correctIdx===undefined && typeof g.answer==="boolean" && tries<30){
+        if(tfSkew(g.answer)) g=null;
       }
     }
     if(!g){
@@ -2409,15 +2915,20 @@
         return;   // give up this cycle rather than serve a mismatched item
       }
     }
-    var tag = (ar!==S.arity? " ("+ROM[ar]+")":"") + (fam==="syllogism"&&S.premises>3? " (3p)":"");
-    g.question.lead = fam + tag + " \u00b7 " + g.question.lead;
-    if(S.prose){ g.question.lead = fam + tag + " \u00b7 Which of the following must be true?"; }
+    // Deliberately NO family/arity label: knowing the question type leaks the
+    // structure and lets a type-specific heuristic form. The prompt stays neutral.
+    g.question.lead = g.question.lead || "Which of the following must be true?";
+    // prose only reads well for families whose premises ARE sentences; grid/vector
+    // families (matrix, lst, spatial) can't be narrated, so prose skips them.
+    var PROSE_OK={web:1,contain:1,syllogism:1,distinction:1,compound:1,analogy:1};
+    var proseOn = S.prose && !!PROSE_OK[fam];
+    if(proseOn){ g.question.lead = "Which of the following must be true?"; }
     current = g;
     var pr = $("premises"); pr.innerHTML="";
     var badge=$("wmbadge"); badge.textContent="";
     var qEl=$("question"); qEl.innerHTML="";
     var nodes=[];
-    if(S.prose && g.premises.length>1){
+    if(proseOn && g.premises.length>1){
       // PROSE-EXTRACTION MODE: identical constraints, rendered as a paragraph.
       // Correctness is untouched (same premises, same answer) -- this trains the
       // formalization step: pulling constraints out of running text before reasoning.
@@ -2558,6 +3069,7 @@
         }
       }
     }
+    logDay(correct, elapsed);
     var sk=curFam+"|"+curAr, sst=S.stats[sk]||(S.stats[sk]={n:0,c:0,fl:0,ms:[]});
     sst.n++; if(correct){ sst.c++; if(elapsed<20) sst.fl++; }
     if(choice!==null){ sst.ms.push(Math.round(elapsed*10)/10); if(sst.ms.length>200) sst.ms.shift(); }
@@ -2633,6 +3145,7 @@
   }
 
   function syncUI(){
+    try{ if(document.getElementById("famHost")) paintFamilies(); }catch(e){}
     clampPrem();
     paintTopbar();
     if($("hudArity")) $("hudArity").textContent = S.arity;
@@ -2766,7 +3279,7 @@
     var mode = S.autoprog
       ? " Auto-advance at 16 in a row · target "+GATE[S.arity]+" premises."
       : " Free play · switch levels anytime.";
-    $("legend").innerHTML = desc + mode;
+    $("legend").innerHTML = ""; $("legend").style.display="none";   // no type/arity/target reveal
   }
 
   function renderStats(){
@@ -2832,7 +3345,10 @@
     $("timeUp").onclick=function(){ S.timer=Math.min(45,S.timer+5); save(); syncUI(); };
     $("timeDown").onclick=function(){ S.timer=Math.max(10,S.timer-5); save(); syncUI(); };
     if($("stairToggle")) $("stairToggle").onclick = function(){ S.stair=!S.stair; save(); syncUI(); };
-    $("autoToggle").onclick=function(){ S.autoprog=!S.autoprog; streak=0; save(); syncUI(); };
+    $("autoToggle").onclick=function(){
+      if(S.mode!=="leveled"){ setMode("leveled"); return; }   // turning climb on enters Leveled
+      S.autoprog=!S.autoprog; streak=0; save(); syncUI();
+    };
     $("scrToggle").onclick=function(){ S.scramble=!S.scramble; save(); syncUI(); };
     $("maskToggle").onclick=function(){ S.mask=!S.mask; save(); syncUI(); next(); };
     $("maskDn").onclick=function(){ S.maskCount=Math.max(1,S.maskCount-1); save(); syncUI(); next(); };
@@ -2951,3 +3467,5 @@
   boot();
 })();
 </script>
+</body>
+</html>
