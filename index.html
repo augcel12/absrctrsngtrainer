@@ -14,7 +14,44 @@
 -->
 </head>
 <body>
-<div id="app">
+<div id="home" class="home">
+  <div class="home-inner">
+    <div class="brandwrap">
+      <h1 class="brand">g-Factor</h1>
+      <div class="brand-beta">beta</div>
+    </div>
+    <div class="menu">
+      <button class="mbtn mbtn-main" id="mPlay">PLAY</button>
+      <button class="mbtn" id="mStats">STATISTICS</button>
+      <button class="mbtn mbtn-sm" id="mWiki">wiki</button>
+      <button class="mbtn mbtn-sm" id="mQuant">quant \u00b7 skeleton</button>
+    </div>
+  </div>
+  <div id="homePanel" class="homepanel" style="display:none"></div>
+</div>
+<div id="quant" class="quant" style="display:none">
+  <div class="wiki-bar">
+    <button class="homebtn wiki-back" id="quantBack">\u2039</button>
+    <span class="wiki-title">quant \u00b7 skeleton</span>
+  </div>
+  <div class="quant-body" id="quantBody">
+    <div class="q-scaffold-note">
+      Skeleton only. No item families are designed yet \u2014 that's the next design pass.
+      One placeholder family is wired so the render loop, answer flow, and trial logging exist.
+    </div>
+    <div class="q-stem" id="qStem"></div>
+    <div class="q-answers" id="qAnswers"></div>
+    <div class="q-status" id="qStatus"></div>
+  </div>
+</div>
+<div id="wiki" class="wiki" style="display:none">
+  <div class="wiki-bar">
+    <button class="homebtn wiki-back" id="wikiBack">\u2039</button>
+    <span class="wiki-title">wiki</span>
+  </div>
+  <div class="wiki-body" id="wikiBody"></div>
+</div>
+<div id="app" style="display:none">
   <div class="frame">
     <header class="topbar">
       <div class="tb-stat">
@@ -57,12 +94,15 @@
         <span class="drawer-title">settings</span>
         <button class="drawer-close" id="closeBtn">done</button>
       </div>
-      <div class="modeswitch">
+      <div class="ctl">
+        <button class="toggle resetbtn" id="resetDefBtn">reset to default (recommended)</button>
+      </div>
+      <div class="modeswitch" style="display:none">
         <button class="modebtn" id="modeSandbox"><b>Sandbox</b><span class="msub">free · any config</span></button>
         <button class="modebtn" id="modeLeveled"><b>Leveled</b><span class="msub">governed climb</span></button>
       </div>
       <div id="levelPanel" style="display:none"></div>
-      <div class="presets" id="presetsBlock">
+      <div class="presets" id="presetsBlock" style="display:none">
         <button class="preset" id="psFrontier"><b>Frontier</b><span class="psub">push capacity · hard</span></button>
         <button class="preset" id="psProse"><b>Prose</b><span class="psub">read constraints from text</span></button>
         <button class="preset" id="psWM"><b>Working memory</b><span class="psub">hold + manipulate</span></button>
@@ -212,10 +252,15 @@
     --ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   }
   *{box-sizing:border-box}
+  /* ROOT BOX: without these, #app's min-height:100% resolves against nothing and
+     the page shows white at the sides/bottom when served as a standalone file. */
+  html,body{ height:100%; margin:0; padding:0; background:var(--bg); }
+  body{ min-height:100vh; min-height:100dvh; }   /* dvh = correct with mobile URL bar */
   #app{
     font-family:var(--ui); color:var(--ink);
     background:var(--bg);
-    min-height:100%; padding:28px 18px; display:flex; justify-content:center;
+    min-height:100vh; min-height:100dvh; width:100%; padding:28px 18px;
+    display:flex; justify-content:center;
   }
   .frame{width:100%; max-width:560px}
   .topbar{display:flex;align-items:center;gap:16px;padding:12px 14px;
@@ -479,7 +524,8 @@
   border:1px solid var(--accent-line);border-radius:8px;padding:2px 8px;margin:0 2px;}
 
   /* ---------- OpenQuant game-room look: sharp, compact, high type contrast ---------- */
-  #app{ -webkit-font-smoothing:antialiased; padding:14px 10px 28px; }
+  #app{ -webkit-font-smoothing:antialiased; padding:14px 10px 28px;
+         padding-bottom:calc(28px + env(safe-area-inset-bottom)); }
 
   /* one card, small radius, thin hairline, no shadow */
   .card{ background:var(--panel); border:1px solid var(--line); border-radius:10px;
@@ -574,6 +620,76 @@
   .glo li{ font-size:12.5px; line-height:1.5; color:var(--muted); margin-bottom:8px; padding-left:0; }
   .glo b{ color:var(--ink); font-weight:600; }
   .glo i{ color:var(--accent-deep); font-style:normal; }
+  .soon{ color:var(--muted); font-size:13px; }
+  .soon b{ color:var(--ink); }
+  .resetbtn{ width:100%; text-align:center; color:var(--accent-deep);
+    border-color:var(--accent-line); background:var(--accent-soft); padding:9px 12px; }
+  .resetbtn:hover{ background:rgba(111,108,235,.2); }
+
+  /* ---------- home screen ---------- */
+  .home{ position:fixed; inset:0; background:var(--bg); z-index:60;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px 18px calc(24px + env(safe-area-inset-bottom)); overflow-y:auto; }
+  .home-inner{ width:100%; max-width:340px; }
+  .brandwrap{ text-align:center; margin-bottom:38px; }
+  .brand{ font-family:var(--ui); font-size:40px; font-weight:600; letter-spacing:-.02em;
+    color:var(--ink); margin:0; line-height:1; }
+  .brand-beta{ font-size:11px; letter-spacing:.22em; text-transform:lowercase;
+    color:var(--faint); margin-top:7px; }
+  .menu{ display:flex; flex-direction:column; gap:10px; }
+  .mbtn{ width:100%; min-height:52px; padding:14px; border-radius:10px;
+    background:transparent; border:1px solid var(--line); color:var(--ink);
+    font-family:var(--ui); font-size:15px; letter-spacing:.08em; cursor:pointer; }
+  .mbtn:hover{ border-color:var(--accent); background:var(--accent-soft); }
+  .mbtn-main{ background:var(--accent-soft); border-color:var(--accent-line);
+    color:var(--accent-deep); font-weight:600; font-size:17px; letter-spacing:.14em; }
+  .mbtn-sm{ min-height:44px; font-size:13px; color:var(--muted); letter-spacing:.1em; }
+  .mbtn-dis{ min-height:44px; font-size:12px; color:var(--faint);
+    border-style:dashed; cursor:not-allowed; opacity:.6; }
+  .mbtn-dis:hover{ border-color:var(--line); background:transparent; }
+  .homepanel{ width:100%; max-width:340px; margin-top:20px; padding:16px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    color:var(--muted); font-size:12.5px; line-height:1.55; }
+  .homepanel h3{ margin:0 0 10px; font-size:12px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--ink); }
+  .hp-row{ display:flex; justify-content:space-between; padding:4px 0;
+    font-variant-numeric:tabular-nums; }
+  .hp-row b{ color:var(--ink); font-weight:600; }
+  .hp-back{ margin-top:14px; width:100%; padding:9px; background:transparent;
+    border:1px solid var(--line); border-radius:8px; color:var(--muted);
+    font-size:12px; cursor:pointer; }
+  .homebtn{ position:fixed; top:10px; left:10px; z-index:40; width:32px; height:32px;
+    min-height:32px; border:1px solid var(--line); border-radius:7px;
+    background:var(--panel); color:var(--muted); font-size:15px; cursor:pointer; }
+  .homebtn:hover{ color:var(--ink); border-color:var(--accent-line); }
+
+  /* ---------- wiki: full page ---------- */
+  .wiki{ position:fixed; inset:0; z-index:62; background:var(--bg);
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:0 0 calc(28px + env(safe-area-inset-bottom)); }
+  .wiki-bar{ position:sticky; top:0; display:flex; align-items:center; gap:12px;
+    padding:12px 14px calc(12px + env(safe-area-inset-top)); background:var(--bg);
+    border-bottom:1px solid var(--line); }
+  .wiki-back{ position:static; }
+  .wiki-title{ font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .wiki-body{ max-width:620px; margin:0 auto; padding:18px 18px 40px; }
+
+  /* ---------- quant skeleton ---------- */
+  .quant{ position:fixed; inset:0; z-index:61; background:var(--bg);
+    overflow-y:auto; padding:0 0 calc(28px + env(safe-area-inset-bottom)); }
+  .quant-body{ max-width:560px; margin:0 auto; padding:22px 18px 40px; }
+  .q-scaffold-note{ font-size:12px; line-height:1.5; color:var(--faint);
+    border:1px dashed var(--line); border-radius:8px; padding:10px 12px; margin-bottom:28px; }
+  .q-stem{ font-family:var(--mono); font-size:30px; color:var(--ink); text-align:center;
+    letter-spacing:.02em; padding:26px 0; font-variant-numeric:tabular-nums; }
+  .q-answers{ display:flex; flex-direction:column; gap:8px; border:1px solid var(--line);
+    border-radius:8px; overflow:hidden; }
+  .q-ans{ min-height:48px; padding:12px; background:transparent; border:0;
+    border-top:1px solid rgba(255,255,255,.055); color:var(--ink); font-size:16px;
+    font-family:var(--mono); text-align:center; cursor:pointer; font-variant-numeric:tabular-nums; }
+  .q-ans:first-child{ border-top:0; }
+  .q-ans:hover{ background:var(--accent-soft); }
+  .q-status{ text-align:center; color:var(--muted); font-size:13px; min-height:20px; margin-top:18px; }
 </style>
 
 <script>
@@ -2073,6 +2189,7 @@
     if(saved) Object.assign(S, saved);
     if(S.timer>45) S.timer=45;
     S.gen=true;                    // 4-option generative only; true/false removed
+    S.mode="sandbox"; S.autoprog=false;   // modes + autoprogress disabled for now
     if(!saved){                    // first run -> most-transferable configuration
       S.skins=true; S.prose=true; S.notation="words"; S.pi=false; S.mixAr=false;
     }
@@ -2107,7 +2224,6 @@
     {key:"beta", title:"Beta", open:false,
      ids:["maskToggle","maskDn","wmSeqToggle","wmHoldToggle","psqDown","pcDown","proseToggle"]},
     // reference
-    {key:"info", title:"Info", open:false, info:true},
     // utilities
     {key:"data", title:"Data", open:false,
      ids:["seedBtn","expBtn","statsBtn"]}
@@ -2156,33 +2272,18 @@
 
   var INFO_HTML =
     '<div class="info">'
-    +'<p><b>What the task is.</b> Premises fix a hidden structure \u2014 an order, a nesting, a grouping, a mapping. Exactly one option is <i>forced</i>: it must hold in every arrangement the premises allow. The other three are consistent but not entailed \u2014 each could be true or false. Find the one that cannot fail.</p>'
-    +'<p><b>How to reason.</b> Don\u2019t test options one at a time against your memory of the text. Build the structure, then read the answer off it. Where the premises leave something undecided, hold <i>every</i> arrangement at once and keep only what survives all of them. Nothing outside the premises exists \u2014 the listed items are the whole world, and no two share a position.</p>'
-    +'<p><b>Why the surface is arbitrary.</b> Tokens are nonsense words or abstract glyphs on purpose. Real-world meaning would give a shortcut; stripping it forces you to reason from structure alone. The same is true across frames: the clothing changes, the reasoning does not.</p>'
-    +'<div class="info-h">The frames</div>'
+    +'<p class="soon"><b>Coming soon.</b></p>'
+    +'<div class="info-h">Citations</div>'
     +'<ul class="glo">'
-    +'<li><b>Order</b> \u2014 everything sits on one line (lighter/earlier/lower\u2026). Binary = "X below Y"; ternary = betweenness; quaternary = compare two gaps.</li>'
-    +'<li><b>Nesting</b> \u2014 a containment hierarchy: things sit inside one another, some pairs unrelated. "inside", "directly inside", "more deeply nested than".</li>'
-    +'<li><b>Categories</b> \u2014 classical syllogism over classes: <i>All / Some / No / Some\u2026not</i>. Combine the quantified statements to see what must follow.</li>'
-    +'<li><b>Direction</b> \u2014 vectors in space/time (west\u2013east, south\u2013north, below\u2013above, earlier\u2013later). Chain the directions to fix the one that is forced.</li>'
-    +'<li><b>Analogy</b> \u2014 A : B :: C : ? \u2014 pick the pair with the <i>same direction and the same distance</i> on the hidden order.</li>'
-    +'<li><b>Matrix</b> \u2014 a 3\u00d73 grid whose rows and columns obey rules over shape / fill / count / orientation. Infer the missing cell.</li>'
-    +'<li><b>Latin square</b> \u2014 each symbol appears exactly once per row and once per column; deduce the hidden cell from that constraint.</li>'
-    +'<li><b>Grouping</b> \u2014 items fall into two hidden classes; decide whether two of them share a class (same) or not (different).</li>'
-    +'<li><b>Compound</b> \u2014 two comparisons joined by <i>and / or / xor</i>. You must evaluate both parts <i>and</i> the connective.</li>'
+    +'<li><b>Carpenter, Just &amp; Shell (1990)</b> \u2014 <i>What one intelligence test measures</i>. What the Raven\u2019s actually demands: rule induction plus goal management. The closest thing to a spec for this app.</li>'
+    +'<li><b>Gentner (1983)</b> \u2014 <i>Structure-mapping: a theoretical framework for analogy</i>. Why relations, not surface features, carry the reasoning.</li>'
+    +'<li><b>Halford, Wilson &amp; Phillips (1998)</b> \u2014 <i>Processing capacity defined by relational complexity</i>. Where the arity ladder comes from, and the human ceiling near quaternary relations.</li>'
+    +'<li><b>Hummel &amp; Holyoak (1997/2003)</b> \u2014 LISA. A working model of how relations get bound to their fillers.</li>'
+    +'<li><b>Rohrer, Dedrick &amp; Stershic (2015)</b> \u2014 interleaved mathematics practice. Why mixing frames beats blocking them.</li>'
+    +'<li><b>Gick &amp; Holyoak (1983)</b> \u2014 <i>Schema induction and analogical transfer</i>. Transfer appears once a schema is abstracted from several varied examples.</li>'
+    +'<li><b>Simons et al. (2016)</b> \u2014 <i>Do brain-training programs work?</i> The skeptical case, and the standard any claim here has to meet.</li>'
+    +'<li><b>Barnett &amp; Ceci (2002)</b> \u2014 a taxonomy for far transfer. How to state honestly how far a gain is meant to travel.</li>'
     +'</ul>'
-    +'<div class="info-h">Symbols &amp; syntax</div>'
-    +'<ul class="glo">'
-    +'<li><b>&gt; &lt;</b> \u2014 order/comparison, when notation is set to symbols instead of words ("A &gt; B" = A is above/greater on the axis).</li>'
-    +'<li><b>gap A\u2013B</b> \u2014 the distance between two positions; a quaternary item may ask you to compare "gap A\u2013B" with "gap C\u2013D".</li>'
-    +'<li><b>between / closer\u2026than</b> \u2014 three-place relations that cannot be reduced to two separate reads; the whole triple must be held together.</li>'
-    +'<li><b>All / Some / No</b> \u2014 category quantifiers (Categories frame). "Some A are not B" is the negative particular.</li>'
-    +'<li><b>and / or / xor</b> \u2014 logical connectives (Compound). <i>xor</i> = exactly one of the two parts is true.</li>'
-    +'<li><b>( 7\u00d75 )</b> \u2014 with <b>identity masking</b> on (Beta), a couple of tokens are shown as arithmetic that evaluates to their identity, and the expression changes each mention \u2014 you must compute it, not match the string.</li>'
-    +'</ul>'
-    +'<div class="info-h">Controls</div>'
-    +'<p><b>Difficulty</b> sets load \u2014 premises, arity band, dimensions, timer. <b>Frames</b> chooses which structures appear (incompatible ones grey out with the reason). <b>Surface</b> holds presentation options that change how an item looks but never what\u2019s true \u2014 scramble, skins, notation, compact, interference. <b>Beta</b> holds rougher modes (masking, working-memory hold/sequence, prose). <b>Data</b> has seed and export.</p>'
-    +'<p><b>Modes.</b> <b>Sandbox</b> is free play at whatever config you set. <b>Leveled</b> is the governed climb that auto-advances as you sustain accuracy. Premises appear first; continue and they hide, so the structure is held in mind \u2014 peek if you must, but holding it is the training.</p>'
     +'</div>';
 
   function buildMenu(){
@@ -2311,6 +2412,275 @@
     if(ans) TFB.t++; else TFB.f++;
     if(TFB.t+TFB.f>60){ TFB.t=Math.round(TFB.t/2); TFB.f=Math.round(TFB.f/2); }
     return false;
+  }
+
+
+  // ============================================================
+  // RECOMMENDED DEFAULTS
+  // Chosen for usability + the strongest evidence we have: every frame ON so
+  // practice is INTERLEAVED across structures (Rohrer 2015; Gick & Holyoak 1983
+  // -- varied surfaces are what force a general schema instead of a per-type
+  // trick); surface variation ON (skins/scramble) for the same reason; arity at
+  // the binary-ternary band, below Halford's ~quaternary ceiling so load is real
+  // but not crushing; a generous timer; and the fragile/rough modes OFF.
+  // ============================================================
+  function applyRecommended(){
+    S.mode="sandbox"; S.autoprog=false;
+    S.gen=true;
+    S.premises=5;
+    S.arity="binary"; S.xband=["binary","ternary"]; S.mixAr=true;   // interleave arity
+    S.dims=2;
+    S.timer=45;
+    S.families = S.families || {};
+    Object.keys(FAMSUP).forEach(function(f){ S.families[f]=true; });   // every frame on
+    S.skins=true; S.scramble=true; S.notation="words"; S.compact=false; S.pi=false;
+    S.stims={glyphs:true, words:true};
+    // rough / high-load extras off
+    S.mask=false; S.maskCount=2; S.prose=false; S.wmSeq=false; S.wmHold=false;
+    S.seed="";
+    try{ setSeed(""); }catch(e){}
+    save(); syncUI();
+    try{ paintFamilies(); }catch(e){}
+    next();
+    // repaint after the item lands, in case item generation re-filtered anything
+    setTimeout(function(){ try{ paintFamilies(); }catch(e){} }, 0);
+  }
+
+
+  // ============================================================
+  // HOME SCREEN — g-Factor. PLAY / STATISTICS / info / quant(disabled).
+  // STATISTICS here is LIFETIME (across sessions); the in-game panel is session-only.
+  // ============================================================
+  var _homeBooted=false;
+
+
+  // ============================================================
+  // QUANT MODE — SKELETON ONLY.
+  // Deliberately not a designed system. It exists so the page is reachable and so
+  // the trial-level logging structure is in place before any item family is chosen.
+  // Every design decision (families, difficulty, adaptivity, composition tracking)
+  // is left OPEN on purpose.
+  // ============================================================
+  var QUANT_LOG = [];   // trial-level rows: the research-instrument backbone
+  function quantLog(row){
+    row.t = Date.now();
+    QUANT_LOG.push(row);
+    // persist alongside the rest of state so nothing is lost between sessions
+    try{ S.quantLog = (S.quantLog||[]).concat([row]); save(); }catch(e){}
+  }
+
+  // Placeholder family: a bare numeric-sequence stub. Its ONLY jobs are to prove the
+  // render/answer/log loop works. The actual families, difficulty model, composition
+  // vector, and adaptivity are yours to design and are intentionally absent.
+  function quantMakeStub(){
+    var start = 2 + Math.floor(Math.random()*8);
+    var step  = 2 + Math.floor(Math.random()*5);
+    var seq=[start]; for(var i=1;i<4;i++) seq.push(seq[i-1]+step);
+    var answer = seq[3]+step;
+    var opts=[answer, answer+step, answer-step, answer+2*step];
+    for(var j=opts.length-1;j>0;j--){ var k=Math.floor(Math.random()*(j+1)); var tmp=opts[j]; opts[j]=opts[k]; opts[k]=tmp; }
+    return {
+      family:"stub-sequence",
+      // composition vector is stubbed empty on purpose — this is where the real
+      // per-item makeup (arity, load dimensions, etc.) will be recorded later.
+      composition:{},
+      stem: seq.join(",  ") + ",  ?",
+      options: opts,
+      correct: answer
+    };
+  }
+
+  var quantCurrent=null;
+  function quantDraw(){
+    quantCurrent = quantMakeStub();
+    var stem=document.getElementById("qStem"); if(stem) stem.textContent=quantCurrent.stem;
+    var host=document.getElementById("qAnswers"); if(!host) return;
+    host.innerHTML="";
+    quantCurrent.options.forEach(function(v){
+      var b=document.createElement("button");
+      b.className="q-ans"; b.textContent=v;
+      b.onclick=function(){ quantAnswer(v, b); };
+      host.appendChild(b);
+    });
+    var st=document.getElementById("qStatus"); if(st) st.textContent="";
+    quantCurrent._shown=Date.now();
+  }
+  function quantAnswer(v, btn){
+    if(!quantCurrent) return;
+    var correct = (v===quantCurrent.correct);
+    quantLog({
+      family: quantCurrent.family,
+      composition: quantCurrent.composition,   // empty for now, by design
+      correct: correct,
+      rt: Date.now()-(quantCurrent._shown||Date.now())
+    });
+    var st=document.getElementById("qStatus");
+    if(st) st.textContent = correct ? "correct" : ("the sequence forces "+quantCurrent.correct);
+    setTimeout(quantDraw, 650);
+  }
+
+  function showQuant(){
+    var q=document.getElementById("quant"), h=document.getElementById("home");
+    if(h) h.style.display="none";
+    if(q) q.style.display="block";
+    quantDraw();
+  }
+  function hideQuant(){
+    var q=document.getElementById("quant");
+    if(q) q.style.display="none";
+    showHome();
+  }
+
+  function showWiki(){
+    var wk=document.getElementById("wiki"), h=document.getElementById("home");
+    var body=document.getElementById("wikiBody");
+    if(body && !body.getAttribute("data-filled")){ body.innerHTML=INFO_HTML; body.setAttribute("data-filled","1"); }
+    if(h) h.style.display="none";
+    if(wk) wk.style.display="block";
+  }
+  function hideWiki(){
+    var wk=document.getElementById("wiki");
+    if(wk) wk.style.display="none";
+    showHome();
+  }
+
+  function showHome(){
+    var h=document.getElementById("home"), a=document.getElementById("app");
+    if(h) h.style.display="flex";
+    if(a) a.style.display="none";
+    var p=document.getElementById("homePanel"); if(p) p.style.display="none";
+  }
+  function showApp(){
+    var h=document.getElementById("home"), a=document.getElementById("app");
+    if(h) h.style.display="none";
+    if(a) a.style.display="flex";
+    if(!_homeBooted){ _homeBooted=true; try{ boot(); }catch(e){ console.error(e); } }
+  }
+  function lifetimeStats(){
+    S.daily = S.daily || {};
+    var keys=Object.keys(S.daily), n=0,c=0,ms=0,dsum=0;
+    keys.forEach(function(k){ var d=S.daily[k]; n+=d.n||0; c+=d.c||0; ms+=d.ms||0; dsum+=d.dsum||0; });
+    return {days:keys.length, n:n, c:c, ms:ms, meanDiff: n? dsum/n : 0};
+  }
+  function fmtHrs(ms){
+    var m=Math.round(ms/60000);
+    if(m<60) return m+" min";
+    return (Math.floor(m/60))+"h "+(m%60)+"m";
+  }
+  function homePanel(kind){
+    var p=document.getElementById("homePanel"); if(!p) return;
+    if(kind==="stats"){
+      var L=lifetimeStats();
+      p.innerHTML='<h3>Lifetime</h3>'
+        +'<div class="hp-row"><span>days trained</span><b>'+L.days+'</b></div>'
+        +'<div class="hp-row"><span>items answered</span><b>'+L.n+'</b></div>'
+        +'<div class="hp-row"><span>accuracy</span><b>'+(L.n?Math.round(100*L.c/L.n)+"%":"\u2013")+'</b></div>'
+        +'<div class="hp-row"><span>time on task</span><b>'+fmtHrs(L.ms)+'</b></div>'
+        +'<div class="hp-row"><span>mean difficulty</span><b>'+(L.n?L.meanDiff.toFixed(1):"\u2013")+'</b></div>'
+        +'<button class="hp-back" id="hpBack">back</button>';
+    } else {
+      p.innerHTML='<h3>Info</h3>'+INFO_HTML+'<button class="hp-back" id="hpBack">back</button>';
+    }
+    p.style.display="block";
+    var b=document.getElementById("hpBack");
+    if(b) b.onclick=function(){ p.style.display="none"; };
+  }
+  function initHome(){
+    // Delegated binding: the drawer's own wiring runs inside boot(), which is
+    // deferred until PLAY, so bind the reset control here where it always exists.
+    document.addEventListener("click", function(e){
+      var t=e.target;
+      while(t && t!==document.body){
+        if(t.id==="resetDefBtn"){ try{ applyRecommended(); }catch(err){ console.error(err); } return; }
+        t=t.parentNode;
+      }
+    }, false);
+    var play=document.getElementById("mPlay");
+    if(play) play.onclick=function(){ showApp(); };
+    var st=document.getElementById("mStats");
+    if(st) st.onclick=function(){ homePanel("stats"); };
+    var wk=document.getElementById("mWiki");
+    if(wk) wk.onclick=function(){ showWiki(); };
+    var wb=document.getElementById("wikiBack");
+    if(wb) wb.onclick=function(){ hideWiki(); };
+    var mq=document.getElementById("mQuant");
+    if(mq) mq.onclick=function(){ showQuant(); };
+    var qb=document.getElementById("quantBack");
+    if(qb) qb.onclick=function(){ hideQuant(); };
+    // in-game button back to the menu
+    if(!document.getElementById("homeBtn")){
+      var hb=document.createElement("button");
+      hb.id="homeBtn"; hb.className="homebtn"; hb.type="button"; hb.title="Menu";
+      hb.textContent="\u2039";
+      hb.onclick=function(){ showHome(); };
+      var appEl=document.getElementById("app"); if(appEl) appEl.appendChild(hb);
+    }
+    // load saved state so lifetime stats are available BEFORE the trainer boots
+    if(store && store.get){
+      Promise.resolve(store.get("relTrainer.v3")).then(function(saved){
+        if(saved) Object.assign(S, saved);
+      }).catch(function(){});
+    }
+  }
+
+
+  // ============================================================
+  // PER-FRAME EXPLANATIONS — every question type now explains WHY the answer is
+  // forced, in terms of the structure the premises fix. Frames with a bespoke
+  // model view (order/containment/syllogism) keep theirs; the rest get this.
+  // ============================================================
+  var FRAME_EXPLAIN = {
+    spatial: {
+      h:"chaining directions",
+      p:"Each premise is a step with a direction on every axis. Add the steps head-to-tail: "+
+        "the route from the first element to the last is the sum of those steps, and that total "+
+        "is the same no matter which order you add them in. Only one offered direction matches the sum \u2014 "+
+        "the rest disagree on at least one axis."
+    },
+    analogy: {
+      h:"same direction, same distance",
+      p:"The premises fix one hidden line. A pair carries two facts: which way it points, and how far apart "+
+        "the two elements sit. Direction alone is a coin flip, so the forced pair must match <b>both</b> \u2014 "+
+        "same sign and same gap. Read the positions off the line, subtract, and compare."
+    },
+    matrix: {
+      h:"rules across rows and columns",
+      p:"Each row and each column obeys a rule over the features (shape, fill, count, orientation). "+
+        "Work out the rule from the complete rows, then apply it to the incomplete one. "+
+        "The forced cell is the only candidate that satisfies the row rule <b>and</b> the column rule at once."
+    },
+    lst: {
+      h:"each symbol once per row and column",
+      p:"This is a Latin square: every symbol appears exactly once in each row and exactly once in each column. "+
+        "That constraint alone pins the hidden cell \u2014 eliminate every symbol already present in that cell's "+
+        "row or column, and one candidate survives."
+    },
+    distinction: {
+      h:"two hidden classes",
+      p:"Every element belongs to one of two hidden groups. 'Same' premises force two elements into the same "+
+        "group; 'different' premises force them apart. Propagate those constraints and the whole partition "+
+        "follows. Only one claim holds in every partition consistent with the premises."
+    },
+    compound: {
+      h:"evaluate both parts, then the connective",
+      p:"Each option joins two comparisons with <b>and</b>, <b>or</b>, or <b>xor</b>. Settle each comparison "+
+        "against the order the premises fix, then combine: <b>and</b> needs both true, <b>or</b> needs at least "+
+        "one, <b>xor</b> needs exactly one. Only one option comes out true in every consistent arrangement."
+    },
+    web: {
+      h:"what survives every arrangement",
+      p:"The premises usually leave more than one arrangement open. A statement is forced only if it holds in "+
+        "<b>all</b> of them \u2014 so where the order is undecided, hold every possibility at once and keep only "+
+        "what never fails. The three distractors are each true in some arrangements and false in others."
+    }
+  };
+  function renderExplainGeneric(it){
+    var el=$("explain"); if(!el) return false;
+    var fam = it && (it._fam || curFam);
+    var E = FRAME_EXPLAIN[fam];
+    if(!E){ return false; }
+    el.innerHTML = '<div class="exp-h">'+E.h+'</div><div class="exp-note">'+E.p+'</div>';
+    return true;
   }
 
   function todayStr(){
@@ -3095,8 +3465,11 @@
       }
     }
     save(); syncUI();
-    var showable = current && ( (current._ts && current._k && current._prem) || current._cprem
+    var hasModel = current && ( (current._ts && current._k && current._prem) || current._cprem
                     || current._fam==="syllogism" );
+    // any frame without a bespoke model view still gets a written explanation
+    var hasGeneric = current && !!FRAME_EXPLAIN[current._fam || curFam];
+    var showable = hasModel || hasGeneric;
     if(showable){
       $("expBtnShow").style.display="block";
       $("expBtnShow").textContent="show model \u00b7 tap for next";
@@ -3345,11 +3718,10 @@
     $("timeUp").onclick=function(){ S.timer=Math.min(45,S.timer+5); save(); syncUI(); };
     $("timeDown").onclick=function(){ S.timer=Math.max(10,S.timer-5); save(); syncUI(); };
     if($("stairToggle")) $("stairToggle").onclick = function(){ S.stair=!S.stair; save(); syncUI(); };
-    $("autoToggle").onclick=function(){
-      if(S.mode!=="leveled"){ setMode("leveled"); return; }   // turning climb on enters Leveled
-      S.autoprog=!S.autoprog; streak=0; save(); syncUI();
-    };
+    // AUTOPROGRESS: disabled for now (kept in code, not deleted).
+    $("autoToggle").onclick=function(){ /* disabled */ };
     $("scrToggle").onclick=function(){ S.scramble=!S.scramble; save(); syncUI(); };
+    $("resetDefBtn").onclick=function(){ applyRecommended(); };
     $("maskToggle").onclick=function(){ S.mask=!S.mask; save(); syncUI(); next(); };
     $("maskDn").onclick=function(){ S.maskCount=Math.max(1,S.maskCount-1); save(); syncUI(); next(); };
     $("maskUp").onclick=function(){ S.maskCount=Math.min(4,S.maskCount+1); save(); syncUI(); next(); };
@@ -3361,7 +3733,8 @@
       var f=current._fam;
       if(current._cprem)        renderExplainContain(current);
       else if(f==="syllogism")  renderExplainSyllogism(current);
-      else                      renderExplain(current);
+      else if(current._ts && current._k && current._prem) renderExplain(current);
+      else if(!renderExplainGeneric(current)) renderExplain(current);
       el.className="explain show";
       $("expBtnShow").textContent="hide model \u00b7 tap for next";
     };
@@ -3464,7 +3837,8 @@
     });
   }
 
-  boot();
+  initHome();
+  showHome();
 })();
 </script>
 </body>
