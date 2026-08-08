@@ -17,36 +17,20 @@
 <div id="home" class="home">
   <div class="home-inner">
     <div class="brandwrap">
-      <h1 class="brand">g-Factor</h1>
+      <h1 class="brand">Combinatorial Reasoning Trainer</h1>
       <div class="brand-beta">beta</div>
     </div>
     <div class="menu">
       <button class="mbtn mbtn-main" id="mPlay">PLAY</button>
       <button class="mbtn" id="mStats">STATISTICS</button>
       <button class="mbtn mbtn-sm" id="mWiki">wiki</button>
-      <button class="mbtn mbtn-sm" id="mQuant">quant \u00b7 skeleton</button>
     </div>
   </div>
   <div id="homePanel" class="homepanel" style="display:none"></div>
 </div>
-<div id="quant" class="quant" style="display:none">
-  <div class="wiki-bar">
-    <button class="homebtn wiki-back" id="quantBack">\u2039</button>
-    <span class="wiki-title">quant \u00b7 skeleton</span>
-  </div>
-  <div class="quant-body" id="quantBody">
-    <div class="q-scaffold-note">
-      Skeleton only. No item families are designed yet \u2014 that's the next design pass.
-      One placeholder family is wired so the render loop, answer flow, and trial logging exist.
-    </div>
-    <div class="q-stem" id="qStem"></div>
-    <div class="q-answers" id="qAnswers"></div>
-    <div class="q-status" id="qStatus"></div>
-  </div>
-</div>
 <div id="wiki" class="wiki" style="display:none">
   <div class="wiki-bar">
-    <button class="homebtn wiki-back" id="wikiBack">\u2039</button>
+    <button class="homebtn wiki-back" id="wikiBack">‹</button>
     <span class="wiki-title">wiki</span>
   </div>
   <div class="wiki-body" id="wikiBody"></div>
@@ -104,7 +88,6 @@
       <div id="levelPanel" style="display:none"></div>
       <div class="presets" id="presetsBlock" style="display:none">
         <button class="preset" id="psFrontier"><b>Frontier</b><span class="psub">push capacity · hard</span></button>
-        <button class="preset" id="psProse"><b>Prose</b><span class="psub">read constraints from text</span></button>
         <button class="preset" id="psWM"><b>Working memory</b><span class="psub">hold + manipulate</span></button>
         <button class="preset" id="psConsol"><b>Consolidation</b><span class="psub">clean fluent reps</span></button>
         <button class="preset" id="psXfer"><b>Transfer</b><span class="psub">everything varies · no strategy</span></button>
@@ -136,14 +119,26 @@
         </div>
       </div>
       <div class="ctl">
-        <span class="ctl-label">timer</span>
-        <button class="step" id="timeDown">−</button>
-        <span id="timeReadout" class="ctl-val">30s</span>
-        <button class="step" id="timeUp">+</button>
+        <span class="ctl-label">study window</span>
+        <button class="step" id="studyDown">−</button>
+        <span id="studyReadout" class="ctl-val">8s</span>
+        <button class="step" id="studyUp">+</button>
+      </div>
+      <div class="ctl">
+        <span class="ctl-label">token length</span>
+        <button class="step" id="tokDown">−</button>
+        <span id="tokReadout" class="ctl-val">4</span>
+        <button class="step" id="tokUp">+</button>
+      </div>
+      <div class="ctl">
+        <span class="ctl-label">answer window</span>
+        <button class="step" id="ansDown">−</button>
+        <span id="ansReadout" class="ctl-val">20s</span>
+        <button class="step" id="ansUp">+</button>
       </div>
       <div class="ctl">
         <span class="ctl-label">dims</span>
-        <button class="step" id="dimDown">\u2212</button>
+        <button class="step" id="dimDown">−</button>
         <span id="dimReadout" class="ctl-val">2</span>
         <button class="step" id="dimUp">+</button>
       </div>
@@ -180,10 +175,7 @@
         <span class="ctl-label">mix arity</span>
         <button class="toggle" id="mixToggle">off</button>
       </div>
-      <div class="ctl">
-        <span class="ctl-label">prose extraction <i class="wip">work in progress</i></span>
-        <button class="toggle" id="proseToggle">off</button>
-      </div>
+      <!-- prose extraction removed -->
       <div class="ctl">
         <span class="ctl-label">notation</span>
         <button class="toggle" id="notationToggle">words</button>
@@ -241,12 +233,12 @@
 <style>
   :root{
     /* OpenQuant game room: near-black page, charcoal card, warm cream ink */
-    --bg:#121212; --panel:#2c2c2e; --panel-2:#242426;
-    --ink:#f7f1e6; --muted:#9a9aa0; --faint:#6e6e73;
+    --bg:#000000; --panel:#0a0a0b; --panel-2:#070708;
+    --ink:#f2ede4; --muted:#8b8b92; --faint:#5c5c62;
     --amber:#6f6ceb; --amber-dim:#3b3a7a;            /* --amber = accent (indigo) */
     --accent:#6f6ceb; --accent-soft:rgba(111,108,235,.12);
     --accent-line:rgba(111,108,235,.45); --accent-deep:#a5a3f5;
-    --ok:#5fbf9b; --no:#e0736c; --line:#3d3d40;
+    --ok:#5fbf9b; --no:#e0736c; --line:#1c1c1f;
     --shadow:none;
     --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
     --ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -345,7 +337,7 @@
   .prem{font-family:var(--mono); font-size:19px; letter-spacing:.01em; color:var(--ink);
     display:flex; align-items:center; flex-wrap:wrap; gap:6px 14px; line-height:1.5;
     padding:9px 13px; background:var(--panel-2); border:1px solid var(--line);
-    border-radius:9px; opacity:0; animation:rise .22s ease forwards}
+    border-radius:9px}
   .prem .tok{display:inline-flex; align-items:center; justify-content:center; vertical-align:middle}
   .tok-vor{width:34px; height:34px}
   .tok-word{font-size:23px; font-weight:600; letter-spacing:.04em; padding:1px 4px}
@@ -353,7 +345,6 @@
   .question .tok-word{font-size:26px}
   .prem .rel{color:var(--amber); font-weight:600}
   .prem .word{color:var(--muted); font-size:15px; letter-spacing:.02em}
-  @keyframes rise{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
   .rule{height:1px; background:var(--line); margin:20px 0}
   .question{font-family:var(--mono); font-size:20px; display:flex; align-items:center;
     gap:12px; flex-wrap:wrap}
@@ -377,7 +368,7 @@
   .verdict.ok{color:var(--ok)} .verdict.no{color:var(--no)}
   .explain{margin-top:14px;padding:14px 12px;background:var(--panel-2);border:1px solid var(--line);
     border-radius:10px;display:none}
-  .explain.show{display:block;animation:rise .2s ease}
+  .explain.show{display:block}
   .exp-h{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
     margin-bottom:10px;text-align:center}
   .exp-row{display:flex;align-items:center;gap:8px;margin:5px 0;font-family:var(--mono);font-size:13px}
@@ -632,7 +623,7 @@
     padding:24px 18px calc(24px + env(safe-area-inset-bottom)); overflow-y:auto; }
   .home-inner{ width:100%; max-width:340px; }
   .brandwrap{ text-align:center; margin-bottom:38px; }
-  .brand{ font-family:var(--ui); font-size:40px; font-weight:600; letter-spacing:-.02em;
+  .brand{ font-family:var(--ui); font-size:27px; font-weight:600; letter-spacing:-.01em; line-height:1.12;
     color:var(--ink); margin:0; line-height:1; }
   .brand-beta{ font-size:11px; letter-spacing:.22em; text-transform:lowercase;
     color:var(--faint); margin-top:7px; }
@@ -674,22 +665,6 @@
   .wiki-title{ font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
   .wiki-body{ max-width:620px; margin:0 auto; padding:18px 18px 40px; }
 
-  /* ---------- quant skeleton ---------- */
-  .quant{ position:fixed; inset:0; z-index:61; background:var(--bg);
-    overflow-y:auto; padding:0 0 calc(28px + env(safe-area-inset-bottom)); }
-  .quant-body{ max-width:560px; margin:0 auto; padding:22px 18px 40px; }
-  .q-scaffold-note{ font-size:12px; line-height:1.5; color:var(--faint);
-    border:1px dashed var(--line); border-radius:8px; padding:10px 12px; margin-bottom:28px; }
-  .q-stem{ font-family:var(--mono); font-size:30px; color:var(--ink); text-align:center;
-    letter-spacing:.02em; padding:26px 0; font-variant-numeric:tabular-nums; }
-  .q-answers{ display:flex; flex-direction:column; gap:8px; border:1px solid var(--line);
-    border-radius:8px; overflow:hidden; }
-  .q-ans{ min-height:48px; padding:12px; background:transparent; border:0;
-    border-top:1px solid rgba(255,255,255,.055); color:var(--ink); font-size:16px;
-    font-family:var(--mono); text-align:center; cursor:pointer; font-variant-numeric:tabular-nums; }
-  .q-ans:first-child{ border-top:0; }
-  .q-ans:hover{ background:var(--accent-soft); }
-  .q-status{ text-align:center; color:var(--muted); font-size:13px; min-height:20px; margin-top:18px; }
 </style>
 
 <script>
@@ -720,12 +695,69 @@
                 "\u2B2D","\u29BE","\u29BF","\u25C8","\u25A6","\u25A7","\u25A8","\u25A9",
                 "\u2724","\u2733","\u2747","\u25D2","\u25D3","\u2B1A","\u25B7","\u25C1"];
   var C = "bdfghjklmnprstvz", V = "aeiou";
-  function nonsense(){
-    var f=rand(3), w=C[rand(C.length)]+V[rand(V.length)]+C[rand(C.length)];
-    if(f>0) w+=V[rand(V.length)];
-    if(f>1) w+=C[rand(C.length)];
-    return w;
+  // Frictionless-distinctive tokens: short CV syllables whose onset AND vowel are both
+  // unique within a set, so no two blur together. Discrimination cost ~0; the token
+  // still has to be HELD (working-memory load stays), it just isn't confusable.
+  // ============================================================
+  // STIMULI: consonant-only garbage letter strings.
+  // No vowels (kills pronounceability -> forces abstract/visual encoding rather than
+  // phonological rehearsal). Length varies. A similarity guard rejects any token that
+  // shares too much with one already in the set, so nothing in a question is confusable.
+  var GB_C = "bdfghjklmnpqrstvwxz".split("");
+  function _gbStr(len){
+    var out="", last="";
+    for(var i=0;i<len;i++){
+      var c; var guard=0;
+      do{ c=GB_C[rand(GB_C.length)]; guard++; }while(c===last && guard<12);
+      out+=c; last=c;
+    }
+    return out;
   }
+  // similarity: reject if same first letter, same length+1 edit apart, or >50% shared letters
+  function _tooSimilar(a,b){
+    if(a===b) return true;
+    if(a[0]===b[0]) return true;                       // no shared onset
+    if(a[a.length-1]===b[b.length-1]) return true;     // no shared final
+    var setA={}, shared=0;
+    for(var i=0;i<a.length;i++) setA[a[i]]=1;
+    for(var j=0;j<b.length;j++) if(setA[b[j]]) shared++;
+    return shared > Math.min(a.length,b.length)*0.5;   // >50% letter overlap
+  }
+  var GB_D = "23456789".split("");   // no 0/1 (confusable with O/l)
+  // Each token MIXES letters and digits, e.g. "c6gh": ~75% of characters are consonant
+  // letters, ~25% digits. Minimum length 4. No vowels, so nothing is pronounceable.
+  function _gbMixed(len){
+    var nDig = Math.max(1, Math.floor(len*0.25));      // ~25% digits, at least 1
+    var slots=[];
+    for(var i=0;i<len;i++) slots.push(i<nDig ? "d" : "c");
+    slots=shuffle(slots);
+    var out="", last="";
+    for(var k=0;k<len;k++){
+      var pool = slots[k]==="d" ? GB_D : GB_C;
+      var ch, guard=0;
+      do{ ch=pool[rand(pool.length)]; guard++; }while(ch===last && guard<12);
+      out+=ch; last=ch;
+    }
+    return out;
+  }
+  function nonsenseSet(count){
+    // Every token in a question has the SAME length (user-set via S.tokenLen),
+    // so length can never be used as a discriminating cue.
+    var L = Math.max(3, Math.min(8, S.tokenLen||4));
+    var out=[], guard=0;
+    while(out.length<count && guard++<6000){
+      var w=_gbMixed(L);
+      var ok=true;
+      for(var i=0;i<out.length;i++){ if(_tooSimilar(w,out[i])){ ok=false; break; } }
+      if(ok) out.push(w);
+    }
+    while(out.length<count){                 // relax if the guard is too tight
+      var f=_gbMixed(L);
+      if(out.indexOf(f)<0) out.push(f);
+    }
+    return shuffle(out);
+  }
+  function nonsense(){ return nonsenseSet(1)[0]; }
   // ---- maximally discriminable tokens: hue + shape + letter, all forced far apart ----
   var TOKLET="ABCDEFGHJKLMNPQRSTUVWXYZ".split("");   // no I/O (confusable)
   var TOKSHAPE=["circle","square","diamond","triangle","hex","star"];
@@ -749,30 +781,12 @@
       +'font-family="ui-monospace,monospace" fill="#1b1b1d">'+letter+'</text></svg>';
   }
   function stimulusSet(n){
-    var out=[];
-    if(S.stims.glyphs){
-      // greedy selection: each new token's hue must be far from every hue already chosen
-      var slots=shuffle([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]);
-      var hueOf=function(sl){ return (sl*47)%360; };
-      var sep=function(a,b){ var d=Math.abs(a-b); return Math.min(d,360-d); };
-      var chosen=[];
-      var wantGlyph = S.stims.words? Math.ceil(n/2) : n;
-      for(var thr=60; thr>=15 && chosen.length<wantGlyph; thr-=10){   // relax if needed
-        chosen=[];
-        for(var i=0;i<slots.length && chosen.length<wantGlyph;i++){
-          var h=hueOf(slots[i]), ok=true;
-          for(var j=0;j<chosen.length;j++) if(sep(h,hueOf(chosen[j]))<thr){ ok=false; break; }
-          if(ok) chosen.push(slots[i]);
-        }
-      }
-      chosen.forEach(function(sl){ out.push("t"+sl); });
-    }
-    if(S.stims.words){ var w=new Set(); while(w.size<20) w.add(nonsense()); out=out.concat(shuffle(Array.from(w))); }
-    if(!out.length) out=GLYPHS.slice();
-    out=shuffle(out);
-    while(out.length<n) out.push("z"+out.length);
-    return out.slice(0,n);
+    // ONLY garbage strings. No glyphs, no shapes, no pronounceable words.
+    // ~75% consonant-letter strings, ~25% digit strings, same spirit: variable length,
+    // no vowels, and mutually non-confusable within a question.
+    return nonsenseSet(n);
   }
+
 
   /* ---------- utils ---------- */
   var seedState=null;
@@ -842,6 +856,51 @@
   var FAM_LABEL={web:"order",contain:"nest",syllogism:"cats",spatial:"dir",analogy:"analogy",matrix:"matrix",lst:"latin",distinction:"group",compound:"compound"};
   var FAM_BETA={spatial:1,analogy:1,matrix:1,lst:1,distinction:1,compound:1};
 
+  // ============================================================
+  // MAPPING / ISOMORPHISM FRAME — FRAMEWORK STUB (not yet live).
+  // Goal (to be developed): present TWO structures that share a hidden relational form
+  // (e.g. two orders, two graphs, two triangles ABC / DEF) and ask which element of one
+  // corresponds to a given element of the other UNDER THE STRUCTURE-PRESERVING MAP.
+  // This trains target B (isomorphism-as-symmetry): seeing two different surfaces as the
+  // same lattice. The earlier easy version leaked because the correspondence was readable
+  // from surface position; the real frame must force recovering the map from RELATIONS.
+  //
+  // DESIGN CONSTRAINTS for whoever builds this (left explicit on purpose):
+  //   1. The two structures must be presented with DIFFERENT surface orderings/labels so
+  //      position gives nothing; only the relational pattern identifies the mapping.
+  //   2. There must be NO automorphism that makes the answer ambiguous (the structure
+  //      must be rigid, or the queried element must not sit on a symmetry orbit) —
+  //      otherwise multiple correspondences are valid and the item has no unique answer.
+  //   3. Difficulty scales by (a) structure size, (b) how much the two surfaces are
+  //      scrambled relative to each other, (c) whether the shared relation is order,
+  //      adjacency, or a higher-arity pattern.
+  //   4. Distractors should be elements that match the target on SOME relation but not the
+  //      full structural role (near-isomorphic lures), not random elements.
+  //
+  // The generator below is a SKELETON: it lays out the data it must produce and returns
+  // null so nothing enters rotation. Fill in structure generation + rigidity check + lure
+  // selection to make it live.
+  function genMapping(pcount, terms, ar){
+    // INTENDED OUTPUT SHAPE (return null until implemented):
+    // return {
+    //   _fam:"mapping",
+    //   premises: [ ...views describing structure S1 and structure S2... ],
+    //   question: { lead:"Which element of the second structure plays the same role as X?",
+    //               html: ... },
+    //   options:  [ {html, correctIdx?} x4 ],   // 4-option generative, like the rest
+    //   correctIdx: <int>,
+    //   _map: { /* the verified structure-preserving bijection S1->S2 */ },
+    //   _s1: {...}, _s2: {...},                  // for the explanation view
+    //   composition: { size:n, scramble:degree, relation:type }  // per-item makeup for logging
+    // };
+    return null;   // NOT LIVE — framework only
+  }
+  // Registered but intentionally NOT added to FAMSUP, so it can never be selected until
+  // it returns real items. To activate later: add mapping:["ternary","quaternary",...] to
+  // FAMSUP, add mapping:1 to FAM_MC/FAM_BETA, a FAM_LABEL entry, and a dispatch line.
+  var MAPPING_READY = false;
+
+
   /* ---------- generators (return {premises:[display], question:{display}, answer:bool}) ---------- */
   var ARITY = { binary:2, ternary:3, quaternary:4 };
 
@@ -859,7 +918,10 @@
     var hi=askAgtB?A:B, lo=askAgtB?B:A;
     var stmt={type:"cmp", hi:hi, lo:lo};
     var ans = evalStmt(order, stmt);
-    var views = prem.map(cmpView);
+    // CHAINING: if the premises are plain comparisons, fuse them into chains so no
+    // atomic "a>b" is ever shown alone; otherwise fall back to per-premise views.
+    var allCmp = prem.length>1 && prem.every(function(p){ return p.type==="cmp"; });
+    var views = allCmp ? chainCmpViews(prem) : prem.map(cmpView);
     if(S.scramble) shuffle(views);
     return { premises:views, question:cmpQ(hi,lo), answer:ans, _fam:"temporal", _order:order, _ts:ts, _stmt:stmt };
   }
@@ -2038,14 +2100,58 @@
 
   function tok(t){
     if(maskMap && maskMap[t]) return maskRender(t);
-    if(/^[a-z]{3,5}$/.test(t)){                    // nonsense word
-      var h=0; for(var i=0;i<t.length;i++) h=(h*131+t.charCodeAt(i))>>>0;
+    // ALL stimuli are garbage strings now: consonant letters or digits, length 2-5.
+    // Render them as text; never fall through to an SVG glyph.
+    if(/^[a-z0-9]{1,6}$/i.test(t)){
       return '<span class="tok tok-word">'+t+'</span>';
     }
-    return '<span class="tok tok-vor">'+tokenSVG(t, 36)+'</span>';
+    return '<span class="tok tok-word">'+t+'</span>';
   }
   function relHi(){ return curFam==="temporal"? '<span class="word">after</span>' : '<span class="rel">&gt;</span>'; }
   function relLo(){ return curFam==="temporal"? '<span class="word">before</span>' : '<span class="rel">&lt;</span>'; }
+  // ============================================================
+  // PREMISE CHAINING — no atomic "a>b" premises. Consecutive comparisons that share a
+  // term are fused into a single chained premise ("a>b>c") so the person must encode the
+  // INTERACTION of relations, not file each as a separate fact. Same premises, same
+  // answer: this is a render-layer fusion, the entailment engine is untouched.
+  function chainCmpViews(prem){
+    // work on a copy of cmp premises in a consistent hi>lo orientation
+    var segs = prem.filter(function(p){ return p.type==="cmp"; })
+                   .map(function(p){ return [p.hi, p.lo]; });   // hi > lo
+    var others = prem.filter(function(p){ return p.type!=="cmp"; });
+    // greedily stitch segments into chains by shared endpoints (hi of one == lo of next)
+    var chains=[];
+    var used=new Array(segs.length).fill(false);
+    for(var i=0;i<segs.length;i++){
+      if(used[i]) continue; used[i]=true;
+      var chain=segs[i].slice();               // [hi, lo], meaning hi>lo
+      var extended=true;
+      while(extended){
+        extended=false;
+        for(var j=0;j<segs.length;j++){
+          if(used[j]) continue;
+          // append: chain tail (smallest) == seg hi  -> chain ... > seg.lo
+          if(chain[chain.length-1]===segs[j][0]){ chain.push(segs[j][1]); used[j]=true; extended=true; }
+          // prepend: seg lo == chain head (largest) -> seg.hi > chain ...
+          else if(segs[j][1]===chain[0]){ chain.unshift(segs[j][0]); used[j]=true; extended=true; }
+        }
+      }
+      chains.push(chain);
+    }
+    // render each chain as a single premise: t0 > t1 > t2 ...
+    var views = chains.map(function(ch){
+      var html="";
+      for(var k=0;k<ch.length;k++){
+        html += tok(ch[k]);
+        if(k<ch.length-1) html += relHi();     // ">" (or skin equivalent)
+      }
+      return {html:html, _chainLen:ch.length};
+    });
+    // any non-cmp premises (btw, etc.) render normally and append
+    others.forEach(function(o){ views.push(cmpView(o)); });
+    return views;
+  }
+
   function cmpView(p){ // randomize surface direction of each premise
     if(rng()<0.5) return {html: tok(p.hi)+relHi()+tok(p.lo)};
     return {html: tok(p.lo)+relLo()+tok(p.hi)};
@@ -2071,9 +2177,9 @@
 
   /* ---------- state ---------- */
   var S = {
-    arity:"binary", premises:6, timer:45, mask:false, maskCount:2, stair:false, autoprog:false, scramble:true, m180:true, wmSeq:false, wmHold:false, compact:false, gen:true, skins:true, pi:false, mixAr:false, prose:true, notation:"words", /* generative-only */
+    arity:"binary", premises:6, timer:45, studySec:8, answerSec:20, tokenLen:4, forcedTwoPhase:true, mask:false, maskCount:2, stair:false, autoprog:false, scramble:true, m180:true, wmSeq:false, wmHold:false, compact:false, gen:true, skins:true, pi:false, mixAr:false, prose:false, notation:"words", /* generative-only */
     families:{web:true,contain:true,syllogism:true,spatial:false,analogy:false,matrix:false,lst:false,distinction:false,compound:false},
-    stims:{glyphs:true,words:true},
+    stims:{glyphs:false,words:true},
     dims:2, seed:"", stats:{}, activePreset:null, mode:"sandbox", arityOverride:null, level:1, lvlFramesSingle:false, dayStreak:0, lastDay:"", daysTrained:0, diagDone:false, diag:false, xfer:false, premSeq:3, premCard:4, xLoArity:"binary", xHiArity:"ternary",
     best:{binary:0, ternary:0, quaternary:0, quinary:0}
   };
@@ -2214,7 +2320,7 @@
   var SECTIONS=[
     // active load dials you touch most
     {key:"difficulty", title:"Difficulty", open:true,
-     ids:["premDown","xBandBtn","dimDown","timeDown","mixToggle","autoToggle"]},
+     ids:["premDown","xBandBtn","dimDown","studyDown","ansDown","tokDown","mixToggle","autoToggle"]},
     // which structures appear
     {key:"frames", title:"Frames", open:true, families:true},
     // presentation transforms that DO NOT change the logic (surface, not structure)
@@ -2426,15 +2532,17 @@
   // ============================================================
   function applyRecommended(){
     S.mode="sandbox"; S.autoprog=false;
-    S.gen=true;
+    S.gen=true; S.forcedTwoPhase=true;
+    S.wmSeq=false; S.wmHold=false;
     S.premises=5;
     S.arity="binary"; S.xband=["binary","ternary"]; S.mixAr=true;   // interleave arity
     S.dims=2;
-    S.timer=45;
+    S.studySec=8; S.answerSec=20;   // forced two-phase windows
+    S.tokenLen=4;
     S.families = S.families || {};
     Object.keys(FAMSUP).forEach(function(f){ S.families[f]=true; });   // every frame on
     S.skins=true; S.scramble=true; S.notation="words"; S.compact=false; S.pi=false;
-    S.stims={glyphs:true, words:true};
+    S.stims={glyphs:false, words:true};
     // rough / high-load extras off
     S.mask=false; S.maskCount=2; S.prose=false; S.wmSeq=false; S.wmHold=false;
     S.seed="";
@@ -2453,83 +2561,6 @@
   // ============================================================
   var _homeBooted=false;
 
-
-  // ============================================================
-  // QUANT MODE — SKELETON ONLY.
-  // Deliberately not a designed system. It exists so the page is reachable and so
-  // the trial-level logging structure is in place before any item family is chosen.
-  // Every design decision (families, difficulty, adaptivity, composition tracking)
-  // is left OPEN on purpose.
-  // ============================================================
-  var QUANT_LOG = [];   // trial-level rows: the research-instrument backbone
-  function quantLog(row){
-    row.t = Date.now();
-    QUANT_LOG.push(row);
-    // persist alongside the rest of state so nothing is lost between sessions
-    try{ S.quantLog = (S.quantLog||[]).concat([row]); save(); }catch(e){}
-  }
-
-  // Placeholder family: a bare numeric-sequence stub. Its ONLY jobs are to prove the
-  // render/answer/log loop works. The actual families, difficulty model, composition
-  // vector, and adaptivity are yours to design and are intentionally absent.
-  function quantMakeStub(){
-    var start = 2 + Math.floor(Math.random()*8);
-    var step  = 2 + Math.floor(Math.random()*5);
-    var seq=[start]; for(var i=1;i<4;i++) seq.push(seq[i-1]+step);
-    var answer = seq[3]+step;
-    var opts=[answer, answer+step, answer-step, answer+2*step];
-    for(var j=opts.length-1;j>0;j--){ var k=Math.floor(Math.random()*(j+1)); var tmp=opts[j]; opts[j]=opts[k]; opts[k]=tmp; }
-    return {
-      family:"stub-sequence",
-      // composition vector is stubbed empty on purpose — this is where the real
-      // per-item makeup (arity, load dimensions, etc.) will be recorded later.
-      composition:{},
-      stem: seq.join(",  ") + ",  ?",
-      options: opts,
-      correct: answer
-    };
-  }
-
-  var quantCurrent=null;
-  function quantDraw(){
-    quantCurrent = quantMakeStub();
-    var stem=document.getElementById("qStem"); if(stem) stem.textContent=quantCurrent.stem;
-    var host=document.getElementById("qAnswers"); if(!host) return;
-    host.innerHTML="";
-    quantCurrent.options.forEach(function(v){
-      var b=document.createElement("button");
-      b.className="q-ans"; b.textContent=v;
-      b.onclick=function(){ quantAnswer(v, b); };
-      host.appendChild(b);
-    });
-    var st=document.getElementById("qStatus"); if(st) st.textContent="";
-    quantCurrent._shown=Date.now();
-  }
-  function quantAnswer(v, btn){
-    if(!quantCurrent) return;
-    var correct = (v===quantCurrent.correct);
-    quantLog({
-      family: quantCurrent.family,
-      composition: quantCurrent.composition,   // empty for now, by design
-      correct: correct,
-      rt: Date.now()-(quantCurrent._shown||Date.now())
-    });
-    var st=document.getElementById("qStatus");
-    if(st) st.textContent = correct ? "correct" : ("the sequence forces "+quantCurrent.correct);
-    setTimeout(quantDraw, 650);
-  }
-
-  function showQuant(){
-    var q=document.getElementById("quant"), h=document.getElementById("home");
-    if(h) h.style.display="none";
-    if(q) q.style.display="block";
-    quantDraw();
-  }
-  function hideQuant(){
-    var q=document.getElementById("quant");
-    if(q) q.style.display="none";
-    showHome();
-  }
 
   function showWiki(){
     var wk=document.getElementById("wiki"), h=document.getElementById("home");
@@ -2603,10 +2634,6 @@
     if(wk) wk.onclick=function(){ showWiki(); };
     var wb=document.getElementById("wikiBack");
     if(wb) wb.onclick=function(){ hideWiki(); };
-    var mq=document.getElementById("mQuant");
-    if(mq) mq.onclick=function(){ showQuant(); };
-    var qb=document.getElementById("quantBack");
-    if(qb) qb.onclick=function(){ hideQuant(); };
     // in-game button back to the menu
     if(!document.getElementById("homeBtn")){
       var hb=document.createElement("button");
@@ -3141,7 +3168,8 @@
         (function(idx){ onTap(b, function(){ resolve(idx); }); })(i);
         ansEl.appendChild(b);
       });
-      ansEl.style.visibility = hidden? "hidden":"visible";
+      if(hidden){ ansEl.style.visibility="hidden"; ansEl.style.height="0"; ansEl.style.overflow="hidden"; ansEl.style.margin="0"; }
+      else { ansEl.style.visibility="visible"; ansEl.style.height=""; ansEl.style.overflow=""; ansEl.style.margin=""; }
       return;
     }
     if(g.options){
@@ -3156,9 +3184,13 @@
       // generative-only build: this path should never execute
       ansEl.className="answers"; ansEl.innerHTML="";
     }
-    ansEl.style.visibility = hidden? "hidden":"visible";
+    if(hidden){ ansEl.style.visibility="hidden"; ansEl.style.height="0"; ansEl.style.overflow="hidden"; ansEl.style.margin="0"; }
+    else { ansEl.style.visibility="visible"; ansEl.style.height=""; ansEl.style.overflow=""; ansEl.style.margin=""; }
   }
-  function revealAnswers(){ $("answers").style.visibility="visible"; }
+  function revealAnswers(){
+    var a=$("answers");
+    a.style.visibility="visible"; a.style.height=""; a.style.overflow=""; a.style.margin="";
+  }
   var _nextPending=false;
   function deferNext(){
     if(_nextPending) return;
@@ -3218,7 +3250,7 @@
     $("verdict").textContent=""; $("verdict").className="verdict";
     // CLEAR STALE ANSWER BUTTONS immediately (was only cleared later inside the async reveal,
     // so old cards lingered under new premises during the wmSeq delay)
-    var ae=$("answers"); ae.innerHTML=""; ae.style.visibility="hidden";
+    var ae=$("answers"); ae.innerHTML=""; ae.style.visibility="hidden"; ae.style.height="0"; ae.style.overflow="hidden"; ae.style.margin="0";
     var terms = stimulusSet(Math.max(10, S.premises+3));
     var enabled=Object.keys(S.families).filter(function(f){return S.families[f];});
     if(!enabled.length) enabled=["comparison"];
@@ -3291,7 +3323,7 @@
     // prose only reads well for families whose premises ARE sentences; grid/vector
     // families (matrix, lst, spatial) can't be narrated, so prose skips them.
     var PROSE_OK={web:1,contain:1,syllogism:1,distinction:1,compound:1,analogy:1};
-    var proseOn = S.prose && !!PROSE_OK[fam];
+    var proseOn = false;   // prose extraction removed
     if(proseOn){ g.question.lead = "Which of the following must be true?"; }
     current = g;
     var pr = $("premises"); pr.innerHTML="";
@@ -3340,19 +3372,27 @@
     function paintQuestion(){ if(!current2()) return; qEl.innerHTML='<span class="qlead">'+g.question.lead+'</span>'+g.question.html; }
     function afterPresent(){
       if(!current2()) return;                   // stale item -> abort
-      if(doHold){
-        var holdMs = 700 + g.premises.length*550;
-        badge.textContent="hold \u2022 keep the model in mind";
+      // FORCED TWO-PHASE FORMAT (always on):
+      //   Phase 1 STUDY  -> premises visible, answers hidden, NO skip control.
+      //   Phase 2 ANSWER -> premises removed, answers shown, countdown to auto-resolve.
+      // Both windows are user-set (studySec / answerSec). There is deliberately no
+      // button to advance early: the study duration is part of the training load.
+      var studyMs = Math.max(1, (S.studySec||8)) * 1000;
+      badge.textContent="study \u2022 the premises will be replaced";
+      buildAnswers(g, true);                     // build now, keep hidden
+      // countdown bar during the STUDY phase
+      startStudyBar(studyMs);
+      wmTimeout=setTimeout(function(){
+        if(!current2()) return;
+        // fade the premises out (CSS .gone animates opacity+transform), then remove from
+        // flow AFTER the transition so the animation is visible instead of snapping.
         nodes.forEach(function(n){ n.classList.add("gone"); });
-        paintQuestion();
-        buildAnswers(g, true);
-        wmTimeout=setTimeout(function(){ if(!current2()) return; badge.textContent=""; revealAnswers(); startTimer(); }, holdMs);
-      } else {
+        setTimeout(function(){ if(!current2()) return; nodes.forEach(function(n){ n.style.display="none"; }); }, 240);
         badge.textContent="";
         paintQuestion();
-        buildAnswers(g, false);
-        startTimer();
-      }
+        revealAnswers();
+        startTimer();                            // answerSec countdown -> resolve(null)
+      }, studyMs);
     }
     if(doSeq){
       nodes.forEach(function(n){ n.style.display="none"; });
@@ -3387,12 +3427,20 @@
     // answers + timer handled by afterPresent/buildAnswers
   }
 
+  function startStudyBar(ms){
+    var bar=$("timerbar"); if(!bar) return;
+    bar.style.transition="none"; bar.style.transform="scaleX(1)"; void bar.offsetWidth;
+    bar.classList.add("study");
+    bar.style.transition="transform "+(ms/1000)+"s linear"; bar.style.transform="scaleX(0)";
+  }
   function startTimer(){
-    var bar=$("timerbar"); bar.style.transition="none"; bar.style.transform="scaleX(1)";
+    var secs=S.answerSec||20;
+    var bar=$("timerbar"); bar.classList.remove("study");
+    bar.style.transition="none"; bar.style.transform="scaleX(1)";
     void bar.offsetWidth;
-    bar.style.transition="transform "+S.timer+"s linear"; bar.style.transform="scaleX(0)";
+    bar.style.transition="transform "+secs+"s linear"; bar.style.transform="scaleX(0)";
     tStart=Date.now();
-    tHandle=setTimeout(function(){ resolve(null); }, S.timer*1000);
+    tHandle=setTimeout(function(){ resolve(null); }, secs*1000);
   }
 
   function resolve(choice){
@@ -3530,12 +3578,15 @@
     if($("dimReadout")) $("dimReadout").textContent = S.dims;
     $("seedBtn").textContent=S.seed? "on":"off";
     $("seedBtn").className="toggle"+(S.seed?" on":"");
-    $("timeReadout").textContent=S.timer+"s";
+    if($("timeReadout")) $("timeReadout").textContent=S.timer+"s";
     if($("stairToggle")) $("stairToggle").textContent = S.stair?"on":"off";
     if($("stairToggle")) $("stairToggle").className = "toggle"+(S.stair?" on":"");
     $("autoToggle").textContent=S.autoprog?"on":"off";
     $("autoToggle").className="toggle"+(S.autoprog?" on":"");
     $("scrToggle").textContent=S.scramble?"on":"off";
+    if($("studyReadout")) $("studyReadout").textContent=(S.studySec||8)+"s";
+    if($("ansReadout")) $("ansReadout").textContent=(S.answerSec||20)+"s";
+    if($("tokReadout")) $("tokReadout").textContent=(S.tokenLen||4);
     $("maskToggle").textContent=S.mask?"on":"off";
     $("maskVal").textContent=S.maskCount;
     if($("m180Toggle")) $("m180Toggle").textContent = S.m180?"on":"off";
@@ -3548,8 +3599,8 @@
     $("piToggle").className="toggle"+(S.pi?" on":"");
     $("mixToggle").textContent=S.mixAr?"on":"off";
     $("mixToggle").className="toggle"+(S.mixAr?" on":"");
-    $("proseToggle").textContent=S.prose?"on":"off";
-    $("proseToggle").className="toggle"+(S.prose?" on":"");
+    if($("proseToggle")){ $("proseToggle").textContent=S.prose?"on":"off";
+      $("proseToggle").className="toggle"+(S.prose?" on":""); }
     var sym = S.notation==="sym";
     ["psFrontier","psProse","psWM","psConsol"].forEach(function(id){
       var el=$(id); if(el) el.className="preset";
@@ -3715,13 +3766,20 @@
     $("premDown").onclick=function(){ bumpPrem(-1); save(); syncUI(); next(); };
     if($("dimUp")) $("dimUp").onclick = function(){ S.dims=Math.min(4,S.dims+1); save(); syncUI(); next(); };
     if($("dimDown")) $("dimDown").onclick = function(){ S.dims=Math.max(2,S.dims-1); save(); syncUI(); next(); };
-    $("timeUp").onclick=function(){ S.timer=Math.min(45,S.timer+5); save(); syncUI(); };
-    $("timeDown").onclick=function(){ S.timer=Math.max(10,S.timer-5); save(); syncUI(); };
     if($("stairToggle")) $("stairToggle").onclick = function(){ S.stair=!S.stair; save(); syncUI(); };
     // AUTOPROGRESS: disabled for now (kept in code, not deleted).
     $("autoToggle").onclick=function(){ /* disabled */ };
     $("scrToggle").onclick=function(){ S.scramble=!S.scramble; save(); syncUI(); };
     $("resetDefBtn").onclick=function(){ applyRecommended(); };
+    function clampStudy(v){ return Math.max(2, Math.min(30, v)); }
+    function clampAns(v){ return Math.max(4, Math.min(60, v)); }
+    $("studyDown").onclick=function(){ S.studySec=clampStudy((S.studySec||8)-1); save(); syncUI(); };
+    $("studyUp").onclick  =function(){ S.studySec=clampStudy((S.studySec||8)+1); save(); syncUI(); };
+    $("ansDown").onclick  =function(){ S.answerSec=clampAns((S.answerSec||20)-1); save(); syncUI(); };
+    $("ansUp").onclick    =function(){ S.answerSec=clampAns((S.answerSec||20)+1); save(); syncUI(); };
+    function clampTok(v){ return Math.max(3, Math.min(8, v)); }
+    $("tokDown").onclick=function(){ S.tokenLen=clampTok((S.tokenLen||4)-1); save(); syncUI(); deferNext(); };
+    $("tokUp").onclick  =function(){ S.tokenLen=clampTok((S.tokenLen||4)+1); save(); syncUI(); deferNext(); };
     $("maskToggle").onclick=function(){ S.mask=!S.mask; save(); syncUI(); next(); };
     $("maskDn").onclick=function(){ S.maskCount=Math.max(1,S.maskCount-1); save(); syncUI(); next(); };
     $("maskUp").onclick=function(){ S.maskCount=Math.min(4,S.maskCount+1); save(); syncUI(); next(); };
@@ -3742,7 +3800,7 @@
     $("skinToggle").onclick=function(){ S.skins=!S.skins; save(); syncUI(); deferNext(); };
     $("piToggle").onclick=function(){ S.pi=!S.pi; piPool=null; piLeft=0; save(); syncUI(); };
     $("mixToggle").onclick=function(){ S.mixAr=!S.mixAr; save(); syncUI(); };
-    $("proseToggle").onclick=function(){ S.prose=!S.prose; save(); syncUI(); deferNext(); };
+    if($("proseToggle")) $("proseToggle").onclick=function(){ /* prose removed */ };
     $("notationToggle").onclick=function(){ S.notation = (S.notation==="sym"?"words":"sym"); S.activePreset=null; save(); syncUI(); deferNext(); };
     var drawerOpen=false;
     var openDrawer=function(o){
