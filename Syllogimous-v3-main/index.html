@@ -21,6 +21,7 @@
 		<link rel="stylesheet" href="fonts/cool/coolicons.css">
 		<link rel="stylesheet" href="css/styles.css">
 		<link rel="stylesheet" href="css/arity.css">
+		<link rel="stylesheet" href="css/minimal.css">
 		<style id="live-styles"></style>
 	</head>
 	<body>
@@ -119,8 +120,47 @@
 										that settle it and the<br>
 										hidden arrangement before<br>
 										moving on.<br>
+										<br>
+										With retries on, this waits<br>
+										until after the retry.<br>
 									</div>
 								</div>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-104" type="checkbox">
+									<label class="switch" for="p-104"></label>
+								</div>
+								<label for="p-104" style="max-width: 170px;">Retry missed items</label>
+								<div class="tooltip-container" tabindex="0">
+									?
+									<div class="tooltip-text">
+										A missed item comes back<br>
+										once, a few items later,<br>
+										with the clock reset.<br>
+										<br>
+										The gap is the point: the<br>
+										surface has faded, so a<br>
+										correct answer means you<br>
+										derived it again instead of<br>
+										recalling your last guess.<br>
+										<br>
+										Retries are never scored and<br>
+										never move progression. A<br>
+										repeat is easier whatever you<br>
+										do, so counting it would<br>
+										raise difficulty on<br>
+										familiarity, not ability.<br>
+									</div>
+								</div>
+							</div>
+							<div class="inline-premise-wrapper">
+								Items in between
+								<span class="inline-premise-spinner">
+									<input id="p-104-delay" type="number" min="1" max="20" value="3" style="width: 6ch">
+								</span>
 							</div>
 						</div>
 						<div class="mb-1">

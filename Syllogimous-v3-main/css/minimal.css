@@ -1,0 +1,322 @@
+/* minimal.css — a quieter skin.
+ *
+ * Skin only. Nothing here touches the stimuli: premise and conclusion text, the subject/relation
+ * styling, the red negation markup, emoji noise and every font size inside the question keep the
+ * exact rendering they had. What changes is the furniture around them — the glowing frame, the gold
+ * brackets, the stencil display font, the saturated buttons — so that the only thing with weight on
+ * the screen is the item you are solving.
+ *
+ * Loaded last on purpose: it overrides, it does not replace. Delete the <link> and the old look
+ * comes back untouched.
+ */
+
+:root {
+    --bracket-color: transparent;
+    --bracket-box-shadow: none;
+    --label-background-color: transparent;
+    --label-color: #8a8f94;
+    --display-label-color: #8a8f94;
+    --preamble-color: #767b80;
+    --offcanvas-bg: #141516;
+    --offcanvas-fg: #e8e8e6;
+    --correct-color: #2f4f3c;
+    --wrong-color: #53333a;
+    --select-background-color: #1b1c1e;
+    --inline-input-bg-color: #222426;
+    --linear-settings-background-color: #1b1c1e;
+    --profile-bg: #1b1c1e;
+    --profile-arrow-bg: #141516;
+    --profile-border: 1px solid #2c2e31;
+    --profile-select-bg: #1b1c1e;
+    --profile-select-border: 1px solid #2c2e31;
+    --folder-bg: #1b1c1e;
+    --switch-background-color: #2c2e31;
+    --switch-unselected-color: #494d52;
+    --switch-selected-color: #cfd3d6;
+    --switch-border-color: #3a3d41;
+    --switch-border-checked-color: transparent;
+    --three-d-background: #26282b;
+    --big-input-bg-color: #1b1c1e;
+    --small-input-bg-color: #222426;
+    --multi-input-bg: #1b1c1e;
+    --single-input-bg: #222426;
+    --spinner-bg: #222426;
+}
+
+.light-mode {
+    --bracket-color: transparent;
+    --bracket-box-shadow: none;
+    --label-background-color: transparent;
+    --label-color: #80868c;
+    --display-label-color: #80868c;
+    --preamble-color: #8a9096;
+    --offcanvas-bg: #fbfbfa;
+    --offcanvas-fg: #15171a;
+    --correct-color: #d5e3d8;
+    --wrong-color: #efd9dd;
+    --select-background-color: #f1f1ef;
+    --inline-input-bg-color: #f1f1ef;
+    --linear-settings-background-color: #f1f1ef;
+    --profile-bg: #f1f1ef;
+    --profile-arrow-bg: #e3e3e0;
+    --profile-border: 1px solid #dcdcd8;
+    --profile-select-bg: #f7f7f5;
+    --profile-select-border: 1px solid #dcdcd8;
+    --folder-bg: #f1f1ef;
+    --switch-background-color: #dcdcd8;
+    --switch-unselected-color: #fff;
+    --switch-selected-color: #4a4d50;
+    --switch-border-color: #cfcfca;
+    --switch-border-checked-color: transparent;
+    --three-d-background: #e8e8e4;
+    --big-input-bg-color: #f1f1ef;
+    --small-input-bg-color: #fff;
+    --multi-input-bg: #f1f1ef;
+    --single-input-bg: #fff;
+    --spinner-bg: #fff;
+    --background-image-bg-color: #fbfbfa;
+    --background-brightness: 1;
+    --overlay-background-color: #fbfbfa;
+}
+
+/* ---- buttons: neutral by default, the answer pair keeps its colour coding ---- */
+button {
+    color: #dfe3e6;
+    background-color: #2c2e31;
+    border-radius: 6px;
+}
+
+button:disabled {
+    background-color: #212326;
+    color: #6b7075;
+}
+
+.light-mode button {
+    color: #15171a;
+    background-color: #e6e6e2;
+}
+
+.light-mode button:disabled {
+    background-color: #f1f1ef;
+    color: #a6abb0;
+}
+
+.light-mode .confirmation-true,
+.light-mode .confirmation-false {
+    color: #15171a;
+}
+
+.light-mode button.delete {
+    color: #fff;
+}
+
+/* ---- inputs and their labels: one typeface everywhere, no inset shadows ---- */
+.inline-input__outer {
+    font-family: "Roboto", sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+}
+
+.inline-input__inner > input,
+.inline-input__inner > select,
+.inline-premise-spinner > input {
+    box-shadow: none;
+    border-bottom: 1px solid #3a3d41;
+    border-radius: 4px;
+}
+
+.light-mode .inline-input__inner > input,
+.light-mode .inline-input__inner > select,
+.light-mode .inline-premise-spinner > input {
+    border-bottom-color: #dcdcd8;
+}
+
+.inline-premise-wrapper {
+    background-color: var(--big-input-bg-color);
+}
+
+/* ---- the frame: no neon border, no glow ---- */
+.main-view {
+    border: none;
+    box-shadow: none;
+    letter-spacing: normal;
+}
+
+/* ---- the gold corner brackets are pure decoration ---- */
+.border-left,
+.border-right,
+.bracket-lip-top-left,
+.bracket-lip-top-right,
+.bracket-lip-bottom-left,
+.bracket-lip-bottom-right {
+    display: none;
+}
+
+/* ---- the card holding the item: one flat surface, one hairline ---- */
+.game-area {
+    border: 1px solid #2c2e31;
+    border-radius: 10px;
+    box-shadow: none;
+    transition: border-color 0.2s ease;
+}
+
+.light-mode .game-area {
+    border-color: #e2e2de;
+}
+
+/* right / wrong / missed stay legible, but as a quiet border rather than a glow */
+.game-area.right,
+.game-area.right:before {
+    border: 1px solid #4c8f63;
+    box-shadow: none;
+}
+
+.game-area.wrong,
+.game-area.wrong:before {
+    border: 1px solid #b4555f;
+    box-shadow: none;
+}
+
+.game-area.missed,
+.game-area.missed:before {
+    border: 1px solid #70757a;
+    box-shadow: none;
+}
+
+.game-area.right:before,
+.game-area.wrong:before,
+.game-area.missed:before {
+    font-family: "Roboto", sans-serif;
+    font-size: var(--step--2);
+    letter-spacing: 0.12em;
+    font-weight: 500;
+    padding: 1px 0;
+    border: none;
+    color: #fff;
+}
+
+/* ---- the item's own label row: plain text, not a stencil ---- */
+.carousel_display_label-wrapper h2,
+.display-inner h2 {
+    font-family: "Roboto", sans-serif;
+    font-size: var(--step--1);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-shadow: none;
+    opacity: 0.75;
+}
+
+/* ---- "Premises" / "Conclusion": present but recessive ---- */
+.preamble,
+.postamble,
+.transform-header {
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
+}
+
+/* ---- timer: a thin line, not a bar ---- */
+/* The control floats over the top of the card. The old 20px bar held it clear of the item's label
+ * row; with a 3px line the wrap has to provide that clearance instead. */
+.timer-wrap {
+    margin-bottom: 4.25rem;
+}
+
+.timer .inline-input__outer {
+    background-color: transparent;
+    font-size: var(--step--1);
+    padding: 0.25rem 0;
+    gap: 0.75rem;
+}
+
+.custom-time-info {
+    font-size: var(--step--2);
+    opacity: 0.5;
+    right: 0.75rem;
+    padding-top: 0.5rem;
+}
+
+.timer {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #2c2e31;
+}
+
+.light-mode .timer {
+    border-bottom-color: #e2e2de;
+}
+
+.timer__bar {
+    height: 3px;
+    background-color: #6f7478;
+}
+
+.timer__bar.override {
+    background-color: #8a9bb0;
+}
+
+/* ---- answer buttons: flat, muted, still colour-coded ---- */
+.confirmation-true,
+.confirmation-false {
+    border: 1px solid transparent;
+    border-radius: 7px;
+    font-size: var(--step-0);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: filter 0.15s ease;
+}
+
+.confirmation-true:hover,
+.confirmation-false:hover {
+    box-shadow: none !important;
+    filter: brightness(1.25);
+}
+
+/* ---- side tabs: small, calm, no glow ---- */
+label.open {
+    font-family: "Roboto", sans-serif;
+    font-size: var(--step--2);
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    padding: 0.85rem;
+    opacity: 0.55;
+    transition: opacity 0.15s ease;
+}
+
+label.open:hover {
+    opacity: 1;
+}
+
+label.open[for="offcanvas-settings"]:hover,
+label.open[for="offcanvas-history"]:hover,
+label.open[for="offcanvas-credits"]:hover,
+label.open[for="offcanvas-graph"]:hover {
+    text-shadow: none;
+}
+
+/* ---- score ---- */
+.score {
+    font-size: var(--step--1);
+    text-shadow: none;
+    opacity: 0.6;
+}
+
+/* ---- panels ---- */
+.offcanvas {
+    box-shadow: none;
+}
+
+button:not(:disabled):hover {
+    box-shadow: none;
+}
+
+/* ---- the post-miss panel, matched to the rest ---- */
+.miss-explanation__inner {
+    border-radius: 10px;
+    box-shadow: none;
+    border: 1px solid #2c2e31;
+}
+
+.light-mode .miss-explanation__inner {
+    border-color: #e2e2de;
+}

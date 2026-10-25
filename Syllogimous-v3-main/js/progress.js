@@ -179,7 +179,7 @@ class ProgressStore {
     success(q, trailingProgress, successes, type) {
         const [overridePremiseSetting, overrideTimerSetting] = TYPE_TO_OVERRIDES[type];
         let newTimerValue;
-        if (savedata.autoProgressionChange === 'auto') {
+        if (savedata.autoProgressionChange === 'auto' && successes.length >= 3) {
             const minUpgrade = q.countdown - 1;
             const left = successes[successes.length - 3].timeElapsed / 1000;
             const right = successes[successes.length - 2].timeElapsed / 1000;
@@ -223,7 +223,9 @@ class ProgressStore {
         trailingProgress.push(q);
         trailingProgress.sort((a, b) => a.timeElapsed - b.timeElapsed);
         const successes = trailingProgress.filter(p => p.correctness === 'right');
-        const commonTypes = this.findCommonTypes(question);
+        // was findCommonTypes(question) — the module-level current question, not the one being scored.
+        // It happened to agree most of the time and would silently level the wrong type when it didn't.
+        const commonTypes = this.findCommonTypes(q);
         if (trailingProgress.length < findAutoProgressionTrailing()) {
             const numFailures = trailingProgress.length - successes.length;
             const bestPercentagePossible = 100 * (findAutoProgressionTrailing() - numFailures) / findAutoProgressionTrailing();

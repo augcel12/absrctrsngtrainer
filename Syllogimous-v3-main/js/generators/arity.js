@@ -223,11 +223,14 @@ function arBuild(fam, P, k, opts = {}) {
             if (!facts) continue;
             const M = eng.mask(facts);
             const keys = new Set(facts.map(f => f.key));
-            const cands = shuffle(fam.conclusions(h, N, k, opts)).filter(c => !keys.has(c.key)).slice(0, 80);
+            // space families need a wider conclusion search: non-decomposable 3/4-ary spatial facts are
+            // rare, so a narrow cap here is what pushes the build down into the looser tiers
+            const wide = fam.id.startsWith('space');
+            const cands = shuffle(fam.conclusions(h, N, k, opts)).filter(c => !keys.has(c.key)).slice(0, wide ? 200 : 80);
             let best = null, tried = 0;
             for (const c of cands) {
                 if (eng.valueM(M, c) !== want) continue;
-                if (++tried > 24) break;
+                if (++tried > (wide ? 60 : 24)) break;
                 if (facts.some(f => eng.value([f], c) === want)) continue;
                 const sup = arSupport(eng, facts, c, want);
                 if (sup.length < Math.max(2, Math.ceil(tier.frac * P))) continue;
@@ -237,7 +240,7 @@ function arBuild(fam, P, k, opts = {}) {
                 const score = sup.length + (c.arity >= 3 ? 0.5 : 0) + Math.random() * 0.1;
                 if (!best || score > best.score) best = { c, sup, score };
             }
-            if (best) return { facts, h, N, concl: best.c, support: best.sup, isValid: want, tier };
+            if (best) return { facts, h, N, concl: best.c, support: best.sup, isValid: want, tier, k };
         }
     }
     return null;
@@ -342,6 +345,9 @@ function arSpaceFamily(gen) {
     return {
         id: 'space' + D,
         engine: N => arEngine('weak', N, D),
+        // Capped at 6 on purpose. A 7th term widens the pool for 4-ary spatial facts and does raise the
+        // strict-tier hit rate, but weak-order enumeration over 7 terms on 3-4 axes pushed worst-case
+        // generation past 4 seconds, which is far worse for training than an occasional step-down.
         terms: (P, k) => Math.max(k + 1, Math.min(6, P + 1)),
         hidden(N) {
             for (;;) {
@@ -373,17 +379,22 @@ function arSpaceFamily(gen) {
                 const end = coinFlip() ? 0 : 2, rest = [0, 1, 2].filter(i => i !== end);
                 return between(s[end], s[rest[0]], s[rest[1]], ax, false);
             }
-            const [w, x] = arTerms(N, 2, used);
-            const s1 = sv(h, w, x);
-            if (!spatialOK(s1)) return null;
-            const opts = [];
-            for (const y of arRange(N)) for (const z of arRange(N)) {
-                if (y === z || [w, x].includes(y) || [w, x].includes(z)) continue;
-                const s2 = sv(h, y, z);
-                if (s1.every((v, i) => v === s2[i])) opts.push(way(w, x, y, z, true));
-                else if (s1.every((v, i) => v === -s2[i])) opts.push(way(w, x, y, z, false));
+            // several draws of the leading pair, not one: a single unlucky (w,x) with no matching
+            // counterpart used to fail the whole fact and push the build into a looser tier
+            for (let attempt = 0; attempt < 8; attempt++) {
+                const [w, x] = arTerms(N, 2, used);
+                const s1 = sv(h, w, x);
+                if (!spatialOK(s1)) continue;
+                const opts = [];
+                for (const y of arRange(N)) for (const z of arRange(N)) {
+                    if (y === z || [w, x].includes(y) || [w, x].includes(z)) continue;
+                    const s2 = sv(h, y, z);
+                    if (s1.every((v, i) => v === s2[i])) opts.push(way(w, x, y, z, true));
+                    else if (s1.every((v, i) => v === -s2[i])) opts.push(way(w, x, y, z, false));
+                }
+                if (opts.length) return arPick(opts);
             }
-            return opts.length ? arPick(opts) : null;
+            return null;
         },
         conclusions(h, N, k, opts) {
             const out = [];
@@ -501,10 +512,18 @@ function arAssemble(r, W, extra) {
     return premises;
 }
 function arQuestion(fam, P, extra) {
-    const k = arityLevel();
+    // Try the arity the dial asks for, hard. If this family genuinely cannot build it at this premise
+    // count, step DOWN one level and label the item with the arity it actually has — never hand back a
+    // plain binary item while the dial still claims 4. An honest label is what keeps the difficulty
+    // reading, and the progression that depends on it, from drifting away from reality.
+    const wantK = arityLevel();
     let r = null;
-    for (let t = 0; t < 4 && !r; t++) r = arBuild(fam, P, k, { analogy: extra.analogy });
+    for (let kk = wantK; kk >= 3 && !r; kk--) {
+        const tries = kk === wantK ? 6 : 3;
+        for (let t = 0; t < tries && !r; t++) r = arBuild(fam, P, kk, { analogy: extra.analogy });
+    }
     if (!r) return null;
+    const k = r.k;
     const W = createStimuli(r.N);
     const premises = arAssemble(r, W, extra);
     let conclusion = r.concl.html(W, false), isValid = r.isValid;
@@ -520,6 +539,8 @@ function arQuestion(fam, P, extra) {
         plen: P,
         modifiers: ['ar' + k],
         arity: k,
+        arityAsked: wantK,
+        arTier: AR_TIERS.indexOf(r.tier),
         arityTimeMult: AR_TIME_MULT[k],
         support: arSupportHTML(r, W),
         supportConclusion: plainConcl,
@@ -664,7 +685,8 @@ function arSyllogismQuestion(sq, length) {
             return {
                 category: 'Syllogism', type: 'syllogism', startedAt: new Date().getTime(),
                 premises, conclusion: arSetHTML(concl, W, false), isValid: want,
-                plen: P, modifiers: ['ar' + k], arity: k, arityTimeMult: AR_TIME_MULT[k],
+                plen: P, modifiers: ['ar' + k], arity: k, arityAsked: k, arTier: AR_TIERS.indexOf(tier),
+                arityTimeMult: AR_TIME_MULT[k],
                 support: best.sup.map(f => arSetHTML(f, W, true)),
                 supportConclusion: arSetHTML(best.c, W, true),
                 syllogismNearMiss: !want,

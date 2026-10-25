@@ -187,7 +187,11 @@ function carouselInit() {
 function displayInit() {
     const q = renderJunkEmojis(question);
     displayLabelType.textContent = q.category.split(":")[0];
-    displayLabelLevel.textContent = (q.plen || q.premises.length) + "p";
+    // show the arity the item ACTUALLY has, not the one the dial asked for, and mark a second attempt
+    const label = [(q.plen || q.premises.length) + "p"];
+    if (q.arity > 2) label.push(q.arity + "-ary");
+    if (q.isRetry) label.push("retry");
+    displayLabelLevel.textContent = label.join(" · ");
     const easy = savedata.scrambleFactor < 12 ? ' (easy)' : '';
     displayText.innerHTML = [
         `<div class="preamble">Premises${easy}</div>`,
@@ -567,12 +571,52 @@ function generateQuestion() {
     return q;
 }
 
+// ---------------------------------------------------------------- retry queue
+// A missed item comes back once, a few items later, with the clock reset. The gap is the point: by the
+// time it returns the surface has faded, so getting it right means deriving it again rather than
+// recalling "I said TRUE last time, so it must be FALSE".
+//
+// Retries are deliberately UNSCORED. A repeated item is easier the second time whatever you do, so
+// feeding it to the progression would ratchet difficulty on familiarity instead of ability — the same
+// reason retest gains on a reused test say little about the ability it measures. A retry is drill;
+// only first attempts are measurement.
+let retryQueue = [];
+let itemsServed = 0;
+
+function retryDelay() {
+    return Math.max(1, Math.min(20, savedata.retryDelay || 3));
+}
+
+function queueRetry(q) {
+    if (!savedata.retryMissed || q.isRetry || q.format) return false;
+    const clone = { ...q };
+    delete clone.correctness;
+    delete clone.answerUser;
+    delete clone.answeredAt;
+    delete clone.didTriggerProgress;
+    clone.isRetry = true;
+    retryQueue.push({ q: clone, due: itemsServed + retryDelay() });
+    return true;
+}
+
+function takeDueRetry() {
+    if (!savedata.retryMissed) {
+        retryQueue = [];
+        return null;
+    }
+    const i = retryQueue.findIndex(r => r.due <= itemsServed);
+    return i < 0 ? null : retryQueue.splice(i, 1)[0].q;
+}
+
 function init() {
     stopCountDown();
-    question = generateQuestion();
+    const retry = takeDueRetry();
+    question = retry || generateQuestion();
     if (!question) {
         return;
     }
+    itemsServed++;
+    question.startedAt = new Date().getTime();
 
     stopCountDown();
     if (timerToggled) {
@@ -708,8 +752,14 @@ function wowFeedbackMissed(cb) {
 }
 
 function wowFeedback() {
-    const next = (question.correctness !== 'right' && savedata.explainOnMiss && !question.format) ? () => showMissExplanation(question) : init;
-    if (question.correctness === 'right') {
+    const missed = question.correctness !== 'right';
+    // A missed item goes back in the queue instead of being explained on the spot. Deriving it again
+    // yourself is worth more than reading why you were wrong, so the explanation waits until after the
+    // retry — and is skipped entirely if the retry lands.
+    const queued = missed && queueRetry(question);
+    const explain = missed && !queued && savedata.explainOnMiss && !question.format;
+    const next = explain ? () => showMissExplanation(question) : init;
+    if (!missed) {
         wowFeedbackRight(init);
     } else if (question.correctness === 'wrong') {
         wowFeedbackWrong(next);
@@ -739,7 +789,7 @@ function closeMissExplanation() {
 
 function storeQuestionAndSave() {
     appState.questions.push(question);
-    if (timerToggle.checked) {
+    if (timerToggle.checked && !question.isRetry) {
         PROGRESS_STORE.storeCompletedQuestion(question)
     }
     save();
