@@ -2,6 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
+		<title>Syllogimous Arity</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<!-- ios support -->
 		<link rel="apple-touch-icon" href="icons/icon-72x72.png" />
@@ -19,6 +20,7 @@
 		<link rel="stylesheet" href="css/codec.css">
 		<link rel="stylesheet" href="fonts/cool/coolicons.css">
 		<link rel="stylesheet" href="css/styles.css">
+		<link rel="stylesheet" href="css/arity.css">
 		<style id="live-styles"></style>
 	</head>
 	<body>
@@ -71,6 +73,56 @@
 								</span>
 							</div>
 						</div>
+						<div class="mb-2">
+							<div class="inline-input__outer big-input">
+								Arity
+								<div class="tooltip-container" tabindex="0">
+									?
+									<div class="tooltip-text">
+										How many terms one premise<br>
+										binds at once, in every<br>
+										relation type.<br>
+										<br>
+										2: classic (A is left of B)<br>
+										3: + "A is between B and C"<br>
+										4: + "A is left of B exactly<br>
+										when C is left of D"<br>
+										<br>
+										At 3+ the conclusion always<br>
+										needs a top-arity premise<br>
+										that can't be looked up in<br>
+										pieces. Time is scaled<br>
+										x1.5 (3) and x2 (4).<br>
+									</div>
+								</div>
+								<span class="inline-input__inner">
+									<select id="p-100" class="form-select ffmono">
+										<option value="2">2 classic</option>
+										<option value="3">3 ternary</option>
+										<option value="4">4 quaternary</option>
+									</select>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-101" type="checkbox">
+									<label class="switch" for="p-101"></label>
+								</div>
+								<label for="p-101" style="max-width: 170px;">Explain after a miss</label>
+								<div class="tooltip-container" tabindex="0">
+									?
+									<div class="tooltip-text">
+										After a wrong or timed-out<br>
+										answer, show the premises<br>
+										that settle it and the<br>
+										hidden arrangement before<br>
+										moving on.<br>
+									</div>
+								</div>
+							</div>
+						</div>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -120,6 +172,7 @@
 										</div>
 										<div class="dropdown-item">
 											<select id="p-52" name="progression-grouping" class="form-select ffmono">
+											  <option value="all">Progress every type together (same steps)</option>
 											  <option value="simple">Progress distinction and linear together</option>
 											  <option value="separate">Only progress linear questions together</option>
 											</select>
@@ -489,6 +542,44 @@
 								<span class="single-input">
 									Priority
 									<span class="inline-premise-spinner"><input id="p-60" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-102" type="checkbox">
+									<label class="switch" for="p-102"></label>
+								</div>
+								<label for="p-102">Enable Mapping</label>
+								<span class="tooltip-container" tabindex="0">?
+									<div class="tooltip-text right">
+										Two sets with the same<br>
+										layout; the second may be<br>
+										turned or mirrored and is<br>
+										described through different<br>
+										pairs. Match by role in the<br>
+										whole layout, not by the<br>
+										compass words or the order<br>
+										of the premises. Time x2.<br>
+									</div>
+								</span>
+							</div>
+							<ul class="explainer">
+								<li>A has the same place as X</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-102-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-102-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-103" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
 								</span>
 							</div>
 						</div>
@@ -2379,6 +2470,8 @@
 		<script src="js/generators/syllogism.js"></script>
 		<script src="js/generators/binary.js"></script>
 		<script src="js/generators/analogy.js"></script>
+		<script src="js/generators/arity.js"></script>
+		<script src="js/generators/mapping.js"></script>
 		<script src="js/generators/banned.js"></script>
 		<script src="js/generators/stimuli.js"></script>
 		<script src="js/generators/premise-html.js"></script>

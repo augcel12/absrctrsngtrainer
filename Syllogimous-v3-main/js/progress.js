@@ -16,7 +16,19 @@ const TYPE_TO_OVERRIDES = {
     "fmt-build" : [ "overrideFmtBuildPremises", "overrideFmtBuildTime" ],
     "fmt-missing" : [ "overrideFmtMissingPremises", "overrideFmtMissingTime" ],
     "fmt-repair" : [ "overrideFmtRepairPremises", "overrideFmtRepairTime" ],
+    "mapping"      : [ "overrideMappingPremises"    , "overrideMappingTime" ],
 };
+
+const TYPE_ENABLE = {
+    "distinction": "enableDistinction", "linear": "enableLinear", "syllogism": "enableSyllogism",
+    "binary": "enableBinary", "space-two-d": "enableDirection", "space-three-d": "enableDirection3D",
+    "space-time": "enableDirection4D", "anchor-space": "enableAnchorSpace", "mapping": "enableMapping",
+    "influence": "enableInfluence", "requirement": "enableRequirement", "contexts": "enableContexts", "balance": "enableBalance",
+    "fmt-judge": "enableFmtJudge", "fmt-name": "enableFmtName", "fmt-build": "enableFmtBuild", "fmt-missing": "enableFmtMissing", "fmt-repair": "enableFmtRepair",
+};
+function unifiedEnabledTypes() {
+    return Object.keys(TYPE_TO_OVERRIDES).filter(t => savedata[TYPE_ENABLE[t]]);
+}
 
 const COMMON_TYPES = [
     ["linear", "distinction", "syllogism"],
@@ -107,9 +119,61 @@ class ProgressStore {
     async storeCompletedQuestion(question) {
         const q = this.convertForDatabase(question);
         if (savedata.autoProgression) {
-            await this.determineLevelChange(q);
+            if (savedata.autoProgressionGrouping === 'all') {
+                this.unifiedLevelChange(q);
+            } else {
+                await this.determineLevelChange(q);
+            }
         }
         await storeProgressData(q);
+    }
+
+    // 'all' grouping: one trailing window over every question, whatever its type. When it passes or
+    // fails, every enabled type moves by the SAME step (premises and time), from its own current value.
+    // The window restarts after each change, so the next decision is made at the new level.
+    unifiedLevelChange(q) {
+        const st = appState.unifiedProgress || (appState.unifiedProgress = { results: [] });
+        const mult = q.arityTimeMult || 1;
+        st.results.push({ right: q.correctness === 'right', t: q.timeElapsed / 1000 / mult });
+        const n = findAutoProgressionTrailing();
+        if (st.results.length > n) st.results.shift();
+        const rights = st.results.filter(r => r.right);
+        const fails = st.results.length - rights.length;
+        const bestPossible = 100 * (n - fails) / n;
+        let dir = 0;
+        if (bestPossible <= findFailureCriteria()) dir = -1;
+        else if (st.results.length >= n) {
+            const pct = 100 * rights.length / n;
+            if (pct >= findSuccessCriteria()) dir = 1;
+            else if (pct <= findFailureCriteria()) dir = -1;
+        }
+        if (!dir) return;
+        const enabled = unifiedEnabledTypes();
+        const cur = enabled.map(type => {
+            const [pKey, tKey] = TYPE_TO_OVERRIDES[type];
+            return { pKey, tKey, p: savedata[pKey] || savedata.premises, t: savedata[tKey] || +savedata.timer };
+        });
+        const drop = savedata.autoProgressionTimeDrop || 5, bump = savedata.autoProgressionTimeBump || 5;
+        const goal = savedata.autoProgressionGoal;
+        const avg = arr => arr.reduce((a, b) => a + b, 0) / Math.max(1, arr.length);
+        const avgTime = avg(cur.map(c => c.t));
+        let dP = 0, dT = 0;
+        if (dir > 0) {
+            const answerTime = avg(rights.map(r => r.t));
+            if (answerTime <= goal || avgTime - drop <= goal) { dP = 1; dT = 10; }
+            else dT = -drop;
+        } else {
+            if (avgTime + bump > goal + 25 && cur.every(c => c.p > 2)) { dP = -1; dT = 0; }
+            else dT = bump;
+        }
+        for (const c of cur) {
+            savedata[c.pKey] = Math.max(2, c.p + dP);
+            savedata[c.tKey] = Math.max(5, Math.min(600, c.t + dT));
+        }
+        st.results = [];
+        st.lastChange = { dP, dT, at: Date.now() };
+        q.didTriggerProgress = true;
+        populateSettings();
     }
 
     success(q, trailingProgress, successes, type) {
@@ -193,7 +257,9 @@ class ProgressStore {
 
     async renderAutoProgressionTrailing(question) {
         const q = this.convertForDatabase(question);
-        let trailingProgress = await getTopRRTProgress(this.calculateCommonKeys(q), findAutoProgressionTrailing());
+        let trailingProgress = savedata.autoProgressionGrouping === 'all'
+            ? ((appState.unifiedProgress && appState.unifiedProgress.results) || []).map(r => ({ correctness: r.right ? 'right' : 'wrong' }))
+            : await getTopRRTProgress(this.calculateCommonKeys(q), findAutoProgressionTrailing());
         progressTracker.innerHTML = '';
         if (!savedata.autoProgression) {
             progressTracker.classList.remove('visible');

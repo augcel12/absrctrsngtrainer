@@ -94,7 +94,7 @@ let savedata = {
     "autoProgressionTrailing": 20,
     "autoProgressionPercentSuccess": 90,
     "autoProgressionPercentFail": 65,
-    "autoProgressionGrouping": 'separate',
+    "autoProgressionGrouping": 'all',
     "spoilerConclusion": false,
     "enableBacktrackingLinear": false,
     "minimalMode": false,
@@ -141,6 +141,12 @@ let savedata = {
     "overrideFmtRepairTime": null,
     "overrideFmtRepairWeight": 100,
     "onlyFormats": false,
+    "arity": 2,
+    "explainOnMiss": true,
+    "enableMapping": false,
+    "overrideMappingPremises": null,
+    "overrideMappingTime": null,
+    "overrideMappingWeight": 100
 };
 
 const defaultSavedata = structuredClone(savedata);
@@ -273,6 +279,12 @@ const compressedSettings = {
     "overrideFmtRepairTime": "fRT",
     "overrideFmtRepairWeight": "fRW",
     "onlyFormats": "onlyF",
+    "arity": "ar",
+    "explainOnMiss": "exMiss",
+    "enableMapping": "map",
+    "overrideMappingPremises": "mapP",
+    "overrideMappingTime": "mapT",
+    "overrideMappingWeight": "mapW"
 };
 
 const keySettingMap = {
@@ -395,6 +407,12 @@ const keySettingMap = {
     "p-88-time": "overrideFmtRepairTime",
     "p-89": "overrideFmtRepairWeight",
     "p-90": "onlyFormats",
+    "p-100": "arity",
+    "p-101": "explainOnMiss",
+    "p-102": "enableMapping",
+    "p-102-premises": "overrideMappingPremises",
+    "p-102-time": "overrideMappingTime",
+    "p-103": "overrideMappingWeight"
 };
 
 const legacySettings = [

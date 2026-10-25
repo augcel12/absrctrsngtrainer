@@ -447,11 +447,14 @@ function findStartingTimerCount() {
 }
 
 function findStartingTimerState() {
+    const mult = (question && question.arityTimeMult) || 1;
     if (question) {
         if (question.countdown) {
-            return ['override', Math.max(1, question.countdown)];
+            return ['override', Math.max(1, Math.round(question.countdown * mult))];
         } else if (question.timeOffset) {
-            return ['override', Math.max(1, +timerTime + question.timeOffset)];
+            return ['override', Math.max(1, Math.round((+timerTime + question.timeOffset) * mult))];
+        } else if (mult !== 1) {
+            return ['override', Math.max(1, Math.round(+timerTime * mult))];
         }
     }
     return ['default', Math.max(1, +timerTime)];
@@ -497,6 +500,8 @@ function generateQuestion() {
             generators.push(createDirection4DGenerator(quota));
         if (savedata.enableAnchorSpace)
             generators.push(createAnchorSpaceGenerator(quota));
+        if (savedata.enableMapping)
+            generators.push(createMappingGenerator(quota));
         if (savedata.enableInfluence)
             generators.push(createInfluenceGenerator(quota));
         if (savedata.enableRequirement)
@@ -703,13 +708,33 @@ function wowFeedbackMissed(cb) {
 }
 
 function wowFeedback() {
+    const next = (question.correctness !== 'right' && savedata.explainOnMiss && !question.format) ? () => showMissExplanation(question) : init;
     if (question.correctness === 'right') {
         wowFeedbackRight(init);
     } else if (question.correctness === 'wrong') {
-        wowFeedbackWrong(init);
+        wowFeedbackWrong(next);
     } else {
-        wowFeedbackMissed(init);
+        wowFeedbackMissed(next);
     }
+}
+
+// After a miss: the answer, the premises that settle it (stated plainly) and the hidden arrangement,
+// before the next item. Continue with Space / Enter / J / K or the button.
+let missExplanationOpen = false;
+function showMissExplanation(q) {
+    stopCountDown();
+    missExplanationOpen = true;
+    const box = document.createElement('div');
+    box.className = 'miss-explanation';
+    box.innerHTML = `<div class="miss-explanation__inner">${createMissExplanationHTML(q)}<button class="miss-explanation__continue">Continue</button></div>`;
+    document.body.appendChild(box);
+    box.querySelector('button').addEventListener('click', closeMissExplanation);
+}
+function closeMissExplanation() {
+    if (!missExplanationOpen) return;
+    missExplanationOpen = false;
+    document.querySelectorAll('.miss-explanation').forEach(el => el.remove());
+    init();
 }
 
 function storeQuestionAndSave() {
@@ -722,7 +747,7 @@ function storeQuestionAndSave() {
 
 function checkIfTrue() {
     trueButton.blur();
-    if (processingAnswer || question.format) {
+    if (processingAnswer || question.format || missExplanationOpen) {
         return;
     }
     processingAnswer = true;
@@ -742,7 +767,7 @@ function checkIfTrue() {
 
 function checkIfFalse() {
     falseButton.blur();
-    if (processingAnswer || question.format) {
+    if (processingAnswer || question.format || missExplanationOpen) {
         return;
     }
     processingAnswer = true;
@@ -1016,6 +1041,13 @@ function handleKeyPress(event) {
     const tagName = event.target.tagName.toLowerCase();
     const isEditable = event.target.isContentEditable;
     if (tagName === "button" || tagName === "input" || tagName === "textarea" || isEditable) {
+        return;
+    }
+    if (missExplanationOpen) {
+        if (["Space", "Enter", "KeyJ", "KeyK", "Digit1", "Digit2", "ArrowLeft", "ArrowRight", "Escape"].includes(event.code)) {
+            event.preventDefault();
+            closeMissExplanation();
+        }
         return;
     }
     switch (event.code) {

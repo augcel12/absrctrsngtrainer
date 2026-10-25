@@ -1,0 +1,13 @@
+/* arity dial additions: miss explanation overlay and support lists */
+.miss-explanation { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0, 0, 0, 0.55); }
+.miss-explanation__inner { background: var(--background-color); color: var(--text-color); border-radius: 10px; padding: 18px 20px; max-width: min(720px, 100%); max-height: 90vh; overflow: auto; text-align: center; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); }
+.miss-explanation__answer { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+.miss-explanation__conclusion { margin-bottom: 12px; opacity: 0.9; }
+.miss-explanation__model { margin: 6px auto 0; text-align: center; white-space: pre-wrap; }
+.miss-explanation__continue { margin-top: 14px; min-height: 44px; padding: 6px 22px; font: inherit; border-radius: 8px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; }
+.support { text-align: left; margin: 6px auto 10px; max-width: 640px; white-space: normal; }
+.support__head { font-weight: 700; margin: 8px 0 4px; text-align: left; }
+.support__premise { margin: 2px 0 2px 10px; }
+.support__note { opacity: 0.75; font-size: 0.9em; margin-top: 4px; }
+.explanation-popup .support { pointer-events: none; }
+.mapping-grids { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: center; margin-top: 8px; white-space: pre; }

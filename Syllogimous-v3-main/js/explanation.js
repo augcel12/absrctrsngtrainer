@@ -137,7 +137,44 @@ function createExplanationBuckets(question) {
     return s;
 }
 
+function createSupportHTML(question) {
+    if (!question.support || !question.support.length) return '';
+    const verb = question.syllogismNearMiss ? 'These premises give' : (question.isValid ? 'These premises make it true' : 'These premises rule it out');
+    let s = `<div class="support"><div class="support__head">${verb}:</div>`;
+    s += question.support.map(p => `<div class="support__premise">${p}</div>`).join('');
+    if (question.syllogismNearMiss && question.supportConclusion) {
+        s += `<div class="support__head">What does follow:</div><div class="support__premise">${question.supportConclusion}</div>`;
+        s += `<div class="support__note">The conclusion shown is close to this but is not implied.</div>`;
+    }
+    s += '</div>';
+    return s;
+}
+
+function createSyllogismRuleHTML(question) {
+    if (question.support || !question.rule) return '';
+    const valid = typeof validRules !== 'undefined' && validRules.includes(question.rule);
+    const mood = question.rule.slice(0, 3).split('').map(d => 'AEIO'[+d]).join('');
+    return `<div class="support"><div class="support__head">Form ${mood}-${question.rule[3]}: ${valid ? 'valid — the conclusion follows' : 'invalid — the conclusion does not follow'}</div></div>`;
+}
+
+function createMissExplanationHTML(q) {
+    const answer = q.isValid ? 'TRUE' : 'FALSE';
+    let s = `<div class="miss-explanation__answer">Answer: ${answer}</div>`;
+    s += `<div class="miss-explanation__conclusion">${q.conclusion}</div>`;
+    if (q.explainHTML) return s + q.explainHTML;
+    s += createSupportHTML(q) + createSyllogismRuleHTML(q);
+    let model = '';
+    try { model = createExplanationModel(q) || ''; } catch (e) { model = ''; }
+    if (model) s += `<div class="support__head">Hidden arrangement:</div><pre class="miss-explanation__model">${model}</pre>`;
+    return s;
+}
+
 function createExplanation(question) {
+    if (question.explainHTML) return question.explainHTML;
+    return createSupportHTML(question) + createSyllogismRuleHTML(question) + (createExplanationModel(question) || '');
+}
+
+function createExplanationModel(question) {
     if (question.bucket) {
         return createExplanationBucket(question);
     }
@@ -160,6 +197,7 @@ function createExplanation(question) {
     if (question.subresults) {
         return question.subresults.map(createExplanation).join('<div class="binary-explainer-separator"></div>');
     }
+    return '';
 }
 
 function createExplanationPopup(question, e) {
@@ -201,6 +239,9 @@ function removeExplanationPopup() {
 }
 
 function createExplanationButton(question) {
+    if (question.support || question.explainHTML || (question.category === 'Syllogism' && question.rule)) {
+        return `<button class="explanation-button">Explanation</button>`;
+    }
     if (question.category === 'Syllogism') {
         return '';
     }
