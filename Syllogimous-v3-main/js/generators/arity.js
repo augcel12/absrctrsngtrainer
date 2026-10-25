@@ -191,7 +191,7 @@ function arPremiseFacts(fam, h, N, P, k) {
     for (const a of arities) {
         let f = null;
         for (let t = 0; t < 40 && !f; t++) {
-            const c = fam.fact(h, N, a, used);
+            const c = fam.fact(h, N, a, used, facts);
             if (c && !keys.has(c.key)) f = c;
         }
         if (!f) return null;
@@ -226,16 +226,22 @@ function arBuild(fam, P, k, opts = {}) {
             // space families need a wider conclusion search: non-decomposable 3/4-ary spatial facts are
             // rare, so a narrow cap here is what pushes the build down into the looser tiers
             const wide = fam.id.startsWith('space');
-            const cands = shuffle(fam.conclusions(h, N, k, opts)).filter(c => !keys.has(c.key)).slice(0, wide ? 200 : 80);
+            // families may look at the premises when proposing conclusions (the linear and clause families
+            // build their conclusions out of what the premises entail) and may veto a candidate (contexts)
+            const cands = shuffle(fam.conclusions(h, N, k, opts, { facts, M, eng })).filter(c => !keys.has(c.key)).slice(0, wide ? 200 : 80);
             let best = null, tried = 0;
             for (const c of cands) {
                 if (eng.valueM(M, c) !== want) continue;
+                if (fam.accept && !fam.accept(eng, M, c, AR_TIERS.indexOf(tier))) continue;
                 if (++tried > (wide ? 60 : 24)) break;
                 if (facts.some(f => eng.value([f], c) === want)) continue;
                 const sup = arSupport(eng, facts, c, want);
                 if (sup.length < Math.max(2, Math.ceil(tier.frac * P))) continue;
                 const tops = sup.filter(f => f.arity === k);
                 if (!tops.length) continue;
+                // and not derivable at all without the top-arity premises: a minimal support that happens to
+                // contain one can still sit beside a second, lower-arity route to the same conclusion
+                if (eng.value(facts.filter(f => f.arity < k), c) === want) continue;
                 if (tier.open !== 'none' && !tops.some(T => arOpenOK(eng, facts, T, tier.open))) continue;
                 const score = sup.length + (c.arity >= 3 ? 0.5 : 0) + Math.random() * 0.1;
                 if (!best || score > best.score) best = { c, sup, score };
@@ -428,20 +434,37 @@ function arSpaceFamily(gen) {
 }
 
 // ---------------------------------------------------------------- DISTINCTION (same / opposite)
-function arBitsFamily() {
+// The same/opposite structure (every term is in one of two states, only "same" and "opposite" are defined)
+// is shared by Distinction and Influence (direct / inverse); a lexicon says how each fact is worded.
+const AR_LEX_DISTINCTION = {
+    pair: (W, x, y, same, plain) => plain
+        ? `${arS(W[x])} ${arR(same ? 'is same as' : 'is opposite of')} ${arS(W[y])}`
+        : createBasicPremiseHTML(same ? createSamePremise(W[x], W[y]) : createOppositePremise(W[x], W[y]), false),
+    notAll: (W, a, b, c, plain) => `${arS(W[a])}, ${arS(W[b])} ${arR('and')} ${arS(W[c])} ${arPhrase('are not all the same', 'are all the same', plain)}`,
+    matchOne: (W, a, b, c, plain) => (plain || !savedata.enableNegation || coinFlip())
+        ? `${arS(W[a])} ${arR('is same as')} ${arS(W[b])} ${arR('or')} ${arS(W[c])}`
+        : `${arS(W[a])} ${arR(arNeg('is opposite of both'))} ${arS(W[b])} ${arR('and')} ${arS(W[c])}`,
+    iff: (W, w, x, y, z, s1, s2, plain) => `${arS(W[w])} ${arR(s1 ? 'is same as' : 'is opposite of')} ${arS(W[x])} ${arR('exactly when')} ${arS(W[y])} ${arPhrase(s2 ? 'is same as' : 'is opposite of', s2 ? 'is opposite of' : 'is same as', plain)} ${arS(W[z])}`,
+};
+function arBitsFamily(lex = AR_LEX_DISTINCTION) {
     const pair = (x, y, same) => ({
         key: `s${Math.min(x, y)},${Math.max(x, y)},${+same}`, arity: 2, terms: [x, y], pairs: [],
         truth: m => (m[x] === m[y]) === same,
-        html: (W, plain) => plain
-            ? `${arS(W[x])} ${arR(same ? 'is same as' : 'is opposite of')} ${arS(W[y])}`
-            : createBasicPremiseHTML(same ? createSamePremise(W[x], W[y]) : createOppositePremise(W[x], W[y]), false),
+        html: (W, plain) => lex.pair(W, x, y, same, plain),
     });
+    // a two-term conclusion may be worded differently from a two-term premise (influence asks "if A
+    // increases, B ..."); the fact itself is the same
+    const cpair = (x, y, same) => {
+        const f = pair(x, y, same);
+        if (lex.pairConcl) { const up = coinFlip(); f.html = (W, plain) => lex.pairConcl(W, x, y, same, up); }
+        return f;
+    };
     const notAll = (a, b, c) => {
         const t = [a, b, c].sort((p, q) => p - q);
         return {
             key: `n${t}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [b, c, null], [a, c, null]],
             truth: m => !(m[a] === m[b] && m[b] === m[c]),
-            html: (W, plain) => `${arS(W[a])}, ${arS(W[b])} ${arR('and')} ${arS(W[c])} ${arPhrase('are not all the same', 'are all the same', plain)}`,
+            html: (W, plain) => lex.notAll(W, a, b, c, plain),
         };
     };
     const matchOne = (a, b, c) => {
@@ -449,15 +472,13 @@ function arBitsFamily() {
         return {
             key: `m${a};${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [a, c, null]],
             truth: m => m[a] === m[b] || m[a] === m[c],
-            html: (W, plain) => (plain || !savedata.enableNegation || coinFlip())
-                ? `${arS(W[a])} ${arR('is same as')} ${arS(W[b])} ${arR('or')} ${arS(W[c])}`
-                : `${arS(W[a])} ${arR(arNeg('is opposite of both'))} ${arS(W[b])} ${arR('and')} ${arS(W[c])}`,
+            html: (W, plain) => lex.matchOne(W, a, b, c, plain),
         };
     };
     const iff = (w, x, y, z, s1, s2) => ({
         key: (() => { const p = [[Math.min(w, x), Math.max(w, x)], [Math.min(y, z), Math.max(y, z)]].map(q => q.join(',')).sort().join('|'); return 'q' + p + (s1 === s2 ? 'e' : 'n'); })(), arity: 4, terms: [w, x, y, z], pairs: [[w, x, null], [y, z, null]],
         truth: m => ((m[w] === m[x]) === s1) === ((m[y] === m[z]) === s2),
-        html: (W, plain) => `${arS(W[w])} ${arR(s1 ? 'is same as' : 'is opposite of')} ${arS(W[x])} ${arR('exactly when')} ${arS(W[y])} ${arPhrase(s2 ? 'is same as' : 'is opposite of', s2 ? 'is opposite of' : 'is same as', plain)} ${arS(W[z])}`,
+        html: (W, plain) => lex.iff(W, w, x, y, z, s1, s2, plain),
     });
     const ana = (a, b, c, d, same) => ({
         key: `a${a},${b},${c},${d},${+same}`, arity: 4, terms: [a, b, c, d], pairs: [],
@@ -485,7 +506,7 @@ function arBitsFamily() {
         conclusions(h, N, k, opts) {
             const out = [];
             if (opts.analogy) { for (let i = 0; i < 80; i++) out.push(ana(...shuffle(arRange(N)).slice(0, 4), coinFlip())); return out; }
-            for (const x of arRange(N)) for (const y of arRange(N)) if (x < y) { out.push(pair(x, y, true)); out.push(pair(x, y, false)); }
+            for (const x of arRange(N)) for (const y of arRange(N)) if (x < y) { out.push(cpair(x, y, true)); out.push(cpair(x, y, false)); }
             if (k >= 3) for (let i = 0; i < 30; i++) { const [a, b, c] = shuffle(arRange(N)).slice(0, 3); out.push(coinFlip() ? notAll(a, b, c) : matchOne(a, b, c)); }
             if (k >= 4) for (let i = 0; i < 30; i++) out.push(iff(...shuffle(arRange(N)).slice(0, 4), coinFlip(), coinFlip()));
             return out;
@@ -524,7 +545,7 @@ function arQuestion(fam, P, extra) {
     }
     if (!r) return null;
     const k = r.k;
-    const W = createStimuli(r.N);
+    const W = createStimuli(r.N + (fam.extraStimuli || 0));   // contexts names ride after the terms
     const premises = arAssemble(r, W, extra);
     let conclusion = r.concl.html(W, false), isValid = r.isValid;
     let plainConcl = r.concl.html(W, true);
@@ -547,6 +568,8 @@ function arQuestion(fam, P, extra) {
         ...extra.model(r, W),
     };
     if (extra.analogy) out.tags = ['analogy'];
+    // a false conclusion that imitates one that follows: say which one does
+    if (r.concl.base && !isValid) { out.syllogismNearMiss = true; out.supportConclusion = r.concl.base.html(W, true); }
     const cd = extra.countdown;
     if (cd) out.countdown = cd;
     return out;

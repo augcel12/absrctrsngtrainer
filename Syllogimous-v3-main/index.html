@@ -81,8 +81,12 @@
 									?
 									<div class="tooltip-text">
 										How many terms one premise<br>
-										binds at once, in every<br>
-										relation type.<br>
+										binds at once. Applies to every<br>
+										type except Mapping and the<br>
+										answer formats (Judge, Name,<br>
+										Build...), which stay two-term.<br>
+										Or/and-style premises: "A requires<br>
+										B or C", "1 A and 2 B balance 3 C".<br>
 										<br>
 										2: classic (A is left of B)<br>
 										3: + "A is between B and C"<br>
@@ -92,7 +96,8 @@
 										At 3+ the conclusion always<br>
 										needs a top-arity premise<br>
 										that can't be looked up in<br>
-										pieces. Time is scaled<br>
+										pieces, and can't be reached<br>
+										without it. Time is scaled<br>
 										x1.5 (3) and x2 (4).<br>
 									</div>
 								</div>
@@ -2511,6 +2516,7 @@
 		<script src="js/generators/binary.js"></script>
 		<script src="js/generators/analogy.js"></script>
 		<script src="js/generators/arity.js"></script>
+		<script src="js/generators/arity-extra.js"></script>
 		<script src="js/generators/mapping.js"></script>
 		<script src="js/generators/banned.js"></script>
 		<script src="js/generators/stimuli.js"></script>
