@@ -147,6 +147,30 @@ function workStatement(x, y) {
     return `If ${subjectHTML(x)} <span class="relation">works</span>, then ${subjectHTML(y)} <span class="relation">must work</span>`;
 }
 
+// A witness world: works/fails for every word, consistent with every premise, that shows why the
+// conclusion holds or fails. Seeded from the conclusion's condition (and, when it's false, a
+// counterexample pair too), then carried out by unit propagation over the requires graph — forward
+// for "works" (r requires q, r works -> q works), backward for "fails" (q fails -> r fails) — to a
+// fixpoint; anything left untouched is safe to default to "works".
+function requirementWitness(words, requires, chosen) {
+    const state = {};
+    state[chosen.x] = chosen.kind === 'work';
+    if (!chosen.valid) state[chosen.y] = chosen.kind !== 'work';
+    for (let changed = true; changed;) {
+        changed = false;
+        for (const r of Object.keys(requires)) {
+            for (const q of requires[r]) {
+                if (state[r] === true && state[q] === undefined) { state[q] = true; changed = true; }
+                if (state[q] === false && state[r] !== false) { state[r] = false; changed = true; }
+            }
+        }
+    }
+    const head = chosen.valid
+        ? `With ${chosen.x} ${chosen.kind === 'work' ? 'working' : 'failing'}, this is what the premises force`
+        : 'This fits every premise, and the conclusion fails in it';
+    return { head, rows: words.map(w => [w, state[w] === undefined ? true : state[w]]) };
+}
+
 class RequirementQuestion {
     create(length) {
         const { words, edges, neighbors } = buildRelationTree(length);
@@ -197,10 +221,10 @@ class RequirementQuestion {
         // "If X fails, Y must fail"  is valid iff Y requires X.
         // "If X works, Y must work"  is valid iff X requires Y.
         const candidates = [
-            { html: failStatement(a, b), valid: reaches(b, a) },
-            { html: failStatement(b, a), valid: reaches(a, b) },
-            { html: workStatement(a, b), valid: reaches(a, b) },
-            { html: workStatement(b, a), valid: reaches(b, a) },
+            { html: failStatement(a, b), valid: reaches(b, a), kind: 'fail', x: a, y: b },
+            { html: failStatement(b, a), valid: reaches(a, b), kind: 'fail', x: b, y: a },
+            { html: workStatement(a, b), valid: reaches(a, b), kind: 'work', x: a, y: b },
+            { html: workStatement(b, a), valid: reaches(b, a), kind: 'work', x: b, y: a },
         ];
         let pool = candidates.filter(c => c.valid === wantValid);
         if (pool.length === 0) pool = candidates;    // cannot happen by construction; kept as a guard
@@ -217,6 +241,7 @@ class RequirementQuestion {
             premises,
             isValid: chosen.valid,
             conclusion: chosen.html,
+            states: requirementWitness(words, requires, chosen),
             ...(savedata.overrideRequirementTime && { countdown: savedata.overrideRequirementTime }),
         };
     }
