@@ -81,17 +81,18 @@
 									?
 									<div class="tooltip-text">
 										How many terms one premise<br>
-										binds at once. Applies to every<br>
-										type except Mapping and the<br>
-										answer formats (Judge, Name,<br>
-										Build...), which stay two-term.<br>
-										Or/and-style premises: "A requires<br>
-										B or C", "1 A and 2 B balance 3 C".<br>
+										binds at once. Every relation<br>
+										type and every answer format<br>
+										has them.<br>
 										<br>
 										2: classic (A is left of B)<br>
-										3: + "A is between B and C"<br>
+										3: + "A is between B and C",<br>
+										"A requires B or C",<br>
+										"A is level with B or C"<br>
 										4: + "A is left of B exactly<br>
-										when C is left of D"<br>
+										when C is left of D", "Exactly 2<br>
+										of B, C and D are same as A",<br>
+										"1 A and 2 B balance 3 C"<br>
 										<br>
 										At 3+ the conclusion always<br>
 										needs a top-arity premise<br>
@@ -2524,6 +2525,7 @@
 		<script src="js/generators/wide-premises.js"></script>
 		<script src="js/generators/premise-reorder.js"></script>
 		<script src="js/generators/formats.js"></script>
+		<script src="js/generators/arity-more.js"></script>
 		<script src="js/explanation.js"></script>
 		<script src="js/backwards-compatibility.js"></script>
 		<script src="js/db.js"></script>

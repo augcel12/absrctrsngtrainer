@@ -44,6 +44,8 @@ const AR_LEX_INFLUENCE = {
         ? `${arS(W[a])} ${arR('varies directly with')} ${arS(W[b])} ${arR('or')} ${arS(W[c])}`
         : `${arS(W[a])} ${arR(arNeg('varies inversely with both'))} ${arS(W[b])} ${arR('and')} ${arS(W[c])}`,
     iff: (W, w, x, y, z, s1, s2, plain) => `${arS(W[w])} ${arR(s1 ? 'varies directly with' : 'varies inversely with')} ${arS(W[x])} ${arR('exactly when')} ${arS(W[y])} ${arPhrase(s2 ? 'varies directly with' : 'varies inversely with', s2 ? 'varies inversely with' : 'varies directly with', plain)} ${arS(W[z])}`,
+    countN: (W, a, rest, n, plain) => `${arR('Exactly ' + n + ' of')} ${rest.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[rest[rest.length - 1]])} ${arPhrase(n === 1 ? 'moves with' : 'move with', n === 1 ? 'moves against' : 'move against', plain)} ${arS(W[a])}`,
+    either: (W, w, x, y, z, s1, s2, plain) => `${arR('Either')} ${arS(W[w])} ${arR(s1 ? 'varies directly with' : 'varies inversely with')} ${arS(W[x])}, ${arR('or')} ${arS(W[y])} ${arPhrase(s2 ? 'varies directly with' : 'varies inversely with', s2 ? 'varies inversely with' : 'varies directly with', plain)} ${arS(W[z])}, ${arR('or both')}`,
 };
 const arSides = (r, W) => [arRange(r.N).filter(i => r.h[i] === 0).map(i => W[i]), arRange(r.N).filter(i => r.h[i] === 1).map(i => W[i])];
 function arInfluenceQuestion(iq, length) {
@@ -62,6 +64,8 @@ function arContextsFamily() {
             case 'pair': return (m[s.x] === m[s.y]) === s.same;
             case 'notAll': return !(m[s.a] === m[s.b] && m[s.b] === m[s.c]);
             case 'matchOne': return m[s.a] === m[s.b] || m[s.a] === m[s.c];
+            case 'countN': return s.rest.filter(r => m[r] === m[s.a]).length === s.n;
+            case 'either': return ((m[s.w] === m[s.x]) === s.s1) || ((m[s.y] === m[s.z]) === s.s2);
             default: return ((m[s.w] === m[s.x]) === s.s1) === ((m[s.y] === m[s.z]) === s.s2);
         }
     };
@@ -70,24 +74,30 @@ function arContextsFamily() {
             case 'pair': return `s${Math.min(s.x, s.y)},${Math.max(s.x, s.y)},${+s.same}`;
             case 'notAll': return `n${[s.a, s.b, s.c].sort((p, q) => p - q)}`;
             case 'matchOne': return `m${s.a};${Math.min(s.b, s.c)},${Math.max(s.b, s.c)}`;
+            case 'countN': return `c${s.a};${s.rest.slice().sort((p, q) => p - q)};${s.n}`;
+            case 'either': return 'E' + [[Math.min(s.w, s.x), Math.max(s.w, s.x), +s.s1], [Math.min(s.y, s.z), Math.max(s.y, s.z), +s.s2]].map(v => v.join(',')).sort().join('|');
             default: {
                 const p = [[Math.min(s.w, s.x), Math.max(s.w, s.x)], [Math.min(s.y, s.z), Math.max(s.y, s.z)]].map(q => q.join(',')).sort().join('|');
                 return 'q' + p + (s.s1 === s.s2 ? 'e' : 'n');
             }
         }
     };
-    const shapeTerms = s => ({ pair: [s.x, s.y], notAll: [s.a, s.b, s.c], matchOne: [s.a, s.b, s.c], iff: [s.w, s.x, s.y, s.z] })[s.kind];
+    const shapeTerms = s => ({ pair: [s.x, s.y], notAll: [s.a, s.b, s.c], matchOne: [s.a, s.b, s.c], iff: [s.w, s.x, s.y, s.z], either: [s.w, s.x, s.y, s.z], countN: [s.a, ...(s.rest || [])] })[s.kind];
     const shapePairs = (s, tag) => ({
         pair: [[s.x, s.y, tag]],
         notAll: [[s.a, s.b, tag], [s.b, s.c, tag], [s.a, s.c, tag]],
         matchOne: [[s.a, s.b, tag], [s.a, s.c, tag]],
         iff: [[s.w, s.x, tag], [s.y, s.z, tag]],
+        either: [[s.w, s.x, tag], [s.y, s.z, tag]],
+        countN: (s.rest || []).map(r => [s.a, r, tag]),
     })[s.kind];
     const shapeHTML = (s, W, plain) => {
         switch (s.kind) {
             case 'pair': return lex.pair(W, s.x, s.y, s.same, plain);
             case 'notAll': return lex.notAll(W, s.a, s.b, s.c, plain);
             case 'matchOne': return lex.matchOne(W, s.a, s.b, s.c, plain);
+            case 'countN': return lex.countN(W, s.a, s.rest, s.n, plain);
+            case 'either': return lex.either(W, s.w, s.x, s.y, s.z, s.s1, s.s2, plain);
             default: return lex.iff(W, s.w, s.x, s.y, s.z, s.s1, s.s2, plain);
         }
     };
@@ -115,7 +125,10 @@ function arContextsFamily() {
         }
         const [w, x, y, z] = arTerms(N, 4, used);
         const s1 = coinFlip(), v1 = (hh[w] === hh[x]) === s1;
-        return { kind: 'iff', w, x, y, z, s1, s2: ((hh[y] === hh[z]) === v1) };
+        const quads = [{ kind: 'iff', w, x, y, z, s1, s2: ((hh[y] === hh[z]) === v1) }];
+        for (const n of [1, 2]) quads.push({ kind: 'countN', a: w, rest: [x, y, z], n });
+        for (const t1 of [true, false]) for (const t2 of [true, false]) quads.push({ kind: 'either', w, x, y, z, s1: t1, s2: t2 });
+        return arPick(quads.filter(q => evalShape(q, hh)));
     };
     const hiddenOne = N => Int8Array.from(arRange(N).map(i => (i === 0 ? 0 : Math.random() < 0.5 ? 1 : 0)));
     return {
@@ -143,8 +156,10 @@ function arContextsFamily() {
                     out.push(mk(coinFlip() ? { kind: 'notAll', a, b, c } : { kind: 'matchOne', a, b, c }, tag));
                 }
                 if (k >= 4) for (let i = 0; i < 20; i++) {
-                    const [w, x, y, z] = shuffle(arRange(N)).slice(0, 4);
-                    out.push(mk({ kind: 'iff', w, x, y, z, s1: coinFlip(), s2: coinFlip() }, tag));
+                    const [w, x, y, z] = shuffle(arRange(N)).slice(0, 4), r = Math.random();
+                    if (r < 0.5) out.push(mk({ kind: 'iff', w, x, y, z, s1: coinFlip(), s2: coinFlip() }, tag));
+                    else if (r < 0.75) out.push(mk({ kind: 'countN', a: w, rest: [x, y, z], n: arPick([1, 2]) }, tag));
+                    else out.push(mk({ kind: 'either', w, x, y, z, s1: coinFlip(), s2: coinFlip() }, tag));
                 }
             }
             return out;
@@ -165,6 +180,7 @@ function arContextsQuestion(cq, length) {
         model: (r, W) => ({
             subresults: [0, 1].map(c => ({
                 category: 'Contexts',
+                title: `Under ${W[r.N + c]}`,
                 buckets: [arRange(r.N).filter(i => r.h[c][i] === 0).map(i => W[i]), arRange(r.N).filter(i => r.h[c][i] === 1).map(i => W[i])],
             })),
         }),
@@ -212,6 +228,18 @@ function arClause(neg, pos, opts = {}) {
     const terms = [...neg, ...pos];
     const key = 'r' + [...neg].sort((a, b) => a - b).join('.') + '>' + [...pos].sort((a, b) => a - b).join('.');
     const premiseHTML = (W, plain) => {
+        if (!pos.length) {
+            return neg.length === 2
+                ? `${arS(W[neg[0]])} ${arR('and')} ${arS(W[neg[1]])} ${arPhrase('do not both work', 'both work', plain)}`
+                : `${arList(W, neg, 'and')} ${arPhrase('do not all work', 'all work', plain)}`;
+        }
+        // "A requires B or C" also reads "if A works and C fails, B must work" — the same clause,
+        // a different way in, which is part of what makes the form worth practising
+        if (!plain && neg.length === 1 && pos.length >= 2 && coinFlip()) {
+            const j = Math.floor(Math.random() * pos.length);
+            const rest = pos.filter((_, i) => i !== j);
+            return `If ${arS(W[neg[0]])} ${arR('works')} ${arR('and')} ${arS(W[pos[j]])} ${arR('fails')}, ${arList(W, rest, 'or')} ${arR('must work')}`;
+        }
         if (neg.length === 1 && pos.length === 1) {
             return (plain || coinFlip())
                 ? `${arS(W[neg[0]])} ${arR('requires')} ${arS(W[pos[0]])}`
@@ -279,8 +307,10 @@ function arRequirementFamily() {
         terms: (P, k) => Math.max(k + 1, Math.min(7, P + 1)),
         hidden: () => null,
         fact(h, N, a, used) {
-            const nNeg = a === 2 ? 1 : a === 3 ? arPick([1, 2]) : arPick([1, 2, 3]);
             const t = arTerms(N, a, used);
+            // at 3+ terms, sometimes the clause with nothing on the right: "A, B and C do not all work"
+            if (a >= 3 && Math.random() < 0.18) return arClause(t, []);
+            const nNeg = a === 2 ? 1 : a === 3 ? arPick([1, 2]) : arPick([1, 2, 3]);
             return arClause(t.slice(0, nNeg), t.slice(nNeg));
         },
         conclusions(h, N, k, opts, ctx) {
@@ -298,7 +328,29 @@ function arRequirementQuestion(rq, length) {
         category: 'Requirement', type: 'requirement', analogy: false, meta: false,
         explainer: '"or" means at least one of them',
         countdown: savedata.overrideRequirementTime || null,
-        model: () => ({}),
+        // The honest picture for a clause item is a world: everything that could be on or off at once.
+        // For a conclusion that does not follow, a world where the premises hold and it fails IS the proof.
+        model: (r, W) => {
+            const fits = m => r.facts.every(f => f.truth(m));
+            const rows = m => arRange(r.N).map(i => [W[i], !!m[i]]);
+            const concl = r.concl.base && !r.isValid ? r.concl : r.concl;
+            if (!r.isValid) {
+                // the proof that it does not follow: a world the premises allow where it fails
+                for (const m of arStates(r.N)) if (fits(m) && concl.truth(m) === false) {
+                    return { states: { head: 'This fits every premise, and the conclusion fails in it', rows: rows(m) } };
+                }
+                return {};
+            }
+            // the proof that it does: turn on everything the conclusion asks about and see what follows
+            for (const m of arStates(r.N)) {
+                if (!fits(m) || !concl.neg.every(i => m[i])) continue;
+                return { states: { head: 'With everything the conclusion asks about working, this is what the premises leave', rows: rows(m) } };
+            }
+            for (const m of arStates(r.N)) if (fits(m)) {
+                return { states: { head: 'The premises never let all of those work at once, so the conclusion holds either way', rows: rows(m) } };
+            }
+            return {};
+        },
     });
 }
 
@@ -452,11 +504,15 @@ function arBalanceQuestion(bq, length) {
         explainer: 'Each side adds up the weights on it',
         countdown: savedata.overrideBalanceTime || null,
         model: (r, W) => {
-            // only when the premises fix every weight (up to scale) is there one arrangement to show
-            if (linBasis(r.facts.map(f => f.vec)).length !== r.N - 1) return {};
+            const unique = linBasis(r.facts.map(f => f.vec)).length === r.N - 1;
             let g = 0; for (const x of r.h) g = linGcd(g, x);
             const w = i => r.h[i] / g;
-            return { bucket: arRange(r.N).sort((a, b) => w(a) - w(b)).map(i => `${W[i]}=${w(i)}`) };
+            return {
+                weights: {
+                    head: unique ? 'The weights, in the smallest whole numbers that fit' : 'One set of weights that fits (the premises do not pin them all down)',
+                    rows: arRange(r.N).sort((a, b) => w(a) - w(b)).map(i => [W[i], w(i)]),
+                },
+            };
         },
     });
 }

@@ -120,7 +120,9 @@ class MappingQuestion {
         const explainHTML = `<div class="support"><div class="support__head">The second set is the first ${T.name}.</div>`
             + `<div class="support__premise">${Wa[x]} ↔ ${Wb[right]}</div>`
             + (!isValid ? `<div class="support__note">${pick.why}.</div>` : '')
-            + `</div><div class="mapping-grids"><div>${grid(Wa, pts)}</div><div>${grid(Wb, ptsB)}</div></div>`;
+            + `</div><div class="mapping-grids">`
+            + `<div><div class="xp-head">First set</div>${grid(Wa, pts)}</div>`
+            + `<div><div class="xp-head">Second set</div>${grid(Wb, ptsB)}</div></div>`;
 
         const countdown = savedata.overrideMappingTime;
         return {
@@ -134,6 +136,7 @@ class MappingQuestion {
             modifiers: [ti ? 'turned' : 'straight'],
             arityTimeMult: 2,
             explainHTML,
+            _mp: { Wa, Wb, pts, ptsB, x, y },      // for arity-more.js, removed there
             ...(countdown && { countdown }),
         };
     }

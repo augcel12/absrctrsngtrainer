@@ -193,6 +193,7 @@ const FMT_GROUP = {
 
 // Solve a group structure: value of every word relative to its component's root.
 function fmtGroupSolve(kind, stmts) {
+    stmts = stmts.filter(s => s.arId === undefined);   // k-ary premises go to the arity engines
     const G = FMT_GROUP[kind === 'contexts' ? 'parity' : kind];
     const adj = {};
     for (const s of stmts) {

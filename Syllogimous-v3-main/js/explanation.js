@@ -137,6 +137,51 @@ function createExplanationBuckets(question) {
     return s;
 }
 
+// ---------------------------------------------------------------- model pictures
+// Every item type ends in some hidden structure. These draw it: a set of on/off states (Requirement),
+// a weighing (Balance), the combinations that exist (Syllogism categories).
+function createExplanationStates(st) {
+    let s = `<div class="xp-head">${st.head}</div><div class="xp-states">`;
+    for (const [word, on] of st.rows) {
+        s += `<div class="xp-state ${on ? 'is-on' : 'is-off'}"><span class="xp-state__w">${word}</span>`
+           + `<span class="xp-state__v">${on ? 'works' : 'fails'}</span></div>`;
+    }
+    return s + '</div>';
+}
+
+function createExplanationWeights(wt) {
+    const max = Math.max(...wt.rows.map(r => r[1]));
+    let s = `<div class="xp-head">${wt.head}</div><div class="xp-weights">`;
+    for (const [word, w] of wt.rows) {
+        s += `<div class="xp-weight"><span class="xp-weight__w">${word}</span>`
+           + `<span class="xp-weight__bar" style="width:${Math.round(100 * w / max)}%"></span>`
+           + `<span class="xp-weight__v">${w}</span></div>`;
+    }
+    return s + '</div>';
+}
+
+function createExplanationNeeds(nd) {
+    let s = `<div class="xp-head">${nd.head}</div><div class="xp-needs">`;
+    for (const [word, needs] of nd.rows) {
+        s += `<div class="xp-need"><span class="xp-need__w">${word}</span><span class="xp-need__arrow">\u2192</span>`
+           + `<span class="xp-need__list">${needs.join(', ')}</span></div>`;
+    }
+    return s + '</div><div class="support__note">If the one on the left works, every one on the right has to as well.</div>';
+}
+
+function createExplanationRegions(rg) {
+    if (!rg.rows.length) return '';
+    let s = `<div class="xp-head">Which combinations exist</div><table class="xp-regions"><tr>`;
+    for (const t of rg.terms) s += `<th>${t}</th>`;
+    s += '</tr>';
+    for (const row of rg.rows) {
+        s += '<tr>';
+        for (const v of row) s += `<td class="${v ? 'is-in' : 'is-out'}">${v ? '\u25CF' : '\u00B7'}</td>`;
+        s += '</tr>';
+    }
+    return s + '</table><div class="support__note">One row per kind of thing that exists: a filled dot means it is in that category.</div>';
+}
+
 function createSupportHTML(question) {
     if (!question.support || !question.support.length) return '';
     const verb = question.syllogismNearMiss ? 'These premises give' : (question.isValid ? 'These premises make it true' : 'These premises rule it out');
@@ -165,16 +210,43 @@ function createMissExplanationHTML(q) {
     s += createSupportHTML(q) + createSyllogismRuleHTML(q);
     let model = '';
     try { model = createExplanationModel(q) || ''; } catch (e) { model = ''; }
-    if (model) s += `<div class="support__head">Hidden arrangement:</div><pre class="miss-explanation__model">${model}</pre>`;
+    if (model) {
+        // the drawn models carry their own heading and are laid out with real elements, not spacing
+        const own = q.states || q.weights || q.regions || q.needs || q.modelNote || (q.subresults && q.subresults.some(r => r.title));
+        s += own ? `<div class="miss-explanation__model is-drawn">${model}</div>`
+                 : `<div class="support__head">Hidden arrangement:</div><pre class="miss-explanation__model">${model}</pre>`;
+    }
     return s;
 }
 
 function createExplanation(question) {
-    if (question.explainHTML) return question.explainHTML;
-    return createSupportHTML(question) + createSyllogismRuleHTML(question) + (createExplanationModel(question) || '');
+    const title = question.title ? `<div class="xp-title">${question.title}</div>` : '';
+    if (question.explainHTML) return title + question.explainHTML;
+    return title + createSupportHTML(question) + createSyllogismRuleHTML(question) + (createExplanationModel(question) || '');
 }
 
 function createExplanationModel(question) {
+    const note = question.modelNote ? `<div class="xp-head">${question.modelNote}</div>` : '';
+    if (note) {
+        const inner = createExplanationModel({ ...question, modelNote: null });
+        return inner ? note + inner : '';
+    }
+    if (question.states) {
+        return createExplanationStates(question.states);
+    }
+
+    if (question.weights) {
+        return createExplanationWeights(question.weights);
+    }
+
+    if (question.regions) {
+        return createExplanationRegions(question.regions);
+    }
+
+    if (question.needs) {
+        return createExplanationNeeds(question.needs);
+    }
+
     if (question.bucket) {
         return createExplanationBucket(question);
     }
@@ -246,7 +318,8 @@ function createExplanationButton(question) {
         return '';
     }
 
-    if (question.wordCoordMap || question.bucket || question.buckets || question.subresults) {
+    if (question.wordCoordMap || question.bucket || question.buckets || question.subresults
+        || question.states || question.weights || question.regions || question.needs || question.modelNote) {
         return `<button class="explanation-button">Explanation</button>`;
     }
 

@@ -273,6 +273,36 @@ function arOrderFamily(g) {
         truth: m => ((m[w] < m[x]) === o1) === ((m[y] < m[z]) === o2),
         html: (W, plain) => `${arS(W[w])} ${arR(o1 ? g.prev : g.next)} ${arS(W[x])} ${arR('exactly when')} ${arS(W[y])} ${arPhrase(o2 ? g.prev : g.next, o2 ? g.next : g.prev, plain)} ${arS(W[z])}`,
     });
+    // "A is left of B or C" — true when at least one holds, so it cannot be read off either pair alone
+    const orDisj = (a, b, c) => {
+        const [lo, hi] = b < c ? [b, c] : [c, b];
+        return {
+            key: `o${a};${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [a, c, null]],
+            truth: m => m[a] < m[b] || m[a] < m[c],
+            html: (W, plain) => (plain || !savedata.enableNegation || coinFlip())
+                ? `${arS(W[a])} ${arR(g.prev)} ${arS(W[b])} ${arR('or')} ${arS(W[c])}`
+                : `${arS(W[a])} ${arR(arNeg(g.next + ' both'))} ${arS(W[b])} ${arR('and')} ${arS(W[c])}`,
+        };
+    };
+    // "Exactly one of A and B is between C and D"
+    const oneBetween = (a, b, c, d) => {
+        const mid = a < b ? [a, b] : [b, a], ends = c < d ? [c, d] : [d, c];
+        const inside = (m, x) => (m[c] < m[x] && m[x] < m[d]) || (m[d] < m[x] && m[x] < m[c]);
+        return {
+            key: `x${mid},${ends}`, arity: 4, terms: [a, b, c, d], pairs: [[a, c, null], [a, d, null], [b, c, null], [b, d, null]],
+            truth: m => inside(m, a) !== inside(m, b),
+            html: (W, plain) => `${arR('Exactly one of')} ${arS(W[a])} ${arR('and')} ${arS(W[b])} ${arPhrase('is between', 'is not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])}`,
+        };
+    };
+    // "Among A, B, C and D, A is at one end" — A is the extreme one way or the other
+    const extreme = (a, rest) => {
+        const all = [a, ...rest];
+        return {
+            key: `e${a};${rest.slice().sort((p, q) => p - q)}`, arity: all.length, terms: all, pairs: rest.map(r => [a, r, null]),
+            truth: m => rest.every(r => m[a] < m[r]) || rest.every(r => m[a] > m[r]),
+            html: (W, plain) => `${arR('Among')} ${all.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[all[all.length - 1]])}, ${arS(W[a])} ${arPhrase('is at one end', 'is not at one end', plain)}`,
+        };
+    };
     const ana = (a, b, c, d, same) => ({
         key: `a${a},${b},${c},${d},${+same}`, arity: 4, terms: [a, b, c, d], pairs: [],
         truth: m => ((m[a] < m[b]) === (m[c] < m[d])) === same,
@@ -287,24 +317,36 @@ function arOrderFamily(g) {
             if (a === 2) { const [x, y] = arTerms(N, 2, used); return h[x] < h[y] ? bin(x, y) : bin(y, x); }
             if (a === 3) {
                 const t = arTerms(N, 3, used).sort((p, q) => h[p] - h[q]);
-                if (Math.random() < 0.75) return between(t[1], t[0], t[2], true);
+                const opts = [between(t[1], t[0], t[2], true)];
                 const end = coinFlip() ? 0 : 2;
                 const rest = [0, 1, 2].filter(i => i !== end);
-                return between(t[end], t[rest[0]], t[rest[1]], false);
+                opts.push(between(t[end], t[rest[0]], t[rest[1]], false));
+                for (const [p, q, r] of [[t[0], t[1], t[2]], [t[1], t[0], t[2]]]) opts.push(orDisj(p, q, r));
+                return arPick(opts.filter(f => f.truth(h)));
             }
             const [w, x, y, z] = arTerms(N, 4, used);
             const o1 = coinFlip();
             const v1 = (h[w] < h[x]) === o1;
             const o2 = ((h[y] < h[z]) === v1);
-            return iff(w, x, y, z, o1, o2);
+            const quads = [iff(w, x, y, z, o1, o2), oneBetween(w, x, y, z), oneBetween(w, y, x, z), extreme(w, [x, y, z]), extreme(x, [w, y, z])];
+            return arPick(quads.filter(f => f.truth(h)));
         },
         conclusions(h, N, k, opts) {
             const out = [];
             const quads = n => { for (let i = 0; i < n; i++) { const t = shuffle(arRange(N)).slice(0, 4); out.push(opts.analogy ? ana(...t, coinFlip()) : iff(...t, coinFlip(), coinFlip())); } };
             if (opts.analogy) { quads(80); return out; }
             for (const x of arRange(N)) for (const y of arRange(N)) if (x !== y) out.push(bin(x, y));
-            if (k >= 3) for (let i = 0; i < 30; i++) { const [a, b, c] = shuffle(arRange(N)).slice(0, 3); out.push(between(a, b, c, Math.random() < 0.7)); }
-            if (k >= 4) quads(30);
+            if (k >= 3) for (let i = 0; i < 30; i++) {
+                const [a, b, c] = shuffle(arRange(N)).slice(0, 3);
+                out.push(coinFlip() ? between(a, b, c, Math.random() < 0.7) : orDisj(a, b, c));
+            }
+            if (k >= 4) {
+                quads(20);
+                for (let i = 0; i < 20; i++) {
+                    const [a, b, c, d] = shuffle(arRange(N)).slice(0, 4);
+                    out.push(coinFlip() ? oneBetween(a, b, c, d) : extreme(a, [b, c, d]));
+                }
+            }
             return out;
         },
     };
@@ -329,6 +371,25 @@ function arSpaceFamily(gen) {
             key: `t${inside ? 'i' : 'o'}${ax}:${a},${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, ax], [a, c, ax]],
             truth: (m, axis) => axis !== ax || (((m[b] < m[a] && m[a] < m[c]) || (m[c] < m[a] && m[a] < m[b])) === inside),
             html: (W, plain) => `${arS(W[a])} ${inside ? arPhrase('is between', 'is not between', plain) : arPhrase('is not between', 'is between', plain)} ${arS(W[b])} ${arR('and')} ${arS(W[c])} ${arR(AR_AXIS[ax])}`,
+        };
+    };
+    // "A is level with B or C, north-south" — a tie on that axis with at least one of them
+    const levelOne = (a, b, c, ax) => {
+        const [lo, hi] = b < c ? [b, c] : [c, b];
+        return {
+            key: `l${ax}:${a};${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, ax], [a, c, ax]],
+            truth: (m, axis) => axis !== ax || m[a] === m[b] || m[a] === m[c],
+            html: (W, plain) => `${arS(W[a])} ${arPhrase('is level with', 'is not level with', plain)} ${arS(W[b])} ${arR('or')} ${arS(W[c])} ${arR(AR_AXIS[ax])}`,
+        };
+    };
+    // "Exactly one of A and B is between C and D, east-west"
+    const oneBetween = (a, b, c, d, ax) => {
+        const mid = a < b ? [a, b] : [b, a], ends = c < d ? [c, d] : [d, c];
+        const inside = (m, x) => (m[c] < m[x] && m[x] < m[d]) || (m[d] < m[x] && m[x] < m[c]);
+        return {
+            key: `X${ax}:${mid},${ends}`, arity: 4, terms: [a, b, c, d], pairs: [[a, c, ax], [a, d, ax], [b, c, ax], [b, d, ax]],
+            truth: (m, axis) => axis !== ax || inside(m, a) !== inside(m, b),
+            html: (W, plain) => `${arR('Exactly one of')} ${arS(W[a])} ${arR('and')} ${arS(W[b])} ${arPhrase('is between', 'is not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])} ${arR(AR_AXIS[ax])}`,
         };
     };
     const way = (a, b, c, d, same) => ({
@@ -377,6 +438,14 @@ function arSpaceFamily(gen) {
             }
             if (a === 3) {
                 const t = arTerms(N, 3, used);
+                // a tie on some axis lets the "level with one of them" form be used instead
+                const lv = shuffle(arRange(D)).filter(ax => t.some((i, n) => t.some((j, o) => o > n && h[i][ax] === h[j][ax])));
+                if (lv.length && Math.random() < 0.35) {
+                    const ax = lv[0];
+                    const opts = [[t[0], t[1], t[2]], [t[1], t[0], t[2]], [t[2], t[0], t[1]]]
+                        .map(([p, q, r]) => levelOne(p, q, r, ax)).filter(f => f.truth(h.map(c => c[ax]), ax));
+                    if (opts.length) return arPick(opts);
+                }
                 const axes = shuffle(arRange(D)).filter(ax => new Set(t.map(i => h[i][ax])).size === 3);
                 if (!axes.length) return null;
                 const ax = axes[0];
@@ -387,6 +456,15 @@ function arSpaceFamily(gen) {
             }
             // several draws of the leading pair, not one: a single unlucky (w,x) with no matching
             // counterpart used to fail the whole fact and push the build into a looser tier
+            if (Math.random() < 0.3) {
+                const t = arTerms(N, 4, used);
+                const opts = [];
+                for (const ax of arRange(D)) for (const [p, q, r, u] of [[t[0], t[1], t[2], t[3]], [t[0], t[2], t[1], t[3]], [t[0], t[3], t[1], t[2]]]) {
+                    const f = oneBetween(p, q, r, u, ax);
+                    if (f.truth(h.map(c => c[ax]), ax)) opts.push(f);
+                }
+                if (opts.length) return arPick(opts);
+            }
             for (let attempt = 0; attempt < 8; attempt++) {
                 const [w, x] = arTerms(N, 2, used);
                 const s1 = sv(h, w, x);
@@ -422,11 +500,13 @@ function arSpaceFamily(gen) {
             }
             if (k >= 3) for (let i = 0; i < 30; i++) {
                 const [a, b, c] = shuffle(arRange(N)).slice(0, 3), ax = Math.floor(Math.random() * D);
-                if (h[b][ax] !== h[c][ax]) out.push(between(a, b, c, ax, Math.random() < 0.7));
+                if (coinFlip()) out.push(levelOne(a, b, c, ax));
+                else if (h[b][ax] !== h[c][ax]) out.push(between(a, b, c, ax, Math.random() < 0.7));
             }
             if (k >= 4) for (let i = 0; i < 30; i++) {
                 const t = shuffle(arRange(N)).slice(0, 4);
-                if (spatialOK(sv(h, t[0], t[1])) && spatialOK(sv(h, t[2], t[3]))) out.push(way(...t, coinFlip()));
+                if (coinFlip()) out.push(oneBetween(t[0], t[1], t[2], t[3], Math.floor(Math.random() * D)));
+                else if (spatialOK(sv(h, t[0], t[1])) && spatialOK(sv(h, t[2], t[3]))) out.push(way(...t, coinFlip()));
             }
             return out;
         },
@@ -445,6 +525,8 @@ const AR_LEX_DISTINCTION = {
         ? `${arS(W[a])} ${arR('is same as')} ${arS(W[b])} ${arR('or')} ${arS(W[c])}`
         : `${arS(W[a])} ${arR(arNeg('is opposite of both'))} ${arS(W[b])} ${arR('and')} ${arS(W[c])}`,
     iff: (W, w, x, y, z, s1, s2, plain) => `${arS(W[w])} ${arR(s1 ? 'is same as' : 'is opposite of')} ${arS(W[x])} ${arR('exactly when')} ${arS(W[y])} ${arPhrase(s2 ? 'is same as' : 'is opposite of', s2 ? 'is opposite of' : 'is same as', plain)} ${arS(W[z])}`,
+    countN: (W, a, rest, n, plain) => `${arR('Exactly ' + n + ' of')} ${rest.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[rest[rest.length - 1]])} ${arPhrase(n === 1 ? 'is same as' : 'are same as', n === 1 ? 'is opposite of' : 'are opposite of', plain)} ${arS(W[a])}`,
+    either: (W, w, x, y, z, s1, s2, plain) => `${arR('Either')} ${arS(W[w])} ${arR(s1 ? 'is same as' : 'is opposite of')} ${arS(W[x])}, ${arR('or')} ${arS(W[y])} ${arPhrase(s2 ? 'is same as' : 'is opposite of', s2 ? 'is opposite of' : 'is same as', plain)} ${arS(W[z])}, ${arR('or both')}`,
 };
 function arBitsFamily(lex = AR_LEX_DISTINCTION) {
     const pair = (x, y, same) => ({
@@ -480,6 +562,20 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
         truth: m => ((m[w] === m[x]) === s1) === ((m[y] === m[z]) === s2),
         html: (W, plain) => lex.iff(W, w, x, y, z, s1, s2, plain),
     });
+    // "Exactly 2 of B, C and D are the same as A" — a count, so no pair of them settles it
+    const countN = (a, rest, n) => ({
+        key: `c${a};${rest.slice().sort((p, q) => p - q)};${n}`, arity: rest.length + 1, terms: [a, ...rest],
+        pairs: rest.map(r => [a, r, null]),
+        truth: m => rest.filter(r => m[r] === m[a]).length === n,
+        html: (W, plain) => lex.countN(W, a, rest, n, plain),
+    });
+    // "Either A is same as B, or C is opposite of D, or both"
+    const either = (w, x, y, z, s1, s2) => ({
+        key: (() => { const q = [[Math.min(w, x), Math.max(w, x), +s1], [Math.min(y, z), Math.max(y, z), +s2]].map(v => v.join(',')).sort().join('|'); return 'E' + q; })(),
+        arity: 4, terms: [w, x, y, z], pairs: [[w, x, null], [y, z, null]],
+        truth: m => ((m[w] === m[x]) === s1) || ((m[y] === m[z]) === s2),
+        html: (W, plain) => lex.either(W, w, x, y, z, s1, s2, plain),
+    });
     const ana = (a, b, c, d, same) => ({
         key: `a${a},${b},${c},${d},${+same}`, arity: 4, terms: [a, b, c, d], pairs: [],
         truth: m => ((m[a] === m[b]) === (m[c] === m[d])) === same,
@@ -501,14 +597,22 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
             }
             const [w, x, y, z] = arTerms(N, 4, used);
             const s1 = coinFlip(), v1 = (h[w] === h[x]) === s1, s2 = ((h[y] === h[z]) === v1);
-            return iff(w, x, y, z, s1, s2);
+            const quads = [iff(w, x, y, z, s1, s2), iff(w, x, y, z, s1, s2)];
+            for (const n of [1, 2]) quads.push(countN(w, [x, y, z], n));
+            for (const t1 of [true, false]) for (const t2 of [true, false]) quads.push(either(w, x, y, z, t1, t2));
+            return arPick(quads.filter(f => f.truth(h)));
         },
         conclusions(h, N, k, opts) {
             const out = [];
             if (opts.analogy) { for (let i = 0; i < 80; i++) out.push(ana(...shuffle(arRange(N)).slice(0, 4), coinFlip())); return out; }
             for (const x of arRange(N)) for (const y of arRange(N)) if (x < y) { out.push(cpair(x, y, true)); out.push(cpair(x, y, false)); }
             if (k >= 3) for (let i = 0; i < 30; i++) { const [a, b, c] = shuffle(arRange(N)).slice(0, 3); out.push(coinFlip() ? notAll(a, b, c) : matchOne(a, b, c)); }
-            if (k >= 4) for (let i = 0; i < 30; i++) out.push(iff(...shuffle(arRange(N)).slice(0, 4), coinFlip(), coinFlip()));
+            if (k >= 4) for (let i = 0; i < 30; i++) {
+                const t = shuffle(arRange(N)).slice(0, 4), r = Math.random();
+                if (r < 0.5) out.push(iff(...t, coinFlip(), coinFlip()));
+                else if (r < 0.75) out.push(countN(t[0], t.slice(1), arPick([1, 2])));
+                else out.push(either(...t, coinFlip(), coinFlip()));
+            }
             return out;
         },
     };
@@ -608,7 +712,7 @@ function arSetRegions(st, R) {
     const out = [];
     for (let r = 0; r < R; r++) {
         if (!st.S.every(t => (r >> t) & 1)) continue;
-        const y = (r >> st.Y) & 1;
+        const y = st.Y.some(t => (r >> t) & 1);          // the object side is a disjunction
         if ((st.q === 'A' || st.q === 'O') ? !y : y) out.push(r);
     }
     return out;
@@ -636,13 +740,21 @@ class ArSetEngine {
         return cR.some(r => !E.has(r)) ? false : 'x';
     }
 }
-function arStatement(q, S, Y) { return { q, S, Y, key: q + S.join('.') + '>' + Y, arity: S.length + 1, terms: [...S, Y], pairs: [] }; }
+// S is a conjunction of subject terms ("A that is B"), Y a disjunction of object terms ("C or D").
+// A disjunctive object only makes sense where it cannot be split: "All A is C or D" and
+// "Some A is neither C nor D" bind every term at once; "No A is C or D" would just be two premises.
+function arStatement(q, S, Y) {
+    Y = Array.isArray(Y) ? Y : [Y];
+    return { q, S, Y, key: q + S.join('.') + '>' + Y.join('.'), arity: S.length + Y.length, terms: [...S, ...Y], pairs: [] };
+}
+const arSetJoin = (W, list, word) => list.map(i => W[i]).join(`</span> <span class="relation">${word}</span> <span class="subject">`);
 function arSetHTML(st, W, plain) {
     const set = plain ? forms[0] : pickNegatable(forms);
     const t = set[{ A: 0, E: 1, I: 2, O: 3 }[st.q]];
     let subj = W[st.S[0]];
-    if (st.S.length > 1) subj += `</span> <span class="relation">that is</span> <span class="subject">` + st.S.slice(1).map(i => W[i]).join(`</span> <span class="relation">and</span> <span class="subject">`);
-    return t.replace('$', subj).replace('$', W[st.Y]);
+    if (st.S.length > 1) subj += `</span> <span class="relation">that is</span> <span class="subject">` + arSetJoin(W, st.S.slice(1), 'and');
+    const obj = st.Y.length > 1 ? arSetJoin(W, st.Y, st.q === 'O' ? 'nor' : 'or') : W[st.Y[0]];
+    return t.replace('$', subj).replace('$', obj);
 }
 function arSyllogismQuestion(sq, length) {
     const k = arityLevel(), P = Math.max(2, length);
@@ -651,11 +763,15 @@ function arSyllogismQuestion(sq, length) {
     const truthIn = (H, st) => { const reg = eng.regions(st); return arUniversal(st) ? reg.every(r => !H[r]) : reg.some(r => H[r]); };
     const randStmt = (arity, used, H) => {
         const t = arTerms(m, arity, used);
-        const S = t.slice(0, arity - 1), Y = t[arity - 1];
         const opts = [];
-        for (const [q, w] of [['A', 3], ['E', 2], ['I', 1], ['O', 1]]) {
-            const st = arStatement(q, S, Y);
-            if (!H || truthIn(H, st)) for (let i = 0; i < w; i++) opts.push(st);
+        // every split of the terms into a conjunctive subject and a (sometimes disjunctive) object
+        for (let nY = 1; nY <= Math.min(2, arity - 1); nY++) {
+            const S = t.slice(0, arity - nY), Y = t.slice(arity - nY);
+            for (const [q, w] of [['A', 3], ['E', 2], ['I', 1], ['O', 1]]) {
+                if (nY > 1 && q !== 'A' && q !== 'O') continue;   // "no A is C or D" splits in two
+                const st = arStatement(q, S, Y);
+                if (!H || truthIn(H, st)) for (let i = 0; i < w; i++) opts.push(st);
+            }
         }
         return opts.length ? arPick(opts) : null;
     };
@@ -695,9 +811,9 @@ function arSyllogismQuestion(sq, length) {
                 // still possible but not implied
                 const mut = [];
                 const c = best.c;
-                mut.push(arStatement(c.q, [...c.S.slice(0, -1), c.Y], c.S[c.S.length - 1]));
-                for (const q of ['A', 'E', 'I', 'O']) if (q !== c.q) mut.push(arStatement(q, c.S, c.Y));
-                for (const t of arRange(m)) if (!c.terms.includes(t)) { mut.push(arStatement(c.q, c.S, t)); mut.push(arStatement(c.q, [t, ...c.S.slice(1)], c.Y)); }
+                mut.push(arStatement(c.q, [...c.S.slice(0, -1), ...c.Y], [c.S[c.S.length - 1]]));
+                for (const q of ['A', 'E', 'I', 'O']) if (q !== c.q && (c.Y.length === 1 || q === 'A' || q === 'O')) mut.push(arStatement(q, c.S, c.Y));
+                for (const t of arRange(m)) if (!c.terms.includes(t)) { mut.push(arStatement(c.q, c.S, [t, ...c.Y.slice(1)])); mut.push(arStatement(c.q, [t, ...c.S.slice(1)], c.Y)); }
                 const good = shuffle(mut).filter(s => !keys.has(s.key) && eng.value(facts, s) === false);
                 if (!good.length) continue;
                 concl = good[0];
@@ -713,6 +829,7 @@ function arSyllogismQuestion(sq, length) {
                 support: best.sup.map(f => arSetHTML(f, W, true)),
                 supportConclusion: arSetHTML(best.c, W, true),
                 syllogismNearMiss: !want,
+                regions: { terms: W.slice(0, m), rows: arRange(R).filter(r => H[r]).map(r => arRange(m).map(t => (r >> t) & 1)) },
                 ...(countdown && { countdown }),
             };
         }
