@@ -641,9 +641,12 @@ function arQuestion(fam, P, extra) {
     // count, step DOWN one level and label the item with the arity it actually has — never hand back a
     // plain binary item while the dial still claims 4. An honest label is what keeps the difficulty
     // reading, and the progression that depends on it, from drifting away from reality.
-    const wantK = arityLevel();
+    // minK 2: a family that is native to this module (not a patch over a classic generator) and so has
+    // to produce an item at the classic setting too, with two-term premises only.
+    const minK = extra.minK || 3;
+    const wantK = Math.max(minK, arityLevel());
     let r = null;
-    for (let kk = wantK; kk >= 3 && !r; kk--) {
+    for (let kk = wantK; kk >= minK && !r; kk--) {
         const tries = kk === wantK ? 6 : 3;
         for (let t = 0; t < tries && !r; t++) r = arBuild(fam, P, kk, { analogy: extra.analogy });
     }
@@ -662,11 +665,9 @@ function arQuestion(fam, P, extra) {
         conclusion,
         isValid,
         plen: P,
-        modifiers: ['ar' + k],
-        arity: k,
+        ...(k >= 3 ? { modifiers: ['ar' + k], arity: k, arityTimeMult: AR_TIME_MULT[k] } : {}),
         arityAsked: wantK,
         arTier: AR_TIERS.indexOf(r.tier),
-        arityTimeMult: AR_TIME_MULT[k],
         support: arSupportHTML(r, W),
         supportConclusion: plainConcl,
         ...extra.model(r, W),

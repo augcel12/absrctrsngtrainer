@@ -514,6 +514,10 @@ function generateQuestion() {
             generators.push(createContextsGenerator(quota));
         if (savedata.enableBalance)
             generators.push(createBalanceGenerator(quota));
+        if (savedata.enableRing)
+            generators.push(createRingGenerator(quota));
+        if (savedata.enableHierarchy)
+            generators.push(createHierarchyGenerator(quota));
     }
     generators.push(...createFormatGenerators(quota));
 
@@ -758,7 +762,8 @@ function wowFeedback() {
     // retry — and is skipped entirely if the retry lands.
     const queued = missed && queueRetry(question);
     const explain = missed && !queued && savedata.explainOnMiss && !question.format;
-    const next = explain ? () => showMissExplanation(question) : init;
+    // renderJunkEmojis: the explanation must show the same shapes the item did, not the raw tags
+    const next = explain ? () => showMissExplanation(renderJunkEmojis(question)) : init;
     if (!missed) {
         wowFeedbackRight(init);
     } else if (question.correctness === 'wrong') {

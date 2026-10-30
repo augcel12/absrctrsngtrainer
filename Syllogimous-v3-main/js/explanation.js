@@ -169,6 +169,16 @@ function createExplanationNeeds(nd) {
     return s + '</div><div class="support__note">If the one on the left works, every one on the right has to as well.</div>';
 }
 
+// an indented listing: rows are [depth, word] (Hierarchy draws its tree with this)
+function createExplanationLines(ln) {
+    let s = `<div class="xp-head">${ln.head}</div><div class="xp-states" style="flex-direction:column;align-items:flex-start">`;
+    for (const [depth, word] of ln.rows) {
+        s += `<div class="xp-state is-on" style="margin-left:${depth * 24}px">`
+           + `<span class="xp-state__w">${word}</span></div>`;
+    }
+    return s + '</div>';
+}
+
 function createExplanationRegions(rg) {
     if (!rg.rows.length) return '';
     let s = `<div class="xp-head">Which combinations exist</div><table class="xp-regions"><tr>`;
@@ -212,7 +222,7 @@ function createMissExplanationHTML(q) {
     try { model = createExplanationModel(q) || ''; } catch (e) { model = ''; }
     if (model) {
         // the drawn models carry their own heading and are laid out with real elements, not spacing
-        const own = q.states || q.weights || q.regions || q.needs || q.modelNote || (q.subresults && q.subresults.some(r => r.title));
+        const own = q.states || q.weights || q.regions || q.needs || q.lines || q.modelNote || (q.subresults && q.subresults.some(r => r.title));
         s += own ? `<div class="miss-explanation__model is-drawn">${model}</div>`
                  : `<div class="support__head">Hidden arrangement:</div><pre class="miss-explanation__model">${model}</pre>`;
     }
@@ -233,6 +243,10 @@ function createExplanationModel(question) {
     }
     if (question.states) {
         return createExplanationStates(question.states);
+    }
+
+    if (question.lines) {
+        return createExplanationLines(question.lines);
     }
 
     if (question.weights) {
@@ -319,7 +333,7 @@ function createExplanationButton(question) {
     }
 
     if (question.wordCoordMap || question.bucket || question.buckets || question.subresults
-        || question.states || question.weights || question.regions || question.needs || question.modelNote) {
+        || question.states || question.weights || question.regions || question.needs || question.lines || question.modelNote) {
         return `<button class="explanation-button">Explanation</button>`;
     }
 

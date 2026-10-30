@@ -741,6 +741,60 @@
 								</span>
 							</div>
 						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-105" type="checkbox">
+									<label class="switch" for="p-105"></label>
+								</div>
+								<label for="p-105">Enable Ring</label>
+							</div>
+							<ul class="explainer">
+								<li>Going clockwise from A, B comes before C</li>
+								<li>A circle has no first or last, so the smallest premise that says anything binds three</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-105-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-105-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-106" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-107" type="checkbox">
+									<label class="switch" for="p-107"></label>
+								</div>
+								<label for="p-107">Enable Hierarchy</label>
+							</div>
+							<ul class="explainer">
+								<li>A is the lowest one over both B and C</li>
+								<li>Two things need not be related at all &mdash; the third answer is "neither"</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-107-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-107-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-108" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
 						<hr class="divider"/>
 						<div class="mb-1"><div class="ctrl__inner" style="opacity:0.8">Answer formats use the relation types enabled above (not yet Syllogism, Binary, Analogy, 4D or Anchor)</div></div>
 						<div class="mb-1">
@@ -2526,6 +2580,7 @@
 		<script src="js/generators/premise-reorder.js"></script>
 		<script src="js/generators/formats.js"></script>
 		<script src="js/generators/arity-more.js"></script>
+		<script src="js/generators/arity-types.js"></script>
 		<script src="js/explanation.js"></script>
 		<script src="js/backwards-compatibility.js"></script>
 		<script src="js/db.js"></script>

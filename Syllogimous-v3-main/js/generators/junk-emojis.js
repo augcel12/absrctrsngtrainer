@@ -291,6 +291,31 @@ function renderJunkEmojis(question) {
         question.conclusion = renderJunkEmojisText(question.conclusion);
     }
 
+    // The explanation carries the same stimuli as the item. Without this the drawn models and the
+    // support lines show the raw [junk]/[vnoise] tags instead of the shapes the premises used.
+    for (const field of ['support', 'premisesPlain']) {
+        if (Array.isArray(question[field])) question[field] = question[field].map(renderJunkEmojisText);
+    }
+    for (const field of ['supportConclusion', 'explainHTML', 'title', 'modelNote']) {
+        if (typeof question[field] === 'string') question[field] = renderJunkEmojisText(question[field]);
+    }
+    // drawn models: { head, rows: [[word, value], ...] }   (needs: value is a list of words)
+    for (const field of ['states', 'weights', 'needs']) {
+        const m = question[field];
+        if (!m || !Array.isArray(m.rows)) continue;
+        if (typeof m.head === 'string') m.head = renderJunkEmojisText(m.head);
+        m.rows = m.rows.map(([w, v]) => [
+            renderJunkEmojisText(w),
+            Array.isArray(v) ? v.map(renderJunkEmojisText) : v,
+        ]);
+    }
+    if (question.lines && Array.isArray(question.lines.rows)) {
+        question.lines.rows = question.lines.rows.map(([d, w]) => [d, renderJunkEmojisText(w)]);
+    }
+    if (question.regions && Array.isArray(question.regions.terms)) {
+        question.regions.terms = question.regions.terms.map(renderJunkEmojisText);
+    }
+
     return question;
 }
 
