@@ -638,6 +638,29 @@ function arAssemble(r, W, extra) {
     if (extra.explainer) premises.unshift(`<span class="negation-explainer">${extra.explainer}</span>`);
     return premises;
 }
+// Facts that were TRUE of the arrangement, never stated as a premise and never asked about. Recall
+// probes use these: you only have one if you built the whole arrangement instead of the single chain
+// the conclusion needed. They are worded plain (no negation) because a probe shows no explainer, and
+// they come out of the family's own candidate pool, so the direction they are stated in is whatever
+// the pool gives rather than whatever the premises happened to say.
+function arProbeFacts(fam, r, W, opts) {
+    try {
+        const eng = fam.engine(r.N);
+        const M = eng.mask(r.facts);
+        const skip = new Set([r.concl.key, ...r.facts.map(f => f.key)]);
+        const out = [];
+        for (const c of shuffle(fam.conclusions(r.h, r.N, r.k, opts, { facts: r.facts, M, eng }))) {
+            if (skip.has(c.key)) continue;
+            skip.add(c.key);
+            const v = eng.valueM(M, c);
+            if (v === null) continue;
+            out.push({ html: c.html(W, true), truth: v });
+            if (out.length >= 3) break;
+        }
+        return out;
+    } catch (e) { return []; }
+}
+
 function arQuestion(fam, P, extra) {
     // Try the arity the dial asks for, hard. If this family genuinely cannot build it at this premise
     // count, step DOWN one level and label the item with the arity it actually has — never hand back a
@@ -675,6 +698,9 @@ function arQuestion(fam, P, extra) {
         ...extra.model(r, W),
     };
     if (extra.analogy) out.tags = ['analogy'];
+    if (typeof probeActive === 'function' && probeActive()) {
+        out.probeFacts = arProbeFacts(fam, r, W, { analogy: extra.analogy });
+    }
     // a false conclusion that imitates one that follows: say which one does
     if (r.concl.base && !isValid) { out.syllogismNearMiss = true; out.supportConclusion = r.concl.base.html(W, true); }
     const cd = extra.countdown;

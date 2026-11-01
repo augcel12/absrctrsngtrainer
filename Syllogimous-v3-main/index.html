@@ -115,6 +115,58 @@
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
+									<input hidden id="p-110" type="checkbox">
+									<label class="switch" for="p-110"></label>
+								</div>
+								<label for="p-110" style="max-width: 170px;">Recall probes</label>
+								<div class="tooltip-container" tabindex="0">
+									?
+									<div class="tooltip-text">
+										Now and then, in place of an<br>
+										item, a question about one<br>
+										you saw a few items ago.<br>
+										<br>
+										It is gone from the screen,<br>
+										so nothing can be worked out<br>
+										again, and you are never told<br>
+										beforehand which item will<br>
+										be asked about.<br>
+										<br>
+										The strongest kind asks about<br>
+										a relation that was true of<br>
+										that item but never stated<br>
+										and never needed: you have it<br>
+										only if you built the whole<br>
+										arrangement, not just the<br>
+										chain the conclusion asked<br>
+										for.<br>
+										<br>
+										Probes never move the<br>
+										auto-progression dials.<br>
+									</div>
+								</div>
+							</div>
+							<ul class="explainer">
+								<li>Shapes or other hard-to-name stimuli make these much harder to rehearse in words</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									How often
+									<span class="inline-premise-spinner"><input id="p-111" type="number" placeholder="" min="0" max="100" value="20" style="width: 5ch">%</span>
+								</span>
+								<span class="single-input">
+									Look back
+									<span class="inline-premise-spinner"><input id="p-112" type="number" placeholder="" min="2" max="12" value="6" style="width: 5ch">items</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-110-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
 									<input hidden id="p-101" type="checkbox">
 									<label class="switch" for="p-101"></label>
 								</div>
@@ -2529,6 +2581,7 @@
 		<script src="js/generators/formats.js"></script>
 		<script src="js/generators/arity-more.js"></script>
 		<script src="js/generators/arity-types.js"></script>
+		<script src="js/generators/probe.js"></script>
 		<script src="js/explanation.js"></script>
 		<script src="js/backwards-compatibility.js"></script>
 		<script src="js/db.js"></script>

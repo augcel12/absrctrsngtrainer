@@ -188,17 +188,17 @@ function displayInit() {
     const q = renderJunkEmojis(question);
     displayLabelType.textContent = q.category.split(":")[0];
     // show the arity the item ACTUALLY has, not the one the dial asked for, and mark a second attempt
-    const label = [(q.plen || q.premises.length) + "p"];
+    const label = q.isProbe ? ["recall"] : [(q.plen || q.premises.length) + "p"];
     if (q.arity > 2) label.push(q.arity + "-ary");
     if (q.isRetry) label.push("retry");
     displayLabelLevel.textContent = label.join(" · ");
     const easy = savedata.scrambleFactor < 12 ? ' (easy)' : '';
     displayText.innerHTML = [
-        `<div class="preamble">Premises${easy}</div>`,
+        `<div class="preamble">${q.isProbe ? 'Earlier' : `Premises${easy}`}</div>`,
         ...q.premises.map(p => `<div class="formatted-premise">${p}</div>`),
         ...((q.operations && q.operations.length > 0) ? ['<div class="transform-header">Transformations</div>'] : []),
         ...(q.operations ? q.operations.map(o => `<div class="formatted-operation">${o}</div>`) : []),
-        `<div class="postamble">${q.format ? FMT_PROMPT_LABEL[q.format] : 'Conclusion'}</div>`,
+        `<div class="postamble">${q.isProbe ? 'Is this true?' : (q.format ? FMT_PROMPT_LABEL[q.format] : 'Conclusion')}</div>`,
         '<div class="formatted-conclusion">'+q.conclusion+'</div>',
     ].join('');
     const isAnalogy = question?.tags?.includes('analogy');
@@ -592,7 +592,7 @@ function retryDelay() {
 }
 
 function queueRetry(q) {
-    if (!savedata.retryMissed || q.isRetry || q.format) return false;
+    if (!savedata.retryMissed || q.isRetry || q.format || q.isProbe) return false;
     const clone = { ...q };
     delete clone.correctness;
     delete clone.answerUser;
@@ -615,11 +615,12 @@ function takeDueRetry() {
 function init() {
     stopCountDown();
     const retry = takeDueRetry();
-    question = retry || generateQuestion();
+    question = retry || probeMake() || generateQuestion();
     if (!question) {
         return;
     }
     itemsServed++;
+    probeNote(question);
     question.startedAt = new Date().getTime();
 
     stopCountDown();
@@ -794,7 +795,8 @@ function closeMissExplanation() {
 
 function storeQuestionAndSave() {
     appState.questions.push(question);
-    if (timerToggle.checked && !question.isRetry) {
+    // a probe measures what stayed, not how hard the reasoning was — it must not move the dials
+    if (timerToggle.checked && !question.isRetry && !question.isProbe) {
         PROGRESS_STORE.storeCompletedQuestion(question)
     }
     save();
