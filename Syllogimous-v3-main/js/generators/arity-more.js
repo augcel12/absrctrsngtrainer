@@ -7,8 +7,9 @@
 //               4  "X is the same way from Y as P is from Q"   (a relation between two relations —
 //                                                               Gentner's systematicity cue, stated)
 //
-// Formats     Judge / Name / Build / Missing link / Repair are answered by one evaluator over a list
-//             of statements. At arity 3+ some of those statements are k-ary facts, and the evaluator
+// Formats     Name / Missing link / Repair are answered by one evaluator over a list of statements
+//             (Judge and Build were cut — see formats.js). At arity 3+ some of those statements are
+//             k-ary facts, and the evaluator
 //             switches from the group solver (which only knows pairs) to the model-enumeration engines
 //             in arity.js. Answers stay two-term, so nothing about answering changes: what changes is
 //             that the premises can no longer be chained pair by pair.

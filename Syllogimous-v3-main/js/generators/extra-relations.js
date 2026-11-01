@@ -53,55 +53,90 @@ function subjectHTML(word) {
 }
 
 // ---------------------------------------------------------------- INFLUENCE
-function createDirectPremise(a, b) {
+// Direct/inverse alone is the exact same ±1-propagation-on-a-tree structure as Distinction (same/
+// opposite) wearing different words — composing signs is XOR either way. What makes variation
+// genuinely proportional is a magnitude that composes multiplicatively alongside the sign, so each
+// edge also carries a gain: plain (1x) or sharp (quick, outsized swings). The chain "amplifies" if any
+// single link on the path does — an OR, not an XOR — so getting both halves right needs two different
+// kinds of composition over the same path, not one bit copied under a new name.
+function createDirectPremise(a, b, sharp) {
     return {
         start: a, end: b,
-        relation: 'varies directly with',
-        reverse: 'varies inversely with',
-        relationMinimal: '∝',
-        reverseMinimal: '∝1/',
+        relation: sharp ? 'varies sharply and directly with' : 'varies directly with',
+        reverse: sharp ? 'varies sharply and inversely with' : 'varies inversely with',
+        relationMinimal: sharp ? '∝²' : '∝',
+        reverseMinimal: sharp ? '∝²1/' : '∝1/',
+        sharp,
     };
 }
 
-function createInversePremise(a, b) {
+function createInversePremise(a, b, sharp) {
     return {
         start: a, end: b,
-        relation: 'varies inversely with',
-        reverse: 'varies directly with',
-        relationMinimal: '∝1/',
-        reverseMinimal: '∝',
+        relation: sharp ? 'varies sharply and inversely with' : 'varies inversely with',
+        reverse: sharp ? 'varies sharply and directly with' : 'varies directly with',
+        relationMinimal: sharp ? '∝²1/' : '∝1/',
+        reverseMinimal: sharp ? '∝²' : '∝',
+        sharp,
     };
 }
 
 class InfluenceQuestion {
     create(length) {
         const { words, edges, neighbors } = buildRelationTree(length);
-        // sign[w] = +1 if w moves with the root, -1 if against it
+        // sign[w] = +1 if w moves with the root, -1 if against it (same algebra as Distinction)
+        // big[w]  = true if ANY edge between the root and w is a sharp (outsized) one — a second,
+        //           independently-composed quantity riding the same tree
         const sign = { [words[0]]: 1 };
+        const big = { [words[0]]: false };
         const premiseMap = {};
         for (const [source, target] of edges) {
             const direct = coinFlip();
+            const sharp = Math.random() < 0.35;
             sign[target] = direct ? sign[source] : -sign[source];
+            big[target] = big[source] || sharp;
             premiseMap[premiseKey(source, target)] = direct
-                ? createDirectPremise(source, target)
-                : createInversePremise(source, target);
+                ? createDirectPremise(source, target, sharp)
+                : createInversePremise(source, target, sharp);
         }
 
         let premises = orderPremises(premiseMap, neighbors);
         premises = scramble(premises);
         premises = premises.map(p => createPremiseHTML(p, false));
-        if (savedata.enableMeta && !savedata.minimalMode) {
-            premises = applyMeta(premises, p => p.match(/<span class="relation">(?:<span class="is-negated">)?(.*?)<\/span>/)[1]);
+        // Meta rewrites a premise into "same as (X to Y) to Z", dropping that premise's own wording —
+        // including any "sharply". The magnitude question needs every edge on the path legible, so it
+        // only gets asked on the items where meta hasn't swallowed that information.
+        const metaOn = savedata.enableMeta && !savedata.minimalMode;
+        if (metaOn) {
+            // strip "sharply and " before comparing: applyMeta decides same/opposite by string equality,
+            // and it needs to compare on sign alone — the magnitude word would make two same-signed
+            // premises register as "different" for no sign-related reason
+            premises = applyMeta(premises, p => p.match(/<span class="relation">(?:<span class="is-negated">)?(.*?)<\/span>/)[1].replace('sharply and ', ''));
         }
 
         const [a, b] = new DirectionPairChooser().pickTwoDistantWords(neighbors);
+        // whether the path between a and b carries a sharp edge is undirected (gain, not a sign), so
+        // it reads the same walking either way; compute it straight off the tree, not off sign[] roots
+        const pathSharp = treePath(neighbors, a, b).some(([x, y]) => premiseMap[premiseKey(x, y)]?.sharp);
+        const askMag = !metaOn;
+
+        // the conclusion is a conjunction of two independent claims (direction, magnitude); decide
+        // true/false first and then make each half right or wrong, so false isn't 3x as likely as
+        // true just because there are two ways to be wrong and one way to be right
+        const isValid = coinFlip();
+        let dirOk, bigOk;
+        if (isValid) { dirOk = true; bigOk = true; }
+        else { dirOk = coinFlip(); bigOk = dirOk ? false : coinFlip(); }
+
         const aUp = coinFlip();
-        const bUp = coinFlip();
-        const conclusion = `If ${subjectHTML(a)} <span class="relation">${aUp ? 'increases' : 'decreases'}</span>, `
-                         + `${subjectHTML(b)} <span class="relation">${bUp ? 'increases' : 'decreases'}</span>`;
         const aMove = aUp ? 1 : -1;
-        const bMove = aMove * sign[a] * sign[b];
-        const isValid = (bMove === 1) === bUp;
+        const correctBUp = (aMove * sign[a] * sign[b]) === 1;
+        const bUp = (askMag ? dirOk : isValid) ? correctBUp : !correctBUp;
+        const statedBig = bigOk ? pathSharp : !pathSharp;
+
+        const conclusion = `If ${subjectHTML(a)} <span class="relation">${aUp ? 'increases' : 'decreases'}</span>, `
+                         + `${subjectHTML(b)} <span class="relation">${bUp ? 'increases' : 'decreases'}</span>`
+                         + (askMag ? `<span class="relation">${statedBig ? ', by a lot more' : ', by about the same amount'}</span>` : '');
 
         const buckets = [
             words.filter(w => sign[w] === 1),
@@ -115,6 +150,7 @@ class InfluenceQuestion {
             premises,
             isValid,
             conclusion,
+            modelNote: askMag ? 'Sign groups who moves which way; a sharp link anywhere on the path makes the whole chain sharp' : 'Sign groups who moves which way',
             ...(savedata.overrideInfluenceTime && { countdown: savedata.overrideInfluenceTime }),
         };
     }

@@ -251,10 +251,17 @@ function arHierarchyFamily() {
                 opts.push(notaLine(t[0], t[1], t[2]));
                 return arPick(opts.filter(f => f.truth(h)));
             }
-            const [w, x, y, z] = arTerms(N, 4, used);
-            const quads = [iff(w, x, y, z), iff(w, y, x, z)];
-            for (const n of [0, 1, 2]) quads.push(countUnder(w, [x, y, z], n));
-            return arPick(quads.filter(f => f.truth(h)));
+            if (a === 4) {
+                const [w, x, y, z] = arTerms(N, 4, used);
+                const quads = [iff(w, x, y, z), iff(w, y, x, z)];
+                for (const n of [0, 1, 2]) quads.push(countUnder(w, [x, y, z], n));
+                return arPick(quads.filter(f => f.truth(h)));
+            }
+            // a === 5: a pivot plus four others — "exactly N of these four sit under the pivot" is a
+            // genuine count over four independent things, so it still can't be split into smaller facts
+            const [piv, ...rest] = arTerms(N, 5, used);
+            const fives = [0, 1, 2, 3].map(n => countUnder(piv, rest, n));
+            return arPick(fives.filter(f => f.truth(h)));
         },
         conclusions(h, N, k) {
             const out = [];
@@ -267,6 +274,10 @@ function arHierarchyFamily() {
             if (k >= 4) for (let i = 0; i < 30; i++) {
                 const [a, b, c, d] = shuffle(arRange(N)).slice(0, 4);
                 out.push(coinFlip() ? iff(a, b, c, d) : countUnder(a, [b, c, d], arPick([0, 1, 2])));
+            }
+            if (k >= 5) for (let i = 0; i < 30; i++) {
+                const [piv, ...rest] = shuffle(arRange(N)).slice(0, 5);
+                out.push(countUnder(piv, rest, arPick([0, 1, 2, 3])));
             }
             return out;
         },

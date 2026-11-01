@@ -2,9 +2,7 @@
 // when the current question has a `format`, and hands the result to submitFormatAnswer().
 
 const FMT_PROMPT_LABEL = {
-    judge: 'Is this true?',
     name: 'What is the relation?',
-    build: 'Write a premise that makes this true',
     missing: 'A premise is missing. Make all of these true',
     repair: 'The premises contradict each other',
 };
@@ -94,15 +92,6 @@ function renderFormatPanel(q) {
 
     const terms = (q.words || []).map(w => ({ html: fmtTermHTML(w), value: w }));
 
-    if (q.format === 'judge') {
-        const row = document.createElement('div');
-        row.className = 'fmt-choices';
-        for (const [key, label] of [['necessary', 'Must be true'], ['possible', 'Could be true'], ['impossible', "Can't be true"]]) {
-            row.appendChild(submitButton(() => finish(fmtCheckJudge(q, key)), label));
-        }
-        panel.appendChild(row);
-    }
-
     if (q.format === 'name') {
         if (fam.kind === 'ratio') {
             const p = numberInput('#'), qq = numberInput('#');
@@ -126,9 +115,8 @@ function renderFormatPanel(q) {
         }
     }
 
-    if (q.format === 'build' || q.format === 'missing' || q.format === 'repair') {
-        const check = { build: fmtCheckBuild, missing: fmtCheckMissing, repair: fmtCheckRepair }[q.format];
-        const freeResponse = q.format !== 'build';
+    if (q.format === 'missing' || q.format === 'repair') {
+        const check = { missing: fmtCheckMissing, repair: fmtCheckRepair }[q.format];
         panel.appendChild(chipRow('First term', terms, v => state.a = v));
 
         let relInput = null, pInput = null, qInput = null;
@@ -145,7 +133,7 @@ function renderFormatPanel(q) {
             l.textContent = 'Amounts';
             row.append(l, line);
             panel.appendChild(row);
-        } else if (freeResponse) {
+        } else {
             relInput = document.createElement('input');
             relInput.type = 'text';
             relInput.className = 'fmt-text';
@@ -161,9 +149,6 @@ function renderFormatPanel(q) {
             l.textContent = 'Relation';
             row.append(l, relInput);
             panel.appendChild(row);
-        } else {
-            const items = fam.rels.map(r => ({ html: fmtEscape(r.text.replace(/^is /, '')), value: r.key }));
-            panel.appendChild(chipRow('Relation', items, v => state.rel = v));
         }
 
         panel.appendChild(chipRow('Second term', terms, v => state.b = v));
@@ -172,15 +157,13 @@ function renderFormatPanel(q) {
             let s;
             if (fam.kind === 'ratio') {
                 s = { a: state.a, b: state.b, p: +pInput.value, q: +qInput.value };
-            } else if (freeResponse) {
+            } else {
                 if (!state.a || !state.b) return finish({ error: 'Pick both terms' });
                 s = fmtParseRelation(fam, relInput.value, state.a, state.b);
                 if (!s) {
                     return finish({ error: 'Not a relation for this type. Use one of: '
                         + fam.rels.map(r => r.text.replace(/^is /, '')).join(', ') });
                 }
-            } else {
-                s = { a: state.a, b: state.b, rel: state.rel ?? undefined };
             }
             finish(check(q, s));
         };

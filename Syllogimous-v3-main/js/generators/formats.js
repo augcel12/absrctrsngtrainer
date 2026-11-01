@@ -7,11 +7,15 @@
 // correct answer counts, not just the one the generator had in mind.
 //
 // Formats
-//   judge    Is the statement necessary, possible, or impossible?
 //   name     What is X to Y?  (a relation, or "can't tell")
-//   build    Construct a premise that makes the target true
 //   missing  One premise was removed; write a premise that makes every listed fact true   (free response)
 //   repair   The premises contradict; rewrite one so they're consistent                    (free response)
+//
+// Judge (necessary/possible/impossible, picked from 3 buttons) and Build (assemble an answer by
+// picking from a short menu of terms and relations) used to live here too. Both were cut: judge was a
+// strictly thinner version of the plain True/False flow over a smaller, non-arity-native family list,
+// and build's "construction" was multiple choice over a handful of options, not real generative recall.
+// Missing and repair keep the free-text construction that was actually worth having.
 //
 // Statements are plain objects:  { a, b, rel, p, q, ctx }
 //   parity   rel 0 = same, 1 = opposite                       (symmetric)
@@ -22,9 +26,7 @@
 //   ratio    p * weight(a) = q * weight(b)
 
 const FMT_LABELS = {
-    judge: 'Judge',
     name: 'Name',
-    build: 'Build',
     missing: 'Missing link',
     repair: 'Repair',
 };
@@ -123,7 +125,7 @@ function fmtEnabledFamilies() {
 
 // Which families each format supports.
 function fmtSupports(format, fam) {
-    if (fam.kind === 'contexts') return format === 'judge' || format === 'name';
+    if (fam.kind === 'contexts') return format === 'name';
     if (fam.kind === 'require' && format === 'repair') return false;   // requirements can never contradict
     return true;
 }
@@ -442,23 +444,6 @@ function fmtPathEdgeIndices(stmts, a, b) {
     return out;
 }
 
-// A statement about (a, b) whose status is `status`. For 'necessary' this is the true relation.
-function fmtStatementWithStatus(fam, stmts, a, b, status, ctx) {
-    const options = [];
-    if (fam.kind === 'ratio') {
-        const t = fmtTrueRelation(fam, stmts, a, b);
-        const base = t || { p: 1, q: pickRandomItems([1, 2, 3, 4, 6], 1).picked[0] };
-        for (const [p, q] of [[base.p, base.q], [base.q, base.p], [base.p, base.q * 2], [base.p * 2, base.q], [base.p, base.q * 3], [base.p * 3, base.q]]) {
-            const g = gcdN(p, q);
-            options.push({ a, b, p: p / g, q: q / g });
-        }
-    } else {
-        for (const r of fam.rels) options.push({ a, b, rel: r.key, ...(ctx && { ctx }) });
-    }
-    const match = options.filter(o => fmtStatus(fam, stmts, o) === status);
-    return match.length ? pickRandomItems(match, 1).picked[0] : null;
-}
-
 // In Contexts items the asked pair must relate differently in the two contexts,
 // so the context always matters.
 function fmtContextMatters(fam, stmts, contexts, a, b) {
@@ -486,53 +471,6 @@ function fmtBase(format, fam, extra) {
         startedAt: new Date().getTime(),
         ...extra,
     };
-}
-
-function fmtMakeJudge(fam, length) {
-    // Decide the answer first, uniformly over the answers this family can have, so no answer
-    // is a better guess than another.
-    const achievable = {
-        parity: ['necessary', 'possible', 'impossible'],
-        vector: ['necessary', 'possible', 'impossible'],
-        ratio: ['necessary', 'possible', 'impossible'],
-        order: ['necessary', 'possible', 'impossible'],
-        require: ['necessary', 'possible'],            // a requirement can always be added consistently
-        contexts: ['necessary', 'impossible'],        // every pair is determined within a context
-    }[fam.kind];
-    const want = pickRandomItems(achievable, 1).picked[0];
-    for (let attempt = 0; attempt < 40; attempt++) {
-        const item = fmtTryJudge(fam, length, want);
-        if (item) return item;
-    }
-    return null;
-}
-
-function fmtTryJudge(fam, length, want) {
-    // "possible" in a group family needs a gap: remove one premise so two parts float free
-    const removeOne = ['parity', 'vector', 'ratio'].includes(fam.kind) && (want === 'possible' || Math.random() < 0.25);
-    const tree = fmtTree(fam, length + (removeOne ? 1 : 0));
-    let stmts = tree.stmts;
-    if (removeOne) {
-        const i = Math.floor(Math.random() * stmts.length);
-        stmts = stmts.filter((_, j) => j !== i);
-    }
-    const words = fmtWords(tree.stmts);
-    const ctxs = tree.contexts;
-    for (let tries = 0; tries < 20; tries++) {
-        const ctx = ctxs ? pickRandomItems(ctxs, 1).picked[0] : undefined;
-        const pair = fmtPickPair(words, stmts, (a, b) => fmtContextMatters(fam, stmts, ctxs, a, b));
-        if (!pair) return null;
-        const st = fmtStatementWithStatus(fam, stmts, pair[0], pair[1], want, ctx);
-        if (!st) continue;
-        return fmtBase('judge', fam, {
-            premises: fmtShownPremises(fam, stmts),
-            stmts, target: st,
-            conclusion: fmtStatementHTML(fam, st, false),
-            answerKey: want,
-            isValid: { necessary: 'must be true', possible: 'could be true', impossible: "can't be true" }[want],
-        });
-    }
-    return null;
 }
 
 function fmtMakeName(fam, length) {
@@ -599,22 +537,6 @@ function fmtSplit(fam, length, needPair) {
         return { full, shown, removed, pair, words };
     }
     return null;
-}
-
-function fmtMakeBuild(fam, length) {
-    const split = fmtSplit(fam, length, (shown, removed, pair) => {
-        const t = fmtTrueRelation(fam, [...shown, removed], pair[0], pair[1]);
-        return t && fmtStatus(fam, shown, t) !== 'necessary';
-    });
-    if (!split) return null;
-    const { shown, removed, pair, words } = split;
-    const target = fmtTrueRelation(fam, [...shown, removed], pair[0], pair[1]);
-    return fmtBase('build', fam, {
-        premises: fmtShownPremises(fam, shown),
-        stmts: shown, words, target,
-        conclusion: fmtStatementHTML(fam, target, false),
-        isValid: 'e.g. ' + fmtStatementText(fam, removed),
-    });
 }
 
 function fmtMakeMissing(fam, length) {
@@ -693,7 +615,7 @@ function fmtMakeRepair(fam, length) {
     return null;
 }
 
-const FMT_MAKERS = { judge: fmtMakeJudge, name: fmtMakeName, build: fmtMakeBuild, missing: fmtMakeMissing, repair: fmtMakeRepair };
+const FMT_MAKERS = { name: fmtMakeName, missing: fmtMakeMissing, repair: fmtMakeRepair };
 
 class FormatQuestion {
     constructor(format) { this.format = format; }
@@ -715,7 +637,7 @@ class FormatQuestion {
 }
 
 function fmtKey(format) {
-    return { judge: 'Judge', name: 'Name', build: 'Build', missing: 'Missing', repair: 'Repair' }[format];
+    return { name: 'Name', missing: 'Missing', repair: 'Repair' }[format];
 }
 
 function createFormatGenerators(quota) {
@@ -736,10 +658,6 @@ function createFormatGenerators(quota) {
 // ---------------------------------------------------------------- answer checking
 // Each returns { correct } or { error } (an input problem: not scored, the user can fix it).
 
-function fmtCheckJudge(q, choice) {
-    return { correct: choice === q.answerKey, text: { necessary: 'must be true', possible: 'could be true', impossible: "can't be true" }[choice] };
-}
-
 function fmtCheckName(q, ans) {
     const fam = fmtFamilyById(q.family);
     if (ans === 'cant') return { correct: q.answer === null, text: "can't tell" };
@@ -758,16 +676,6 @@ function fmtValidStatement(fam, s, words) {
     if (fam.kind === 'ratio' && !(Number.isInteger(s.p) && Number.isInteger(s.q) && s.p > 0 && s.q > 0)) return 'Enter two whole numbers above zero';
     if (fam.kind !== 'ratio' && s.rel === undefined) return 'Enter a relation';
     return null;
-}
-
-function fmtCheckBuild(q, s) {
-    const fam = fmtFamilyById(q.family);
-    const err = fmtValidStatement(fam, s, q.words);
-    if (err) return { error: err };
-    if (fmtSamePair(s, q.target)) return { error: 'Use a different pair of terms than the target' };
-    const all = [...q.stmts, s];
-    const ok = fmtConsistent(fam, all) && fmtStatus(fam, all, q.target) === 'necessary';
-    return { correct: ok, text: fmtStatementText(fam, s) };
 }
 
 function fmtCheckMissing(q, s) {

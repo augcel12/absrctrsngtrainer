@@ -44,16 +44,48 @@ function stripExplainer(ps){return ps.filter(p=>!/negation-explainer/.test(p));}
 const stats={};
 function rec(t,v){stats[t]=stats[t]||{n:0,t:0};stats[t].n++;if(v)stats[t].t++;}
 
+// Influence premises carry a second, independent bit: "sharply" (a gain), on top of the direct/
+// inverse sign. The chain is sharp if any edge on the A-B path is one — checked with its own BFS
+// over the literal (non-meta) edges, since meta wording drops the "sharply" of the premise it
+// rewrites, and the generator only asks the magnitude half when meta is off for that reason.
+function parseInfluenceLine(line,item){
+  const s=subj(line);
+  if(/is-meta/.test(line)){
+    assert(s.length===4,'meta subjects',item);
+    const txt=line.replace(/<[^>]+>/g,'');
+    const same=/same as/.test(txt.split('(')[0]);
+    const negated=/<span class="is-negated">(opposite of|same as)<\/span>/.test(line);
+    let k=same?0:1; if(negated)k^=1;
+    return {meta:[s[0],s[3],s[1],s[2],k]};
+  }
+  assert(s.length===2,'2 subjects',item);
+  const txt=line.replace(/<[^>]+>/g,'');
+  const sharp=/sharply/.test(txt);
+  let k; if(txt.includes('directly with'))k=0; else if(txt.includes('inversely with'))k=1; else assert(false,'unknown relation '+txt,item);
+  if(neg(line))k^=1;
+  return {pair:[s[0],s[1],k],sharp};
+}
 function checkInfluence(item,L){
   const ps=item.premises; assert(ps.length===L,'premise count '+ps.length+' vs '+L,item);
-  const cons=ps.map(p=>parseParity(p,'varies directly with','varies inversely with',item));
+  const cons=ps.map(p=>parseInfluenceLine(p,item));
   const ms=parityModels(cons); assert(ms.length>0,'inconsistent',item);
   const c=item.conclusion.replace(/<[^>]+>/g,''); const [A,B]=subj(item.conclusion);
-  const m=c.match(/If .* (increases|decreases), .* (increases|decreases)/); assert(m,'concl parse',item);
+  const m=c.match(/If .* (increases|decreases), .* (increases|decreases)(, (by a lot more|by about the same amount))?/); assert(m,'concl parse',item);
   const claimK = (m[1]===m[2])?0:1;
   const vals=ms.map(a=>(a[A]^a[B])===claimK);
   assert(vals.every(v=>v===vals[0]),'undetermined',item);
-  assert(vals[0]===item.isValid,'wrong key',item);
+  let expected = vals[0];
+  if (m[4]) {
+    const statedBig = m[4]==='by a lot more';
+    const edges=cons.filter(c=>c.pair).map(c=>({a:c.pair[0],b:c.pair[1],sharp:c.sharp}));
+    const adj={}; for(const e of edges){(adj[e.a]=adj[e.a]||[]).push(e);(adj[e.b]=adj[e.b]||[]).push(e);}
+    const visited=new Set([A]),queue=[A],prevEdge={};
+    while(queue.length){const w=queue.shift();if(w===B)break;for(const e of (adj[w]||[])){const o=e.a===w?e.b:e.a;if(visited.has(o))continue;visited.add(o);prevEdge[o]=e;queue.push(o);}}
+    assert(A===B||B in prevEdge,'path not found (magnitude asked but meta hid an edge)',item);
+    let pathSharp=false; for(let w=B;prevEdge[w];w=(prevEdge[w].a===w?prevEdge[w].b:prevEdge[w].a)) if(prevEdge[w].sharp) pathSharp=true;
+    expected = expected && (statedBig===pathSharp);
+  }
+  assert(expected===item.isValid,'wrong key',item);
   assert(!ps.some(p=>!/is-meta/.test(p)&&subj(p).includes(A)&&subj(p).includes(B)),'pair stated directly',item);
   rec('influence',item.isValid);
 }

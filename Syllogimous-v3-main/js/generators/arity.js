@@ -1,12 +1,14 @@
-// arity.js — the arity dial. One setting (savedata.arity: 2 classic, 3 ternary, 4 quaternary) changes
-// every frame: linear (all wordings), space 2D / 3D / space-time / anchor, distinction, syllogism, and
-// through them analogy, binary and meta.
+// arity.js — the arity dial. One setting (savedata.arity: 2 classic, 3 ternary, 4 quaternary, 5 quinary)
+// changes every frame: linear (all wordings), space 2D / 3D / space-time / anchor, distinction, syllogism,
+// and through them analogy, binary and meta. Quinary is honest, not padded: most families have no genuine
+// 5-ary fact and step down to 4 (see arQuestion's step-down loop); syllogism (subject conjunctions grow
+// freely) and hierarchy (pivot + N-way count) carry a real fifth term today.
 //
 // Arity = how many terms ONE premise binds. A chain of two-term premises, however long, is processed one
 // pair at a time; a premise like "A is between B and C" or "A is left of B exactly when C is left of D"
 // can only be used by holding all of its terms together.
 //
-// At arity 3+ an item mixes two-term premises with ternary / quaternary ones and is kept only if:
+// At arity 3+ an item mixes two-term premises with higher-arity ones and is kept only if:
 //   1. the conclusion's truth is forced by the premises (syllogism: it follows, or it doesn't follow but
 //      is still possible — never a plain contradiction);
 //   2. the smallest set of premises that settles it contains a top-arity premise and covers a good share
@@ -23,10 +25,10 @@
 
 function arityLevel() {
     const a = +savedata.arity;
-    return a >= 3 ? Math.min(4, a) : 2;
+    return a >= 3 ? Math.min(5, a) : 2;
 }
 function arityActive() { return arityLevel() >= 3; }
-const AR_TIME_MULT = { 2: 1, 3: 1.5, 4: 2 };
+const AR_TIME_MULT = { 2: 1, 3: 1.5, 4: 2, 5: 2.5 };
 
 // ---------------------------------------------------------------- bitsets
 function abNew(n) { return new Uint32Array((n + 31) >> 5); }
