@@ -701,6 +701,11 @@ function arQuestion(fam, P, extra) {
     if (typeof probeActive === 'function' && probeActive()) {
         out.probeFacts = arProbeFacts(fam, r, W, { analogy: extra.analogy });
     }
+    // analogy items read as a pair of pairs, so the single stated conclusion IS the item — leave them
+    if (!extra.analogy && typeof interrogateRoll === 'function' && interrogateRoll()) {
+        const qs = arInterrogateQueries(fam, r, W, interrogateCount());
+        if (qs) applyInterrogate(out, qs);
+    }
     // a false conclusion that imitates one that follows: say which one does
     if (r.concl.base && !isValid) { out.syllogismNearMiss = true; out.supportConclusion = r.concl.base.html(W, true); }
     const cd = extra.countdown;

@@ -62,10 +62,11 @@ class BinaryQuestion {
         while (flip !== isValid) {
             let [generator, generator2] = pickRandomItems(pool, 2).picked;
 
-            [choice, choice2] = [
+            // binary combines the two answers, so each half has to BE a plain true/false item
+            [choice, choice2] = interrogateSuspend(() => [
                 generator.question.create(Math.floor(length/2)),
                 generator2.question.create(Math.ceil(length/2))
-            ];
+            ]);
     
             premises = [...choice.premises, ...choice2.premises];
             premises = scramble(premises);
@@ -121,7 +122,7 @@ class NestedBinaryQuestion {
         length = Math.max(4, length);
         const halfLength = Math.floor(length / 2);
         const questions = Array(halfLength).fill(0)
-            .map(() => pool[Math.floor(Math.random() * pool.length)].question.create(2));
+            .map(() => interrogateSuspend(() => pool[Math.floor(Math.random() * pool.length)].question.create(2)));
 
         let numOperands = +savedata.maxNestedBinaryDepth;
         let i = 0;

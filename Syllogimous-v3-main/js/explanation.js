@@ -214,8 +214,10 @@ function createSyllogismRuleHTML(question) {
 
 function createMissExplanationHTML(q) {
     const answer = q.isValid ? 'TRUE' : 'FALSE';
-    let s = `<div class="miss-explanation__answer">Answer: ${answer}</div>`;
-    s += `<div class="miss-explanation__conclusion">${q.conclusion}</div>`;
+    let s = q.queryAnswers
+        ? `<div class="support__head">What was asked, and what followed:</div>${q.queryAnswers}`
+        : `<div class="miss-explanation__answer">Answer: ${answer}</div>`
+          + `<div class="miss-explanation__conclusion">${q.conclusion}</div>`;
     if (q.explainHTML) return s + q.explainHTML;
     s += createSupportHTML(q) + createSyllogismRuleHTML(q);
     let model = '';

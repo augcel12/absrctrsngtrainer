@@ -592,7 +592,8 @@ function retryDelay() {
 }
 
 function queueRetry(q) {
-    if (!savedata.retryMissed || q.isRetry || q.format || q.isProbe) return false;
+    if (!savedata.retryMissed || q.isRetry || q.isProbe) return false;
+    if (q.format && q.format !== 'interrogate') return false;
     const clone = { ...q };
     delete clone.correctness;
     delete clone.answerUser;
@@ -762,7 +763,10 @@ function wowFeedback() {
     // yourself is worth more than reading why you were wrong, so the explanation waits until after the
     // retry — and is skipped entirely if the retry lands.
     const queued = missed && queueRetry(question);
-    const explain = missed && !queued && savedata.explainOnMiss && !question.format;
+    // Interrogate is the exception among formats: what you missed is the arrangement itself, so the
+    // drawn explanation is the whole value of getting it wrong.
+    const explain = missed && !queued && savedata.explainOnMiss
+        && (!question.format || question.format === 'interrogate');
     // renderJunkEmojis: the explanation must show the same shapes the item did, not the raw tags
     const next = explain ? () => showMissExplanation(renderJunkEmojis(question)) : init;
     if (!missed) {

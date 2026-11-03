@@ -296,8 +296,12 @@ function renderJunkEmojis(question) {
     for (const field of ['support', 'premisesPlain']) {
         if (Array.isArray(question[field])) question[field] = question[field].map(renderJunkEmojisText);
     }
-    for (const field of ['supportConclusion', 'explainHTML', 'title', 'modelNote']) {
+    for (const field of ['supportConclusion', 'explainHTML', 'title', 'modelNote', 'queryAnswers']) {
         if (typeof question[field] === 'string') question[field] = renderJunkEmojisText(question[field]);
+    }
+    // interrogate: the queries themselves carry stimuli
+    if (Array.isArray(question.queries)) {
+        question.queries = question.queries.map(q => ({ ...q, html: renderJunkEmojisText(q.html) }));
     }
     // drawn models: { head, rows: [[word, value], ...] }   (needs: value is a list of words)
     for (const field of ['states', 'weights', 'needs']) {

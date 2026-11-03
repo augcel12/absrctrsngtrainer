@@ -2129,6 +2129,8 @@ table.distinction {
 .fmt-error { color: #f55; font-size: 0.85em; min-height: 1em; }
 .fmt-fact { margin: 0.15rem 0; }
 .fmt-instruction { opacity: 0.85; }
+.fmt-query { padding: 0.45rem 0 0.5rem; border-top: 1px solid rgba(127, 127, 127, 0.3); }
+.fmt-query__claim { line-height: 1.4; }
 
 /* ---------------------------------------------------------------- drawn explanations */
 .xp-title { font-weight: 600; opacity: .75; margin: .4rem 0 .2rem; }

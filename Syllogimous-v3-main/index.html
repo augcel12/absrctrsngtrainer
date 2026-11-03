@@ -115,6 +115,61 @@
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
+									<input hidden id="p-113" type="checkbox">
+									<label class="switch" for="p-113"></label>
+								</div>
+								<label for="p-113" style="max-width: 170px;">Interrogate</label>
+								<div class="tooltip-container" tabindex="0">
+									?
+									<div class="tooltip-text">
+										A true/false item tells you<br>
+										which pair it cares about, so<br>
+										one chain is all you ever<br>
+										have to work out.<br>
+										<br>
+										Here it does not. You study<br>
+										the premises, hide them, and<br>
+										only then are asked several<br>
+										things about different parts<br>
+										of the arrangement. They do<br>
+										not come back.<br>
+										<br>
+										Each answer is must be true,<br>
+										can't be true, or can't tell,<br>
+										so one arrangement that fits<br>
+										is not enough — you need what<br>
+										every arrangement that fits<br>
+										agrees on.<br>
+										<br>
+										All or nothing: three right<br>
+										out of four scores zero.<br>
+										<br>
+										One clock covers studying and<br>
+										answering.<br>
+									</div>
+								</div>
+							</div>
+							<ul class="explainer">
+								<li>Needs the arity engine, so it rides items at arity 3+, plus Ring, Hierarchy and Mapping at any setting</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									How often
+									<span class="inline-premise-spinner"><input id="p-114" type="number" placeholder="" min="0" max="100" value="35" style="width: 5ch">%</span>
+								</span>
+								<span class="single-input">
+									Questions
+									<span class="inline-premise-spinner"><input id="p-115" type="number" placeholder="" min="2" max="6" value="3" style="width: 5ch">each</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-113-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
 									<input hidden id="p-110" type="checkbox">
 									<label class="switch" for="p-110"></label>
 								</div>
@@ -2582,6 +2637,7 @@
 		<script src="js/generators/arity-more.js"></script>
 		<script src="js/generators/arity-types.js"></script>
 		<script src="js/generators/probe.js"></script>
+		<script src="js/generators/interrogate.js"></script>
 		<script src="js/explanation.js"></script>
 		<script src="js/backwards-compatibility.js"></script>
 		<script src="js/db.js"></script>

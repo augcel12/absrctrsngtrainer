@@ -2,6 +2,7 @@
 // when the current question has a `format`, and hands the result to submitFormatAnswer().
 
 const FMT_PROMPT_LABEL = {
+    interrogate: 'Study the arrangement',
     name: 'What is the relation?',
     missing: 'A premise is missing. Make all of these true',
     repair: 'The premises contradict each other',
@@ -13,6 +14,48 @@ function fmtEscape(s) {
 
 function fmtTermHTML(word) {
     return `<span class="subject">${renderJunkEmojisText(word)}</span>`;
+}
+
+// The questions themselves. Three-way, so "I know one arrangement that fits" is not an answer:
+// you have to know what every arrangement that fits agrees on.
+function askInterrogate(q, panel, finish) {
+    const answers = new Array(q.queries.length).fill(undefined);
+    const opts = [[true, 'Must be true'], [false, "Can't be true"], [null, "Can't tell"]];
+    q.queries.forEach((query, i) => {
+        const row = document.createElement('div');
+        row.className = 'fmt-row fmt-query';
+        const claim = document.createElement('div');
+        claim.className = 'fmt-query__claim';
+        claim.innerHTML = renderJunkEmojisText(query.html);
+        const chips = document.createElement('div');
+        chips.className = 'fmt-chips';
+        for (const [value, label] of opts) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'fmt-chip';
+            chip.textContent = label;
+            chip.addEventListener('click', () => {
+                chips.querySelectorAll('.fmt-chip').forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+                answers[i] = value;
+            });
+            chips.appendChild(chip);
+        }
+        row.append(claim, chips);
+        panel.appendChild(row);
+    });
+    const go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'fmt-submit';
+    go.textContent = 'Submit';
+    go.addEventListener('click', () => {
+        if (answers.some(a => a === undefined)) return finish({ error: 'Answer every one' });
+        finish(interrogateCheck(q, answers));
+    });
+    const row = document.createElement('div');
+    row.className = 'fmt-choices';
+    row.appendChild(go);
+    panel.appendChild(row);
 }
 
 function renderFormatPanel(q) {
@@ -91,6 +134,26 @@ function renderFormatPanel(q) {
     };
 
     const terms = (q.words || []).map(w => ({ html: fmtTermHTML(w), value: w }));
+
+    // Study, then the premises are taken away and the questions arrive. Two phases, one clock: time
+    // spent learning the arrangement is time not spent answering.
+    if (q.format === 'interrogate') {
+        const start = document.createElement('div');
+        start.className = 'fmt-choices';
+        start.appendChild(submitButton(() => {
+            start.remove();
+            displayText.querySelectorAll('.formatted-premise, .formatted-operation, .transform-header,'
+                + ' .preamble, .postamble, .formatted-conclusion').forEach(el => el.remove());
+            const gone = document.createElement('div');
+            gone.className = 'preamble';
+            gone.textContent = 'Premises hidden';
+            panel.parentNode.insertBefore(gone, panel);
+            askInterrogate(q, panel, finish);
+        }, 'Hide the premises'));
+        panel.appendChild(start);
+        panel.appendChild(error);
+        return;
+    }
 
     if (q.format === 'name') {
         if (fam.kind === 'ratio') {
