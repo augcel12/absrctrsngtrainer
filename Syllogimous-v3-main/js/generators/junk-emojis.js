@@ -254,7 +254,55 @@ function renderJunkEmojisText(text) {
     return text;
 }
 
-function renderJunkEmojis(question) {
+// Symbolised relations. A relation phrase on the question side is drawn as one of a fixed set of
+// glyphs, so the premises can be encoded without words to say them in. Each phrase keeps its glyph
+// (stored in the profile), and explanations after a miss still show the words, so the glyph is learned
+// against the phrase it stands for. Connectives (and / or / as ...) are not relations and keep their words.
+const REL_GLYPHS = [
+    '<circle cx="10" cy="10" r="7"/>',
+    '<rect x="3" y="3" width="14" height="14"/>',
+    '<path d="M10 2 L18 17 L2 17 Z"/>',
+    '<path d="M10 1 L19 10 L10 19 L1 10 Z"/>',
+    '<path d="M5 2 L15 2 L19 10 L15 18 L5 18 L1 10 Z"/>',
+    '<path d="M8 2 H12 V8 H18 V12 H12 V18 H8 V12 H2 V8 H8 Z"/>',
+    '<path d="M3 5 L5 3 L10 8 L15 3 L17 5 L12 10 L17 15 L15 17 L10 12 L5 17 L3 15 L8 10 Z"/>',
+    '<path d="M2 8 H12 V3 L19 10 L12 17 V12 H2 Z"/>',
+    '<path d="M18 8 H8 V3 L1 10 L8 17 V12 H18 Z"/>',
+    '<path d="M8 18 V8 H3 L10 1 L17 8 H12 V18 Z"/>',
+    '<path d="M8 2 V12 H3 L10 19 L17 12 H12 V2 Z"/>',
+    '<path d="M10 1 L12.6 7.2 L19.2 7.6 L14.1 11.8 L15.8 18.2 L10 14.6 L4.2 18.2 L5.9 11.8 L0.8 7.6 L7.4 7.2 Z"/>',
+];
+// 12 shapes in 3 paints: 36 glyphs, enough for every relation phrase a session sees at once
+const REL_PAINT = ['fill="currentColor"', 'fill="none" stroke="currentColor" stroke-width="2.4"', 'fill="#2e86ab"'];
+const REL_CONNECTIVES = new Set(['and', 'or', 'as', 'that is', 'but', 'if', 'then']);
+
+function relGlyphIndex(key) {
+    const map = savedata.relSymbols || (savedata.relSymbols = {});
+    if (!(key in map)) {
+        const used = new Set(Object.values(map));
+        let i = 0;
+        while (i < REL_PAINT.length * REL_GLYPHS.length && used.has(i)) i++;
+        // more phrases than glyphs: reuse, in order, rather than refuse to draw
+        const cap = REL_PAINT.length * REL_GLYPHS.length;
+        map[key] = i < cap ? i : Object.keys(map).length % cap;
+    }
+    return map[key];
+}
+
+function renderRelationSymbols(html) {
+    return html.replace(/<span class="relation"><span class="is-negated">(.*?)<\/span><\/span>|<span class="relation">(.*?)<\/span>/g,
+        (match, neg, plain) => {
+            const text = (neg !== undefined ? neg : plain).replace(/<[^>]+>/g, '').trim();
+            if (REL_CONNECTIVES.has(text.toLowerCase())) return match;
+            const g = relGlyphIndex(text.toLowerCase());
+            const glyph = `<g ${REL_PAINT[Math.floor(g / REL_GLYPHS.length)]}>${REL_GLYPHS[g % REL_GLYPHS.length]}</g>`;
+            const cls = neg !== undefined ? 'rel-sym rel-sym-neg' : 'rel-sym';
+            return `<span class="${cls}"><svg viewBox="0 0 20 20" width="1.15em" height="1.15em" fill="currentColor" aria-hidden="true">${glyph}</svg></span>`;
+        });
+}
+
+function renderJunkEmojis(question, opts = {}) {
+    const S = t => (opts.symbols !== false && savedata.symbolRelations) ? renderRelationSymbols(t) : t;
     question = structuredClone(question);
     if (question.bucket) {
         question.bucket = question.bucket.map(renderJunkEmojisText);
@@ -276,19 +324,19 @@ function renderJunkEmojis(question) {
     }
 
     if (question.subresults) {
-        question.subresults = question.subresults.map(renderJunkEmojis);
+        question.subresults = question.subresults.map(s => renderJunkEmojis(s, opts));
     }
 
     if (question.premises) {
-        question.premises = question.premises.map(renderJunkEmojisText);
+        question.premises = question.premises.map(p => S(renderJunkEmojisText(p)));
     }
 
     if (question.operations) {
-        question.operations = question.operations.map(renderJunkEmojisText);
+        question.operations = question.operations.map(p => S(renderJunkEmojisText(p)));
     }
 
     if (question.conclusion) {
-        question.conclusion = renderJunkEmojisText(question.conclusion);
+        question.conclusion = S(renderJunkEmojisText(question.conclusion));
     }
 
     // The explanation carries the same stimuli as the item. Without this the drawn models and the
@@ -301,7 +349,7 @@ function renderJunkEmojis(question) {
     }
     // interrogate: the queries themselves carry stimuli
     if (Array.isArray(question.queries)) {
-        question.queries = question.queries.map(q => ({ ...q, html: renderJunkEmojisText(q.html) }));
+        question.queries = question.queries.map(q => ({ ...q, html: S(renderJunkEmojisText(q.html)) }));
     }
     // drawn models: { head, rows: [[word, value], ...] }   (needs: value is a list of words)
     for (const field of ['states', 'weights', 'needs']) {

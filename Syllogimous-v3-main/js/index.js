@@ -768,7 +768,7 @@ function wowFeedback() {
     const explain = missed && !queued && savedata.explainOnMiss
         && (!question.format || question.format === 'interrogate');
     // renderJunkEmojis: the explanation must show the same shapes the item did, not the raw tags
-    const next = explain ? () => showMissExplanation(renderJunkEmojis(question)) : init;
+    const next = explain ? () => showMissExplanation(renderJunkEmojis(question, { symbols: false })) : init;
     if (!missed) {
         wowFeedbackRight(init);
     } else if (question.correctness === 'wrong') {

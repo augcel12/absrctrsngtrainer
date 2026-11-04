@@ -2157,3 +2157,8 @@ table.distinction {
 .xp-need__w { font-weight: 700; text-align: right; }
 .xp-need__arrow { opacity: .55; }
 .xp-need__list { text-align: left; opacity: .85; }
+
+/* symbolised relations: the glyph stands in for the phrase; a red bar marks a negated one */
+.rel-sym { display: inline-block; position: relative; vertical-align: -0.2em; line-height: 0; }
+.rel-sym svg { display: block; }
+.rel-sym-neg::after { content: ''; position: absolute; left: -15%; right: -15%; top: 50%; border-top: 2px solid #f00; transform: rotate(-30deg); }
