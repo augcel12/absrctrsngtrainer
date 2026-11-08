@@ -28,7 +28,6 @@ function arityLevel() {
     return a >= 3 ? Math.min(5, a) : 2;
 }
 function arityActive() { return arityLevel() >= 3; }
-const AR_TIME_MULT = { 2: 1, 3: 1.5, 4: 2, 5: 2.5 };
 
 // ---------------------------------------------------------------- bitsets
 function abNew(n) { return new Uint32Array((n + 31) >> 5); }
@@ -690,7 +689,7 @@ function arQuestion(fam, P, extra) {
         conclusion,
         isValid,
         plen: P,
-        ...(k >= 3 ? { modifiers: ['ar' + k], arity: k, arityTimeMult: AR_TIME_MULT[k] } : {}),
+        ...(k >= 3 ? { modifiers: ['ar' + k], arity: k } : {}),
         arityAsked: wantK,
         arTier: AR_TIERS.indexOf(r.tier),
         support: arSupportHTML(r, W),
@@ -859,7 +858,6 @@ function arSyllogismQuestion(sq, length) {
                 category: 'Syllogism', type: 'syllogism', startedAt: new Date().getTime(),
                 premises, conclusion: arSetHTML(concl, W, false), isValid: want,
                 plen: P, modifiers: ['ar' + k], arity: k, arityAsked: k, arTier: AR_TIERS.indexOf(tier),
-                arityTimeMult: AR_TIME_MULT[k],
                 support: best.sup.map(f => arSetHTML(f, W, true)),
                 supportConclusion: arSetHTML(best.c, W, true),
                 syllogismNearMiss: !want,

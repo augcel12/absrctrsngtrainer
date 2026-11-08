@@ -524,7 +524,6 @@ function arInheritArity(q) {
     const k = Math.max(2, ...parts.map(p => p.arity || 2));
     if (k >= 3) {
         q.arity = k;
-        q.arityTimeMult = Math.max(1, ...parts.map(p => p.arityTimeMult || 1));
         q.modifiers = [...(q.modifiers || []), 'ar' + k];
     }
     return q;

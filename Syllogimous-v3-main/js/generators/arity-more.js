@@ -422,7 +422,6 @@ function fmtArWeightsFromFacts(facts, N) {
         q.premises = [...q.premises, ...shuffle(extra.map(e => e.html))];
         q.arity = k;
         q.arityAsked = arityLevel();
-        q.arityTimeMult = Math.max(2, AR_TIME_MULT[k]);
         q.modifiers = [...(q.modifiers || []), 'ar' + k];
         return q;
     };
@@ -495,7 +494,6 @@ function fmtArWeightsFromFacts(facts, N) {
             if (k >= 3) {
                 out.arity = k;
                 out.arityAsked = arityLevel();
-                out.arityTimeMult = AR_TIME_MULT[k];
                 out.modifiers = [...(out.modifiers || []), 'ar' + k];
             }
         }
