@@ -17,11 +17,12 @@ let ses = null, carry = null, cur = null, waiter = null, deadline = 0, bankLen =
 // ---------------------------------------------------------------- drawing
 const GL = ['<circle cx="10" cy="10" r="7"/>', '<rect x="3" y="3" width="14" height="14"/>', '<path d="M10 2 L18 17 L2 17 Z"/>',
     '<path d="M10 1 L19 10 L10 19 L1 10 Z"/>', '<path d="M5 2 L15 2 L19 10 L15 18 L5 18 L1 10 Z"/>',
-    '<path d="M8 2 H12 V8 H18 V12 H12 V18 H8 V12 H2 V8 H8 Z"/>', '<path d="M3 5 L5 3 L10 8 L15 3 L17 5 L12 10 L17 15 L15 17 L10 12 L5 17 L3 15 L8 10 Z"/>',
+    '<path d="M8 2 H12 V8 H18 V12 H12 V18 H8 V12 H2 V8 H8 Z"/>', '<path d="M3 2 H17 L10 10 L17 18 H3 L10 10 Z"/>',
     '<path d="M2 8 H12 V3 L19 10 L12 17 V12 H2 Z"/>', '<path d="M18 8 H8 V3 L1 10 L8 17 V12 H18 Z"/>', '<path d="M8 18 V8 H3 L10 1 L17 8 H12 V18 Z"/>',
     '<path d="M8 2 V12 H3 L10 19 L17 12 H12 V2 Z"/>', '<path d="M10 1 L12.6 7.2 L19.2 7.6 L14.1 11.8 L15.8 18.2 L10 14.6 L4.2 18.2 L5.9 11.8 L0.8 7.6 L7.4 7.2 Z"/>'];
-const glyph = (g, s) => `<svg class="gl" width="${s || 22}" height="${s || 22}" viewBox="0 0 20 20">${GL[g]}</svg>`;
-// objects are unnameable on purpose: a mirrored 5x5 pattern in its own colour, new every world
+// a struck sign = the statement does not hold
+const glyph = (g, s, no) => `<svg class="gl" width="${s || 22}" height="${s || 22}" viewBox="0 0 20 20">${GL[g]}${no ? '<path d="M0 20 L20 0" style="stroke:var(--no);stroke-width:2.6"/>' : ''}</svg>`;
+// objects are new in every world: a mirrored 5x5 pattern in its own colour
 function makeTokens(n) {
     const h0 = rnd(360), out = [], ones = b => { let c = 0; for (; b; b &= b - 1) c++; return c; };
     while (out.length < n) {
@@ -38,8 +39,8 @@ function tokInner(t) {
     return o;
 }
 const tok = (t, s) => `<svg class="tok" width="${s || 30}" height="${s || 30}" viewBox="0 0 7 7">${tokInner(t)}</svg>`;
-// a statement: the sign, then its objects in order. mark: true/false draws a tick or cross in front
-const stm = (W, f, mark) => `<span class="st${mark === false ? ' bad' : ''}">${mark == null ? '' : `<b class="${mark ? 'ok' : 'no'}">${mark ? '✓' : '✗'}</b>`}${glyph(W.rels[f.r].glyph)}${f.a.map(o => tok(W.tok[o])).join('')}</span>`;
+// a statement: the sign, then its objects in order. mark true/false draws a tick or cross in front
+const stm = (W, f, mark) => `<span class="st${mark === false ? ' bad' : ''}">${mark == null ? '' : `<b class="${mark ? 'ok' : 'no'}">${mark ? '✓' : '✗'}</b>`}${glyph(W.rels[f.r].glyph, 0, f.no)}${f.a.map(o => tok(W.tok[o])).join('')}</span>`;
 function board(W, place, o) {
     o = o || {};
     const S = W.S, U = o.u || 56, r = U * 0.4, pad = r + 8;
@@ -61,6 +62,7 @@ function board(W, place, o) {
 const show = html => { stage.innerHTML = html; };
 const label = t => { info.textContent = ses ? `Level ${st.level} · world ${ses.worlds}${t ? ' · ' + t : ''}` : ''; };
 const GO = t => `<button class="go" data-go="go">${t}</button>`;
+const cards = (W, ev) => `<div class="cards">${ev.boards.map(b => `<div class="card">${board(W, b.place, { u: 42 })}<div class="facts">${b.items.map(it => stm(W, it, it.v)).join('')}</div></div>`).join('')}</div>`;
 
 // ---------------------------------------------------------------- input
 // tap an object, then a place. Tapping a filled place sends its object back.
@@ -122,13 +124,14 @@ function record(adj, counted) {
 }
 const corrected = (raw, chance) => Math.max(0, (raw - chance) / (1 - chance));
 
-// ---------------------------------------------------------------- crack: learn the signs from marked examples
-async function crack(W) {
+// ---------------------------------------------------------------- learning signs from marked boards
+// mode 'world': a new world's signs. mode 'shift': something about them has changed.
+async function crack(W, ev, mode) {
     const t0 = now(); let fails = 0;
-    noClock(); label('crack');
+    noClock(); label(mode === 'shift' ? 'change' : 'crack');
+    const cap = mode === 'shift' ? 'Something has changed.' : 'New world. Work out what each sign means.';
     for (;;) {
-        show(`<div class="cap">New world. Work out what each sign means. ✓ holds on that board, ✗ does not.</div>
-            <div class="cards">${W.crack.boards.map(b => `<div class="card">${board(W, b.place, { u: 42 })}<div class="facts">${b.items.map(it => stm(W, it, it.v)).join('')}</div></div>`).join('')}</div><div class="row">${GO('Test')}${fails ? '<button data-go="skip">Skip world</button>' : ''}</div>`);
+        show(`<div class="cap">${cap} ✓ holds on that board, ✗ does not.</div>${cards(W, ev)}<div class="row">${GO('Test')}${fails && mode === 'world' ? '<button data-go="skip">Skip world</button>' : ''}</div>`);
         if (await wait(0) === 'skip') return false;
         const T = E.crackTest(W);
         show(`<div class="card">${board(W, T.place)}</div><div id="c"></div>${GO('Submit')}`);
@@ -138,12 +141,14 @@ async function crack(W) {
         const right = T.items.map((it, i) => ans[i] === (it.v ? 1 : 0));
         if (right.every(Boolean)) break;
         fails++;
-        show(`<div class="card">${board(W, T.place)}</div><div id="c">${T.items.map((it, i) => `<div class="row">${stm(W, it, it.v)}${right[i] ? '' : '<b class="no">missed</b>'}</div>`).join('')}</div>${GO('More examples')}`);
+        const last = mode === 'shift' && fails >= 2;
+        show(`<div class="card">${board(W, T.place)}</div><div id="c">${T.items.map((it, i) => `<div class="row">${stm(W, it, it.v)}${right[i] ? '' : '<b class="no">missed</b>'}</div>`).join('')}</div>${GO(last ? 'Go on' : 'More examples')}`);
         await wait(0);
-        if (W.crack.boards.length >= 6) W.crack.boards.shift();
-        W.crack.add();
+        if (last) break;
+        if (ev.boards.length >= 6) ev.boards.shift();
+        ev.add();
     }
-    ses.cracks.push(Math.round(now() - t0));
+    (mode === 'shift' ? ses.shifts : ses.cracks).push(Math.round(now() - t0));
     return true;
 }
 
@@ -172,7 +177,7 @@ async function round(W, P, kind, o) {
         const place = builder(W, $('#b')); cur.place = place;
         await wait(answerEnd());
         const ok = E.sat(W, R.facts, place), hit = ok.filter(Boolean).length;
-        raw = hit / ok.length; chance = mean(R.facts.map(f => W.rels[f.r].rate));
+        raw = hit / ok.length; chance = mean(R.facts.map(f => E.chanceOf(W, f)));
         fb = `<div class="cap">${hit} of ${ok.length} facts hold</div><div class="facts">${R.facts.map((f, i) => stm(W, f, ok[i])).join('')}</div>${board(W, place)}`
             + (raw < 1 || o.keep ? `<div class="cap">${o.keep ? 'This is the arrangement. It stays.' : 'One that fits'}</div>${board(W, E.placeOf(W, R.h))}` : '');
     } else {
@@ -191,15 +196,27 @@ async function round(W, P, kind, o) {
     await wait(0);
     return { adj, R };
 }
-
-// ---------------------------------------------------------------- shift: the vocabulary changes, then one arrangement is held and moved
-async function shiftBlock(W, P) {
-    const sh = E.shift(W), n = W.S.n, g = i => glyph(W.rels[i].glyph, 40);
-    noClock(); label('shift');
-    show(`<div class="ask">${sh.t === 'swap' ? g(sh.i) + '⇄' + g(sh.j) : g(sh.i)}</div><div class="cap">${{
-        swap: 'These two signs have exchanged meanings.', neg: 'This sign now holds exactly where it did not before.', rev: 'This sign now reads its objects in the reverse order.' }[sh.t]}</div>${GO('Go')}`);
+// an arrangement is flashed, then statements about it are judged from memory
+async function shown(W) {
+    const n = W.S.n, place = shuffle(range(n)), cl = E.knownClaims(W, place, 4);
+    cur = { W, kind: 'shown', claims: cl }; label(''); bank();
+    show(board(W, place));
+    await wait(now() + Math.max(2.5, 0.7 * n));
+    show(`<div id="c"></div>${GO('Submit')}`);
+    const ans = chooser(W, $('#c'), cl, TWO); cur.ans = ans;
+    await wait(answerEnd()); noClock();
+    const right = cl.map((c, i) => ans[i] === c.st);
+    record(corrected(right.filter(Boolean).length / cl.length, 0.5), true);
+    show(`<div id="c">${cl.map((c, i) => `<div class="row">${stm(W, c.f, c.st === 1)}${right[i] ? '' : '<b class="no">missed</b>'}</div>`).join('')}</div>${board(W, place)}${GO('Next')}`);
     await wait(0);
-    const r1 = await round(W, P, 'rebuild', { F: P.F + 1, spec: { t: 1, max: 1, min: 1, bias: sh.t === 'swap' ? [sh.i, sh.j] : [sh.i] }, keep: true, label: 'shift' });
+}
+
+// ---------------------------------------------------------------- shift: a sign changes, then one arrangement is held and moved
+async function shiftBlock(W, P) {
+    const sh = E.shift(W), n = W.S.n;
+    await crack(W, sh.ev, 'shift');
+    const bias = sh.o.t === 'swap' ? [sh.o.i, sh.o.j] : [sh.o.i];
+    const r1 = await round(W, P, 'rebuild', { F: P.F + 1, spec: { t: 1, max: 1, min: 1, bias }, keep: true, label: 'change' });
     // the held arrangement is moved; nothing about it is shown again
     const pi = E.genOp(W, st.level > 5 ? 4 : 3), after = E.placeOf(W, r1.R.h).map(s => pi[s]);
     cur = { W, kind: 'op', after }; bank();
@@ -237,28 +254,33 @@ async function carryRound() {
 
 // ---------------------------------------------------------------- world and session
 async function world() {
-    const probe = ses.kind === 'probe', P = E.params(st.level, st.deep && !probe);
+    const probe = ses.kind === 'probe', deep = st.deep && !probe, P = E.params(st.level, deep);
     noClock(); show('<div class="cap">…</div>');
     await new Promise(r => setTimeout(r, 30));          // paint before the generator runs
     const W = E.makeWorld(P, probe); W.tok = makeTokens(W.S.n);
     ses.worlds++;
     const r0 = ses.rounds, s0 = ses.sum;
-    if (!await crack(W)) return null;
-    const plan = shuffle(probe ? ['rebuild', 'rebuild', 'rebuild', 'rebuild', 'judge', 'judge', 'judge', 'judge'] : ['rebuild', 'rebuild', 'rebuild', 'judge', 'judge', 'first']);
-    const again = [];
+    if (!await crack(W, W.crack, 'world')) return null;
+    const plan = shuffle(probe ? ['rebuild', 'rebuild', 'rebuild', 'rebuild', 'judge', 'judge', 'judge', 'judge']
+        : ['rebuild', 'rebuild', 'judge', 'judge', 'first', deep ? 'rebuild' : 'shown']);
+    // a missed structure comes back two rounds later with the objects renamed
+    const again = [], redo = x => round(W, P, x.kind, { R: E.disguise(W, x.R), nocount: true, label: 'again' });
     for (let i = 0; i < plan.length; i++) {
         if (!probe && i === 2 && carry && Math.random() < 0.6) await carryRound();
-        const res = await round(W, P, plan[i]);
-        // a missed structure comes back two rounds later with the objects renamed
-        if (!probe && res.adj < 0.6 && plan[i] !== 'first') again.push({ kind: plan[i], R: res.R, due: i + 2 });
+        if (plan[i] === 'shown') await shown(W);
+        else {
+            const res = await round(W, P, plan[i]);
+            if (!probe && res.adj < 0.6 && plan[i] !== 'first') again.push({ kind: plan[i], R: res.R, due: i + 2 });
+        }
         const d = again.findIndex(x => x.due === i);
-        if (d >= 0) { const x = again.splice(d, 1)[0]; await round(W, P, x.kind, { R: E.disguise(W, x.R), nocount: true, label: 'again' }); }
+        if (d >= 0) await redo(again.splice(d, 1)[0]);
     }
+    for (const x of again) await redo(x);
     if (!probe) await shiftBlock(W, P);
     return ses.rounds > r0 ? (ses.sum - s0) / (ses.rounds - r0) : 0;
 }
 async function session(kind) {
-    ses = { kind, worlds: 0, rounds: 0, sum: 0, cracks: [], carry: [], L0: st.level }; carry = null;
+    ses = { kind, worlds: 0, rounds: 0, sum: 0, cracks: [], shifts: [], carry: [], L0: st.level }; carry = null;
     document.body.classList.add('run');
     try {
         for (;;) {
@@ -266,13 +288,14 @@ async function session(kind) {
             if (kind === 'probe') break;
             if (c == null) continue;
             noClock(); label('');
-            show(`<div class="big">${pct(c)}</div><div class="cap">World ${ses.worlds} · cracked in ${ses.cracks[ses.cracks.length - 1]} s</div><div class="row">${GO('Next world')}<button data-go="end">End session</button></div>`);
+            show(`<div class="big">${pct(c)}</div><div class="cap">World ${ses.worlds} · level ${st.level} · cracked in ${ses.cracks[ses.cracks.length - 1]} s</div><div class="row">${GO('Next world')}<button data-go="end">End session</button></div>`);
             await wait(0);
         }
     } catch (e) { if (e !== END) { document.body.classList.remove('run'); ses = null; home(); throw e; } }
     document.body.classList.remove('run'); noClock();
     if (ses.rounds && (kind === 'train' || ses.rounds >= 8)) {
-        const rec = { d: Date.now(), L: st.level, L0: ses.L0, c: ses.sum / ses.rounds, k: ses.cracks.length ? Math.round(mean(ses.cracks)) : 0, y: ses.carry.length ? mean(ses.carry) : null, deep: st.deep && kind === 'train' };
+        const avg = a => a.length ? Math.round(mean(a)) : null;
+        const rec = { d: Date.now(), L: st.level, L0: ses.L0, c: ses.sum / ses.rounds, k: avg(ses.cracks), s: avg(ses.shifts), y: ses.carry.length ? mean(ses.carry) : null, deep: st.deep && kind === 'train' };
         const list = kind === 'probe' ? st.probes : st.sessions;
         list.push(rec); if (list.length > 40) list.shift();
         save();
@@ -282,14 +305,14 @@ async function session(kind) {
 function home() {
     label('');
     const P = E.params(st.level, false), day = d => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    const line = r => `${day(r.d)} · L${r.L0 !== r.L ? r.L0 + '→' + r.L : r.L}${r.deep ? ' deep' : ''} · ${pct(r.c)} · crack ${r.k} s${r.y == null ? '' : ' · carry ' + pct(r.y)}`;
+    const line = r => `${day(r.d)} · L${r.L0 !== r.L ? r.L0 + '→' + r.L : r.L}${r.deep ? ' deep' : ''} · ${pct(r.c)}${r.k == null ? '' : ' · crack ' + r.k + ' s'}${r.s == null ? '' : ' · change ' + r.s + ' s'}${r.y == null ? '' : ' · carry ' + pct(r.y)}`;
     show(`<h1>Cold Start</h1>
         <div class="row"><button data-act="dn">−</button><b>Level ${st.level}</b><button data-act="up">+</button></div>
         <div class="cap">arity ${P.k} · ${P.n} objects · ${P.F} facts</div>
         <div class="row"><label>Seconds per round <input id="clk" type="number" min="10" max="900" value="${st.clock}"></label></div>
         <div class="row"><label><input id="deep" type="checkbox"${st.deep ? ' checked' : ''}> Deep: no clock, two more objects, two more facts</label></div>
         <div class="row"><button class="go" data-act="start">Start</button><button data-act="probe">Probe</button></div>
-        <div class="cap">Probe: one world of a kind never used in training. It does not change your level.</div>
+        <div class="cap">Probe: one world built only from boards and relations training never uses. It does not change your level.</div>
         ${st.sessions.length ? `<div class="hist"><b>Sessions</b><br>${st.sessions.slice(-6).reverse().map(line).join('<br>')}</div>` : ''}
         ${st.probes.length ? `<div class="hist"><b>Probes</b><br>${st.probes.slice(-6).reverse().map(line).join('<br>')}</div>` : ''}`);
 }
