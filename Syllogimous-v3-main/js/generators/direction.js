@@ -78,8 +78,8 @@ class Direction2D {
         return {
             start: b,
             end: a,
-            relation: `is ${direction} of`,
-            reverse: `is ${reverseDirection} of`,
+            relation: direction ? `is ${direction} of` : 'is at the same place as',
+            reverse: reverseDirection ? `is ${reverseDirection} of` : 'is at the same place as',
             relationMinimal: dirStringMinimal(dirCoord),
             reverseMinimal: dirStringMinimal(inverse(dirCoord)),
         }
@@ -133,8 +133,8 @@ class Direction3D {
         return {
             start: b,
             end: a,
-            relation: `is ${direction} of`,
-            reverse: `is ${reverseDirection} of`,
+            relation: direction ? `is ${direction} of` : 'is at the same place as',
+            reverse: reverseDirection ? `is ${reverseDirection} of` : 'is at the same place as',
             relationMinimal: dirStringMinimal(dirCoord),
             reverseMinimal: dirStringMinimal(inverse(dirCoord)),
         }
@@ -186,8 +186,9 @@ class Direction4D {
         return {
             start: b,
             end: a,
-            relation: `${timeName} ${direction} of`,
-            reverse: `${reverseTimeName} ${reverseDirection} of`,
+            // a transform can leave two terms at one place, a moment apart: say that, not "was  of"
+            relation: direction ? `${timeName} ${direction} of` : `${timeName} at the same place as`,
+            reverse: reverseDirection ? `${reverseTimeName} ${reverseDirection} of` : `${reverseTimeName} at the same place as`,
             relationMinimal: dirStringMinimal(dirCoord),
             reverseMinimal: dirStringMinimal(inverse(dirCoord)),
         }

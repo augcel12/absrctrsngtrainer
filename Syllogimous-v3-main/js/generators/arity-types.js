@@ -44,6 +44,13 @@ function arRingFamily() {
             truth: m => gap(m, b, a, N) === 1,
             html: (W, plain) => `${arS(W[a])} ${arPhrase('is the next one clockwise after', 'is not the next one clockwise after', plain)} ${arS(W[b])}`,
         });
+        // the other two-term fact: they do NOT sit side by side that way round. Without it a ring at the
+        // classic setting only had its N adjacencies to say, which ran out at six premises
+        const notNext = (a, b) => ({
+            key: `x${a},${b}`, arity: 2, terms: [a, b], pairs: [],
+            truth: m => gap(m, b, a, N) !== 1,
+            html: (W, plain) => `${arS(W[a])} ${arPhrase('is not the next one clockwise after', 'is the next one clockwise after', plain)} ${arS(W[b])}`,
+        });
         // "going clockwise from A you reach B before C" — the smallest fact a ring can carry
         const cyc = (a, b, c) => ({
             key: `c${a},${b},${c}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [a, c, null]],
@@ -74,18 +81,40 @@ function arRingFamily() {
                 html: (W, plain) => `${arR('Exactly one of')} ${arS(W[a])} ${arR('and')} ${arS(W[b])} ${arPhrase('lies on', 'lies off', plain)} ${arR('the clockwise way from')} ${arS(W[c])} ${arR('round to')} ${arS(W[d])}`,
             };
         };
-        return { next, cyc, nearer, sameGap, oneArc };
+        // "Exactly one of A, B and C lies on the clockwise way from D round to E" — five terms
+        const arcN = (movers, c, d, n) => {
+            const on = (m, x) => gap(m, c, x, N) < gap(m, c, d, N);
+            const ms = movers.slice().sort((p, q) => p - q);
+            return {
+                key: `A${ms};${c},${d};${n}`, arity: movers.length + 2, terms: [...movers, c, d], pairs: movers.flatMap(x => [[x, c, null], [x, d, null]]),
+                truth: m => movers.filter(x => on(m, x)).length === n,
+                html: (W, plain) => `${arR(n === 1 ? 'Exactly one of' : 'Exactly ' + n + ' of')} ${movers.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[movers[movers.length - 1]])} ${arPhrase(n === 1 ? 'lies on' : 'lie on', n === 1 ? 'lies off' : 'lie off', plain)} ${arR('the clockwise way from')} ${arS(W[c])} ${arR('round to')} ${arS(W[d])}`,
+            };
+        };
+        return { next, notNext, cyc, nearer, sameGap, oneArc, arcN };
     };
     return {
         id: 'ring',
         engine: N => arRingEngine(N),
-        terms: (P, k) => Math.max(k + 1, Math.min(6, P + 1)),
+        // at least four seats even with two premises: on three, one adjacency fixes the whole ring
+        terms: (P, k) => Math.max(k === 2 ? 4 : k + 1, Math.min(7, P + 1)),
         hidden: N => Int8Array.from(shuffle(arRange(N))),
         fact(h, N, a, used) {
             const F = mk(N);
             if (a === 2) {
                 const [x, y] = arTerms(N, 2, used);
-                return (h[x] - h[y] + N) % N === 1 ? F.next(x, y) : (h[y] - h[x] + N) % N === 1 ? F.next(y, x) : null;
+                if ((h[x] - h[y] + N) % N === 1) return F.next(x, y);
+                if ((h[y] - h[x] + N) % N === 1) return F.next(y, x);
+                return Math.random() < 0.6 ? null : F.notNext(x, y);
+            }
+            if (a >= 5) {
+                const t = arTerms(N, 5, used), fives = [];
+                for (const [c, d] of [[t[3], t[4]], [t[4], t[3]], [t[0], t[2]], [t[2], t[0]]]) {
+                    const movers = t.filter(x => x !== c && x !== d);
+                    for (const n of [1, 2]) fives.push(F.arcN(movers, c, d, n));
+                }
+                const ok = fives.filter(f => f.truth(h));
+                return ok.length ? arPick(ok) : null;
             }
             if (a === 3) {
                 const t = arTerms(N, 3, used);
@@ -109,6 +138,10 @@ function arRingFamily() {
             if (k >= 4) for (let i = 0; i < 30; i++) {
                 const [a, b, c, d] = shuffle(arRange(N)).slice(0, 4);
                 out.push(coinFlip() ? F.sameGap(a, b, c, d) : F.oneArc(a, b, c, d));
+            }
+            if (k >= 5 && N >= 5) for (let i = 0; i < 24; i++) {
+                const t = shuffle(arRange(N)).slice(0, 5);
+                out.push(F.arcN(t.slice(0, 3), t[3], t[4], coinFlip() ? 1 : 2));
             }
             return out;
         },

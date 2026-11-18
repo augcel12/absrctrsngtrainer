@@ -137,6 +137,10 @@ function load() {
     renderHQL();
     renderFolders();
     populateSettings();
+    const keyBox = document.getElementById('rs-key-box');
+    if (keyBox && typeof notationKeyHTML === 'function' && !keyBox.querySelector('.rs-key')) {
+        keyBox.insertAdjacentHTML('beforeend', notationKeyHTML());
+    }
 }
 
 function populateSettings() {
@@ -558,16 +562,29 @@ function generateQuestion() {
         return;
 
     const totalWeight = generators.reduce((sum, item) => sum + item.weight, 0);
-    const randomValue = Math.random() * totalWeight;
-    let cumulativeWeight = 0;
-    let q;
-    for (let generator of generators) {
-        cumulativeWeight += generator.weight;
-        if (randomValue < cumulativeWeight) {
-            q = generator.question.create(generator.premiseCount);
-            break;
+    const pickGenerator = () => {
+        const randomValue = Math.random() * totalWeight;
+        let cumulativeWeight = 0;
+        for (let generator of generators) {
+            cumulativeWeight += generator.weight;
+            if (randomValue < cumulativeWeight) return generator;
+        }
+        return generators[generators.length - 1];
+    };
+    // A generator that can't build at this setting hands back nothing; that used to leave the old item
+    // on screen with the clock stopped. Draw again, and as a last resort step the premise count down.
+    let q = null;
+    for (let attempt = 0; attempt < 6 && !q; attempt++) {
+        const g = pickGenerator();
+        try { q = g.question.create(g.premiseCount); } catch (e) { console.error(e); q = null; }
+    }
+    for (const g of shuffle(generators.slice())) {
+        if (q) break;
+        for (let n = g.premiseCount - 1; n >= 2 && !q; n--) {
+            try { q = g.question.create(n); } catch (e) { q = null; }
         }
     }
+    if (!q) return;
 
     if (!savedata.removeNegationExplainer && /is-negated/.test(JSON.stringify(q)))
         q.premises.unshift('<span class="negation-explainer">Invert the <span class="is-negated">Red</span> text</span>');
@@ -599,6 +616,8 @@ function queueRetry(q) {
     delete clone.answerUser;
     delete clone.answeredAt;
     delete clone.didTriggerProgress;
+    delete clone.credit;
+    delete clone.queryPicks;
     clone.isRetry = true;
     retryQueue.push({ q: clone, due: itemsServed + retryDelay() });
     return true;
@@ -618,6 +637,13 @@ function init() {
     const retry = takeDueRetry();
     question = retry || probeMake() || generateQuestion();
     if (!question) {
+        // nothing in the current settings can make an item (e.g. only Contexts with Missing link):
+        // say so instead of leaving the last item up with its clock stopped
+        displayLabelType.textContent = '';
+        displayLabelLevel.textContent = '';
+        displayText.innerHTML = '<div class="preamble">No item fits these settings</div>'
+            + '<div class="formatted-premise">Turn on another relation type or answer format in Settings.</div>';
+        renderFormatPanel(null);
         return;
     }
     itemsServed++;
@@ -847,12 +873,15 @@ function checkIfFalse() {
 }
 
 // Generative formats report here instead of through the TRUE/FALSE buttons.
-function submitFormatAnswer(correct, userText) {
+function submitFormatAnswer(correct, userText, credit, picks) {
     if (processingAnswer) {
         return;
     }
     processingAnswer = true;
     question.answerUser = userText;
+    // interrogate: the share of its questions answered right (the level counts this, not all-or-nothing)
+    if (typeof credit === 'number') question.credit = credit;
+    if (Array.isArray(picks)) question.queryPicks = picks;
     if (correct) {
         appState.score++;
         question.correctness = 'right';

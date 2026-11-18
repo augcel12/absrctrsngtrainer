@@ -16,6 +16,60 @@ function fmtTermHTML(word) {
     return `<span class="subject">${renderJunkEmojisText(word)}</span>`;
 }
 
+// what a relation chip shows: its sign in symbol mode, its words otherwise
+function fmtRelChipHTML(rel) {
+    const words = rel.text.replace(/^is /, '');
+    if (savedata.symbolRelations && typeof ntRelIcon === 'function') {
+        const icon = ntRelIcon(rel.text, false);
+        if (icon) return icon;
+    }
+    return fmtEscape(words);
+}
+
+// Directions are picked where they point: a 3×3 pad (the middle is the second term), and for 3D one pad
+// per layer — above, level, below. Faster than reading 26 labels, and there are no words to say.
+function fmtDirPad(fam, onPick) {
+    const wrap = document.createElement('div');
+    wrap.className = 'fmt-pad';
+    const layers = fam.dim === 3 ? [1, 0, -1] : [null];
+    const buttons = [];
+    for (const z of layers) {
+        const box = document.createElement('div');
+        box.className = 'fmt-pad__layer';
+        if (z !== null) {
+            const cap = document.createElement('div');
+            cap.className = 'fmt-pad__cap';
+            cap.textContent = z === 1 ? '▲ above' : z === -1 ? '▼ below' : 'level';
+            box.appendChild(cap);
+        }
+        const grid = document.createElement('div');
+        grid.className = 'fmt-pad__grid';
+        for (const y of [1, 0, -1]) for (const x of [-1, 0, 1]) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            const key = z === null ? `${x},${y}` : `${x},${y},${z}`;
+            if (!fam.rels.some(r => r.key === key)) {
+                b.className = 'fmt-pad__mid';
+                b.disabled = true;
+                b.innerHTML = '<span class="fmt-pad__ring"></span>';
+            } else {
+                b.className = 'fmt-pad__cell';
+                b.innerHTML = '<span class="fmt-pad__dot"></span>';
+                b.addEventListener('click', () => {
+                    buttons.forEach(o => o.classList.remove('selected'));
+                    b.classList.add('selected');
+                    onPick(key);
+                });
+                buttons.push(b);
+            }
+            grid.appendChild(b);
+        }
+        box.appendChild(grid);
+        wrap.appendChild(box);
+    }
+    return wrap;
+}
+
 // The questions themselves. Three-way, so "I know one arrangement that fits" is not an answer:
 // you have to know what every arrangement that fits agrees on.
 function askInterrogate(q, panel, finish) {
@@ -26,7 +80,7 @@ function askInterrogate(q, panel, finish) {
         row.className = 'fmt-row fmt-query';
         const claim = document.createElement('div');
         claim.className = 'fmt-query__claim';
-        claim.innerHTML = renderJunkEmojisText(query.html);
+        claim.innerHTML = savedata.symbolRelations ? renderRelationSymbols(renderJunkEmojisText(query.html)) : renderJunkEmojisText(query.html);
         const chips = document.createElement('div');
         chips.className = 'fmt-chips';
         for (const [value, label] of opts) {
@@ -82,7 +136,7 @@ function renderFormatPanel(q) {
         }
         error.textContent = '';
         panel.querySelectorAll('button, input').forEach(el => el.disabled = true);
-        submitFormatAnswer(result.correct, result.text);
+        submitFormatAnswer(result.correct, result.text, result.credit, result.picks);
     };
 
     const chipRow = (label, items, onPick) => {
@@ -168,8 +222,15 @@ function renderFormatPanel(q) {
             row.appendChild(submitButton(() => finish(fmtCheckName(q, { a: q.a, b: q.b, p: +p.value, q: +qq.value }))));
             row.appendChild(submitButton(() => finish(fmtCheckName(q, 'cant')), "Can't tell"));
             panel.appendChild(row);
+        } else if (fam.kind === 'vector') {
+            const pick = v => finish(fmtCheckName(q, v === 'cant' ? 'cant' : { a: q.a, b: q.b, rel: v }));
+            panel.appendChild(fmtDirPad(fam, pick));
+            const row = document.createElement('div');
+            row.className = 'fmt-choices';
+            row.appendChild(submitButton(() => pick('cant'), "Can't tell"));
+            panel.appendChild(row);
         } else {
-            const items = fam.rels.map(r => ({ html: fmtEscape(r.text.replace(/^is /, '')), value: r.key }));
+            const items = fam.rels.map(r => ({ html: fmtRelChipHTML(r), value: r.key }));
             items.push({ html: "can't tell", value: 'cant' });
             panel.appendChild(chipRow(null, items, v => {
                 const ans = v === 'cant' ? 'cant' : { a: q.a, b: q.b, rel: v, ...(q.ctx && { ctx: q.ctx }) };
@@ -180,9 +241,40 @@ function renderFormatPanel(q) {
 
     if (q.format === 'missing' || q.format === 'repair') {
         const check = { missing: fmtCheckMissing, repair: fmtCheckRepair }[q.format];
-        panel.appendChild(chipRow('First term', terms, v => state.a = v));
+        // one row of terms, tapped in order: the first tap is the first term, the second tap the second
+        const termRow = document.createElement('div');
+        termRow.className = 'fmt-row';
+        const termLabel = document.createElement('div');
+        termLabel.className = 'fmt-label';
+        termLabel.textContent = 'Terms: tap the first, then the second';
+        const termChips = document.createElement('div');
+        termChips.className = 'fmt-chips';
+        const paint = () => termChips.querySelectorAll('.fmt-chip').forEach(c => {
+            const n = c.dataset.word === state.a ? 1 : c.dataset.word === state.b ? 2 : 0;
+            c.classList.toggle('selected', n > 0);
+            c.dataset.order = n ? String(n) : '';
+        });
+        for (const t of terms) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'fmt-chip fmt-chip--term';
+            chip.innerHTML = t.html;
+            chip.dataset.word = t.value;
+            chip.addEventListener('click', () => {
+                if (state.a === t.value) { state.a = state.b; state.b = null; }
+                else if (state.b === t.value) state.b = null;
+                else if (!state.a) state.a = t.value;
+                else if (!state.b) state.b = t.value;
+                else { state.a = state.b; state.b = t.value; }
+                error.textContent = '';
+                paint();
+            });
+            termChips.appendChild(chip);
+        }
+        termRow.append(termLabel, termChips);
+        panel.appendChild(termRow);
 
-        let relInput = null, pInput = null, qInput = null;
+        let pInput = null, qInput = null;
         if (fam.kind === 'ratio') {
             pInput = numberInput('#');
             qInput = numberInput('#');
@@ -196,25 +288,19 @@ function renderFormatPanel(q) {
             l.textContent = 'Amounts';
             row.append(l, line);
             panel.appendChild(row);
-        } else {
-            relInput = document.createElement('input');
-            relInput.type = 'text';
-            relInput.className = 'fmt-text';
-            relInput.placeholder = 'type the relation';
-            relInput.autocomplete = 'off';
-            relInput.autocapitalize = 'off';
-            relInput.spellcheck = false;
-            relInput.addEventListener('input', () => error.textContent = '');
+        } else if (fam.kind === 'vector') {
+            // where the first term sits, seen from the second (the middle of the pad)
             const row = document.createElement('div');
             row.className = 'fmt-row';
             const l = document.createElement('div');
             l.className = 'fmt-label';
-            l.textContent = 'Relation';
-            row.append(l, relInput);
+            l.textContent = 'Where the first term is';
+            row.append(l, fmtDirPad(fam, v => { state.rel = v; error.textContent = ''; }));
             panel.appendChild(row);
+        } else {
+            panel.appendChild(chipRow('Relation', fam.rels.map(r => ({ html: fmtRelChipHTML(r), value: r.key })), v => state.rel = v));
         }
 
-        panel.appendChild(chipRow('Second term', terms, v => state.b = v));
 
         const submit = () => {
             let s;
@@ -222,11 +308,8 @@ function renderFormatPanel(q) {
                 s = { a: state.a, b: state.b, p: +pInput.value, q: +qInput.value };
             } else {
                 if (!state.a || !state.b) return finish({ error: 'Pick both terms' });
-                s = fmtParseRelation(fam, relInput.value, state.a, state.b);
-                if (!s) {
-                    return finish({ error: 'Not a relation for this type. Use one of: '
-                        + fam.rels.map(r => r.text.replace(/^is /, '')).join(', ') });
-                }
+                if (state.rel === null) return finish({ error: 'Pick a relation' });
+                s = { a: state.a, b: state.b, rel: state.rel };
             }
             finish(check(q, s));
         };

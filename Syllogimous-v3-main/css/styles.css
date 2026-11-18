@@ -988,6 +988,10 @@ input[type="number"]::-moz-inner-spin-button {
     background-color: #ee4411;
 }
 
+.trailing-dot.partial::before {
+    background-color: #e8b931;
+}
+
 .is-connector {
     color: #2bdef9;
     text-transform: uppercase;
@@ -2158,7 +2162,46 @@ table.distinction {
 .xp-need__arrow { opacity: .55; }
 .xp-need__list { text-align: left; opacity: .85; }
 
-/* symbolised relations: the glyph stands in for the phrase; a red bar marks a negated one */
-.rel-sym { display: inline-block; position: relative; vertical-align: -0.2em; line-height: 0; }
-.rel-sym svg { display: block; }
-.rel-sym-neg::after { content: ''; position: absolute; left: -15%; right: -15%; top: 50%; border-top: 2px solid #f00; transform: rotate(-30deg); }
+/* symbol relations (notation.js): each relation drawn as a picture of itself */
+.rs { display: inline-block; vertical-align: -0.3em; line-height: 0; margin: 0 0.1em; }
+.rs svg { display: block; overflow: visible; }
+.rs-inv { color: #f00; }
+.rs-op { font-weight: 600; margin: 0 0.15em; font-size: 1.12em; line-height: 1; }
+.rs-op.rs-inv, .rs-sep.rs-inv { color: #f00; }
+.rs-sep { margin-right: 0.32em; }
+.rs-dot { margin: 0 0.12em; font-weight: 700; }
+.rs-grp { display: inline-block; padding: 0.05em 0.35em 0.1em 0.2em; background: rgba(127,127,127,.16); border-radius: 0.45em; }
+.rs-ctx { display: inline-block; padding: 0 0.32em; border: 1px dashed rgba(127,127,127,.7); border-radius: 0.35em; margin-right: 0.3em; }
+.rs-num { font-weight: 600; margin-right: 0.12em; opacity: .9; }
+.rs-count { margin-right: 0.18em; }
+.rs-key-box { margin: 4px 0 0 30px; font-size: 13px; }
+.rs-key-box summary { cursor: pointer; opacity: .75; }
+.rs-key { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; margin-top: 8px; font-size: 15px; }
+.rs-key__head { grid-column: 1 / -1; margin-top: 8px; opacity: .6; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.rs-key__row { display: contents; }
+.rs-key__sign { white-space: nowrap; }
+.rs-key__words { font-size: 13px; opacity: .85; }
+.support__words { font-size: 0.78em; opacity: .6; margin: 1px 0 6px; }
+
+/* direction pad for answering with a direction */
+.fmt-pad { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.fmt-pad__layer { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fmt-pad__cap { font-size: 12px; opacity: .65; }
+.fmt-pad__grid { display: grid; grid-template-columns: repeat(3, 30px); grid-template-rows: repeat(3, 30px); gap: 3px; }
+.fmt-pad__grid button { width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+.fmt-pad__cell { border: 1px solid rgba(127,127,127,.55); background: transparent; color: inherit; cursor: pointer; }
+.fmt-pad__cell.selected { background: #2bdef9; border-color: #2bdef9; color: #111; }
+.fmt-pad__mid { border: none; background: transparent; color: inherit; }
+.fmt-pad__dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.fmt-pad__ring { width: 10px; height: 10px; border-radius: 50%; border: 1.6px solid currentColor; box-sizing: border-box; }
+
+.fmt-chip--term { position: relative; }
+.fmt-chip--term[data-order]:not([data-order=""])::after { content: attr(data-order); position: absolute; top: -7px; right: -7px; width: 16px; height: 16px; border-radius: 50%; background: currentColor; font-size: 11px; line-height: 16px; text-align: center; }
+.fmt-chip--term[data-order]:not([data-order=""])::after { color: #111; background: #ddd; }
+
+.xp-query { display: flex; gap: .5em; align-items: baseline; justify-content: flex-start; flex-wrap: wrap; text-align: left; margin: 4px 0; }
+.xp-queries .support__note { text-align: left; }
+.xp-query__mark { font-weight: 700; }
+.xp-query__mark.ok { color: #3fbf6f; }
+.xp-query__mark.no { color: #ee4411; }
+.xp-query__said { opacity: .65; font-size: .85em; }

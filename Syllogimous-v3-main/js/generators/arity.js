@@ -1,8 +1,12 @@
 // arity.js — the arity dial. One setting (savedata.arity: 2 classic, 3 ternary, 4 quaternary, 5 quinary)
 // changes every frame: linear (all wordings), space 2D / 3D / space-time / anchor, distinction, syllogism,
 // and through them analogy, binary and meta. Quinary is honest, not padded: most families have no genuine
-// 5-ary fact and step down to 4 (see arQuestion's step-down loop); syllogism (subject conjunctions grow
-// freely) and hierarchy (pivot + N-way count) carry a real fifth term today.
+// 5-ary fact and step down to 4 (see arQuestion's step-down loop). Five-term facts: order "Exactly one of
+// A, B and C is between D and E" / "Exactly 2 of B, C, D and E are left of A" / "Among A..E, A is at one
+// end"; space the same on one axis; same/opposite and influence "Exactly 2 of B, C, D and E are same as
+// A"; contexts the same per context; ring "Exactly one of A, B and C lies on the clockwise way from D
+// round to E"; hierarchy a pivot + four-way count; syllogism, requirement and balance their own.
+// Analogy (a pair of pairs) and Mapping stay at 4 and say so on the item.
 //
 // Arity = how many terms ONE premise binds. A chain of two-term premises, however long, is processed one
 // pair at a time; a premise like "A is between B and C" or "A is left of B exactly when C is left of D"
@@ -187,7 +191,10 @@ const AR_TIERS = [
 ];
 function arPremiseFacts(fam, h, N, P, k) {
     const nTop = Math.max(1, Math.round(P * 0.5));
-    const arities = shuffle(arRange(P).map(i => (i < nTop ? k : (k === 4 && coinFlip() ? 3 : 2))));
+    // the rest are lower-arity: two-term, or at the top settings a mix, so an item is never one tall
+    // premise surrounded by pairs
+    const lower = () => k === 4 ? (coinFlip() ? 3 : 2) : k >= 5 ? arPick([2, 2, 3, 4]) : 2;
+    const arities = shuffle(arRange(P).map(i => (i < nTop ? k : lower())));
     const facts = [], keys = new Set(), used = new Set();
     for (const a of arities) {
         let f = null;
@@ -309,6 +316,24 @@ function arOrderFamily(g) {
         truth: m => ((m[a] < m[b]) === (m[c] < m[d])) === same,
         html: (W, plain) => analogyTo(W[a], W[b]) + (plain ? `<div class="analogy-statement">${same ? 'has the same relation as' : 'has a different relation from'}</div>` : (same ? pickAnalogyStatementSame() : pickAnalogyStatementDifferent())) + analogyTo(W[c], W[d]),
     });
+    // five terms. "Exactly one of A, B and C is between D and E": a count over three, so no pair of
+    // them settles it. "Exactly 2 of B, C, D and E are left of A": where A falls among four others.
+    const list = (W, xs) => `${xs.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[xs[xs.length - 1]])}`;
+    const someBetween = (movers, c, d, n) => {
+        const ms = movers.slice().sort((p, q) => p - q), ends = c < d ? [c, d] : [d, c];
+        const inside = (m, x) => (m[c] < m[x] && m[x] < m[d]) || (m[d] < m[x] && m[x] < m[c]);
+        return {
+            key: `X${ms};${ends};${n}`, arity: movers.length + 2, terms: [...movers, c, d], pairs: movers.flatMap(x => [[x, c, null], [x, d, null]]),
+            truth: m => movers.filter(x => inside(m, x)).length === n,
+            html: (W, plain) => `${arR(n === 1 ? 'Exactly one of' : 'Exactly ' + n + ' of')} ${list(W, movers)} ${arPhrase(n === 1 ? 'is between' : 'are between', n === 1 ? 'is not between' : 'are not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])}`,
+        };
+    };
+    const plural = t => t.replace(/^is /, 'are ').replace(/^contains$/, 'contain');
+    const countPrev = (a, rest, n) => ({
+        key: `k${a};${rest.slice().sort((p, q) => p - q)};${n}`, arity: rest.length + 1, terms: [a, ...rest], pairs: rest.map(r => [a, r, null]),
+        truth: m => rest.filter(r => m[r] < m[a]).length === n,
+        html: (W, plain) => `${arR('Exactly ' + n + ' of')} ${list(W, rest)} ${arPhrase(n === 1 ? g.prev : plural(g.prev), n === 1 ? g.next : plural(g.next), plain)} ${arS(W[a])}`,
+    });
     return {
         id: 'order',
         engine: N => arEngine('order', N, 1),
@@ -324,6 +349,22 @@ function arOrderFamily(g) {
                 opts.push(between(t[end], t[rest[0]], t[rest[1]], false));
                 for (const [p, q, r] of [[t[0], t[1], t[2]], [t[1], t[0], t[2]]]) opts.push(orDisj(p, q, r));
                 return arPick(opts.filter(f => f.truth(h)));
+            }
+            if (a >= 5) {
+                const t = arTerms(N, 5, used), fives = [];
+                for (let r = 0; r < 5; r++) {
+                    const [p, ...rest] = [t[r], ...t.filter((_, i) => i !== r)];
+                    fives.push(extreme(p, rest));
+                    const n = rest.filter(x => h[x] < h[p]).length;
+                    if (n >= 1 && n <= 3) fives.push(countPrev(p, rest, n));
+                }
+                for (const [c, d] of [[t[3], t[4]], [t[0], t[4]], [t[1], t[3]]]) {
+                    const movers = t.filter(x => x !== c && x !== d);
+                    for (const n of [1, 2]) fives.push(someBetween(movers, c, d, n));
+                }
+                const ok = fives.filter(f => f.truth(h));
+                if (ok.length) return arPick(ok);
+                return null;
             }
             const [w, x, y, z] = arTerms(N, 4, used);
             const o1 = coinFlip();
@@ -347,6 +388,12 @@ function arOrderFamily(g) {
                     const [a, b, c, d] = shuffle(arRange(N)).slice(0, 4);
                     out.push(coinFlip() ? oneBetween(a, b, c, d) : extreme(a, [b, c, d]));
                 }
+            }
+            if (k >= 5 && N >= 5) for (let i = 0; i < 24; i++) {
+                const t = shuffle(arRange(N)).slice(0, 5), r = Math.random();
+                if (r < 0.34) out.push(extreme(t[0], t.slice(1)));
+                else if (r < 0.67) out.push(countPrev(t[0], t.slice(1), 1 + Math.floor(Math.random() * 3)));
+                else out.push(someBetween(t.slice(0, 3), t[3], t[4], coinFlip() ? 1 : 2));
             }
             return out;
         },
@@ -391,6 +438,25 @@ function arSpaceFamily(gen) {
             key: `X${ax}:${mid},${ends}`, arity: 4, terms: [a, b, c, d], pairs: [[a, c, ax], [a, d, ax], [b, c, ax], [b, d, ax]],
             truth: (m, axis) => axis !== ax || inside(m, a) !== inside(m, b),
             html: (W, plain) => `${arR('Exactly one of')} ${arS(W[a])} ${arR('and')} ${arS(W[b])} ${arPhrase('is between', 'is not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])} ${arR(AR_AXIS[ax])}`,
+        };
+    };
+    // five terms on one axis: "Exactly one of A, B and C is between D and E, east–west", and "Among A, B,
+    // C, D and E, A is at one end north–south" (strictly beyond all four, one way or the other)
+    const someBetween = (movers, c, d, ax, n) => {
+        const ms = movers.slice().sort((p, q) => p - q), ends = c < d ? [c, d] : [d, c];
+        const inside = (m, x) => (m[c] < m[x] && m[x] < m[d]) || (m[d] < m[x] && m[x] < m[c]);
+        return {
+            key: `Y${ax}:${ms};${ends};${n}`, arity: movers.length + 2, terms: [...movers, c, d], pairs: movers.flatMap(x => [[x, c, ax], [x, d, ax]]),
+            truth: (m, axis) => axis !== ax || movers.filter(x => inside(m, x)).length === n,
+            html: (W, plain) => `${arR(n === 1 ? 'Exactly one of' : 'Exactly ' + n + ' of')} ${movers.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[movers[movers.length - 1]])} ${arPhrase(n === 1 ? 'is between' : 'are between', n === 1 ? 'is not between' : 'are not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])} ${arR(AR_AXIS[ax])}`,
+        };
+    };
+    const endOf = (a, rest, ax) => {
+        const all = [a, ...rest];
+        return {
+            key: `E${ax}:${a};${rest.slice().sort((p, q) => p - q)}`, arity: all.length, terms: all, pairs: rest.map(r => [a, r, ax]),
+            truth: (m, axis) => axis !== ax || rest.every(r => m[a] < m[r]) || rest.every(r => m[a] > m[r]),
+            html: (W, plain) => `${arR('Among')} ${all.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[all[all.length - 1]])}, ${arS(W[a])} ${arPhrase('is at one end', 'is not at one end', plain)} ${arR(AR_AXIS[ax])}`,
         };
     };
     const way = (a, b, c, d, same) => ({
@@ -455,6 +521,20 @@ function arSpaceFamily(gen) {
                 const end = coinFlip() ? 0 : 2, rest = [0, 1, 2].filter(i => i !== end);
                 return between(s[end], s[rest[0]], s[rest[1]], ax, false);
             }
+            if (a >= 5) {
+                const t = arTerms(N, 5, used), fives = [];
+                for (const ax of arRange(D)) {
+                    const col = h.map(c => c[ax]);
+                    for (let r = 0; r < 5; r++) fives.push(endOf(t[r], t.filter((_, i) => i !== r), ax));
+                    for (const [c, d] of [[t[3], t[4]], [t[0], t[4]], [t[1], t[2]]]) {
+                        if (col[c] === col[d]) continue;
+                        const movers = t.filter(x => x !== c && x !== d);
+                        for (const n of [1, 2]) fives.push(someBetween(movers, c, d, ax, n));
+                    }
+                }
+                const ok = fives.filter(f => arRange(D).every(ax => f.truth(h.map(c => c[ax]), ax)));
+                return ok.length ? arPick(ok) : null;
+            }
             // several draws of the leading pair, not one: a single unlucky (w,x) with no matching
             // counterpart used to fail the whole fact and push the build into a looser tier
             if (Math.random() < 0.3) {
@@ -508,6 +588,11 @@ function arSpaceFamily(gen) {
                 const t = shuffle(arRange(N)).slice(0, 4);
                 if (coinFlip()) out.push(oneBetween(t[0], t[1], t[2], t[3], Math.floor(Math.random() * D)));
                 else if (spatialOK(sv(h, t[0], t[1])) && spatialOK(sv(h, t[2], t[3]))) out.push(way(...t, coinFlip()));
+            }
+            if (k >= 5 && N >= 5) for (let i = 0; i < 30; i++) {
+                const t = shuffle(arRange(N)).slice(0, 5), ax = Math.floor(Math.random() * D);
+                if (coinFlip()) out.push(endOf(t[0], t.slice(1), ax));
+                else if (h[t[3]][ax] !== h[t[4]][ax]) out.push(someBetween(t.slice(0, 3), t[3], t[4], ax, coinFlip() ? 1 : 2));
             }
             return out;
         },
@@ -596,6 +681,12 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
                 for (const [a1, b1, c1] of [[p, q, r], [q, p, r], [r, p, q]]) if (h[a1] === h[b1] || h[a1] === h[c1]) opts.push(matchOne(a1, b1, c1));
                 return opts.length ? arPick(opts) : null;
             }
+            if (a >= 5) {
+                // "Exactly 2 of B, C, D and E are the same as A": a count over four
+                const [p, ...rest] = arTerms(N, 5, used);
+                const n = rest.filter(r => h[r] === h[p]).length;
+                return n >= 1 && n <= 3 ? countN(p, rest, n) : null;
+            }
             const [w, x, y, z] = arTerms(N, 4, used);
             const s1 = coinFlip(), v1 = (h[w] === h[x]) === s1, s2 = ((h[y] === h[z]) === v1);
             const quads = [iff(w, x, y, z, s1, s2), iff(w, x, y, z, s1, s2)];
@@ -613,6 +704,10 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
                 if (r < 0.5) out.push(iff(...t, coinFlip(), coinFlip()));
                 else if (r < 0.75) out.push(countN(t[0], t.slice(1), arPick([1, 2])));
                 else out.push(either(...t, coinFlip(), coinFlip()));
+            }
+            if (k >= 5 && N >= 5) for (let i = 0; i < 24; i++) {
+                const t = shuffle(arRange(N)).slice(0, 5);
+                out.push(countN(t[0], t.slice(1), arPick([1, 2, 3])));
             }
             return out;
         },

@@ -15,8 +15,9 @@
 //     not. That is the whole model space, not one picture of it.
 //   - Every query needs integration. A claim settled by one premise on its own is thrown out, the same
 //     test the conclusion of a normal item has to pass.
-//   - All or nothing. Three right out of four scores zero, so there is no partial credit for a partial
-//     structure — which is exactly the thing being trained away.
+//   - Each answer counts. Two right out of three is worth two thirds toward the level, the same footing
+//     as a true/false item, so a run of interrogated items doesn't drag the level down just for having
+//     more questions in it. A clean sweep is what counts as "right" in the history and the score.
 //
 // Queries are worded plainly (never negated): the premises carry the inversion explainer and the
 // premises are gone by the time you answer.
@@ -100,9 +101,9 @@ function applyInterrogate(out, queries) {
     return out;
 }
 
-// scoring: all or nothing
+// scoring: right only if every answer is; the share of answers right is the credit the level sees
 function interrogateCheck(q, answers) {
-    const right = q.queries.every((qq, i) => answers[i] === qq.answer);
+    const hits = q.queries.filter((qq, i) => answers[i] === qq.answer).length;
     const text = q.queries.map((qq, i) => AR_Q_LABEL[String(answers[i])]).join(', ');
-    return { correct: right, text };
+    return { correct: hits === q.queries.length, text, credit: hits / q.queries.length, picks: answers.slice() };
 }

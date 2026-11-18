@@ -135,16 +135,20 @@ class ProgressStore {
     unifiedLevelChange(q) {
         const st = appState.unifiedProgress || (appState.unifiedProgress = { results: [] });
         const mult = q.arityTimeMult || 1;
-        st.results.push({ right: q.correctness === 'right', t: q.timeElapsed / 1000 / mult });
+        // credit: 1 or 0 for an ordinary item, the share of answers right for an interrogated one
+        const credit = typeof q.credit === 'number' ? q.credit : (q.correctness === 'right' ? 1 : 0);
+        st.results.push({ right: q.correctness === 'right', credit, t: q.timeElapsed / 1000 / mult });
         const n = findAutoProgressionTrailing();
         if (st.results.length > n) st.results.shift();
         const rights = st.results.filter(r => r.right);
-        const fails = st.results.length - rights.length;
-        const bestPossible = 100 * (n - fails) / n;
+        const creditOf = r => (typeof r.credit === 'number' ? r.credit : (r.right ? 1 : 0));
+        const earned = st.results.reduce((a, r) => a + creditOf(r), 0);
+        const lost = st.results.length - earned;
+        const bestPossible = 100 * (n - lost) / n;
         let dir = 0;
         if (bestPossible <= findFailureCriteria()) dir = -1;
         else if (st.results.length >= n) {
-            const pct = 100 * rights.length / n;
+            const pct = 100 * earned / n;
             if (pct >= findSuccessCriteria()) dir = 1;
             else if (pct <= findFailureCriteria()) dir = -1;
         }
@@ -261,7 +265,7 @@ class ProgressStore {
     async renderAutoProgressionTrailing(question) {
         const q = this.convertForDatabase(question);
         let trailingProgress = savedata.autoProgressionGrouping === 'all'
-            ? ((appState.unifiedProgress && appState.unifiedProgress.results) || []).map(r => ({ correctness: r.right ? 'right' : 'wrong' }))
+            ? ((appState.unifiedProgress && appState.unifiedProgress.results) || []).map(r => ({ correctness: r.right ? 'right' : (r.credit > 0 ? 'partial' : 'wrong') }))
             : await getTopRRTProgress(this.calculateCommonKeys(q), findAutoProgressionTrailing());
         progressTracker.innerHTML = '';
         if (!savedata.autoProgression) {
@@ -275,7 +279,7 @@ class ProgressStore {
             const span = document.createElement('span');
             span.classList.add('trailing-dot');
             span.style.width = `${width.toFixed(2)}%`;
-            span.classList.add(isSuccess ? 'success' : 'fail');
+            span.classList.add(isSuccess ? 'success' : q.correctness === 'partial' ? 'partial' : 'fail');
             progressTracker.appendChild(span);
         });
     }

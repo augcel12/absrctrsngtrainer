@@ -289,9 +289,13 @@ function fmtArAugment(fam, words, stmts, contexts, want) {
         const used = new Set();
         const facts = base.slice();
         for (let t = 0, made = 0; t < 60 && made < Math.ceil(want / ctxList.length); t++) {
-            const a = (k === 4 && made > 0 && coinFlip()) ? 3 : k;
+            // a fact can bind at most every word there is: a 5-term fact needs five of them
+            const top = Math.min(k, N);
+            const a = (top === 4 && made > 0 && coinFlip()) ? 3 : top;
+            if (a < 3) break;
             const f = fam.kind === 'ratio' ? fmtArRatioFact(h, N, a, used) : af.fact(h, N, a, used, facts);
             if (!f || keys.has(f.key) || f.arity < 3) continue;
+            if (f.terms && f.terms.some(x => x === undefined || x < 0 || x >= N)) continue;
             if (fam.kind !== 'require' && !arFactTrueOf(fam, f, h)) continue;
             keys.add(f.key); facts.push(f); made++;
             f.terms.forEach(x => used.add(x));
@@ -316,9 +320,54 @@ function arFactTrueOf(fam, f, h) {
 
 // ---------------------------------------------------------------- explanation model
 // Formats had no explanation at all. Every family has a structure behind it, so show one that fits.
+//
+// With only two-term premises the structure comes straight off the premise graph. The model-enumeration
+// engines are for k-ary premises only: enumerating every order of 13 terms to draw one picture is what
+// used to freeze the tab once the premise count grew.
+function fmtPlainExplainModel(fam, stmts, ctx) {
+    const all = fmtWords(stmts);
+    let use = fam.kind === 'contexts' ? stmts.filter(s => !s.ctx || s.ctx === ctx) : stmts;
+    let note = null;
+    if (!fmtConsistent(fam, use)) {
+        const i = use.findIndex((_, i) => fmtConsistent(fam, use.filter((_, j) => j !== i)));
+        if (i < 0) return {};
+        use = use.filter((_, j) => j !== i);
+        note = 'All but one premise fit together like this';
+    }
+    let m = {};
+    if (fam.kind === 'order') {
+        // one order that fits: keep taking a term that nothing left still has to come before
+        const cs = use.map(s => fmtCanon(fam, s)), left = new Set(all), order = [];
+        while (left.size) {
+            const w = shuffle([...left]).find(x => !cs.some(c => c.b === x && left.has(c.a)));
+            if (w === undefined) return {};
+            order.push(w); left.delete(w);
+        }
+        m = { bucket: order };
+    } else if (fam.kind === 'require') {
+        const rows = [];
+        for (const w of all) {
+            const needs = all.filter(v => v !== w && fmtReach(use.map(s => fmtCanon(fam, s)), w, v));
+            if (needs.length) rows.push([w, needs]);
+        }
+        return rows.length ? { needs: { head: 'What each one drags in with it', rows } } : {};
+    } else if (fam.kind === 'vector') {
+        const { val, comp } = fmtGroupSolve('vector', use);
+        if (all.some(w => !val[w])) return {};
+        // separate pieces are placed apart: nothing relates them
+        m = { wordCoordMap: Object.fromEntries(all.map(w => [w, val[w].map((v, i) => v + (i === 0 ? 4 * comp[w] : 0))])) };
+    } else {
+        const { val } = fmtGroupSolve(fam.kind, use);
+        if (all.some(w => val[w] === undefined)) return {};
+        m = { buckets: [all.filter(w => val[w] === 0), all.filter(w => val[w] === 1)] };
+    }
+    return note ? { ...m, modelNote: note } : m;
+}
+
 function fmtArExplainModel(fam, stmts, ctx) {
     try {
         stmts = stmts.filter(Boolean);
+        if (fam.kind !== 'ratio' && !stmts.some(s => s.arId !== undefined)) return fmtPlainExplainModel(fam, stmts, ctx);
         const { ix, N } = fmtArIndex(stmts);
         const words = Object.keys(ix).sort((a, b) => ix[a] - ix[b]);
         if (!N) return {};
@@ -461,8 +510,12 @@ function fmtArWeightsFromFacts(facts, N) {
         };
     })(FMT_MAKERS.repair);
     const origTree = fmtTree;
+    // the engines enumerate every arrangement: orders of 8 terms and layouts of 6 are the most that
+    // stays quick. Past that the item keeps its premise count and stays two-term (its label says so)
+    const AR_FMT_MAX_TERMS = { order: 8, vector: 6, parity: 13, contexts: 11, require: 13, ratio: 30 };
     fmtTree = function (fam, edgeCount) {
         if (!arityActive() || fmtArOff) return origTree(fam, edgeCount);
+        if (edgeCount + 1 > (AR_FMT_MAX_TERMS[fam.kind] || 8)) return origTree(fam, edgeCount);
         // Build the whole structure first, read the arrangement off it, then trade some two-term
         // premises for k-ary ones. Added on top they would say nothing new — the tree already fixes
         // every pair — so they have to replace the premises that were doing that work.

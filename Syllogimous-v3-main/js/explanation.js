@@ -192,13 +192,21 @@ function createExplanationRegions(rg) {
     return s + '</table><div class="support__note">One row per kind of thing that exists: a filled dot means it is in that category.</div>';
 }
 
+// In symbol mode a premise in an explanation is shown in signs, with its words underneath: the one
+// place the notation is read against what it stands for.
+function explainLine(html) {
+    if (!savedata.symbolRelations || typeof renderRelationSymbols !== 'function') return html;
+    const signs = renderRelationSymbols(html);
+    return signs === html ? html : `${signs}<div class="support__words">${html}</div>`;
+}
+
 function createSupportHTML(question) {
     if (!question.support || !question.support.length) return '';
     const verb = question.syllogismNearMiss ? 'These premises give' : (question.isValid ? 'These premises make it true' : 'These premises rule it out');
     let s = `<div class="support"><div class="support__head">${verb}:</div>`;
-    s += question.support.map(p => `<div class="support__premise">${p}</div>`).join('');
+    s += question.support.map(p => `<div class="support__premise">${explainLine(p)}</div>`).join('');
     if (question.syllogismNearMiss && question.supportConclusion) {
-        s += `<div class="support__head">What does follow:</div><div class="support__premise">${question.supportConclusion}</div>`;
+        s += `<div class="support__head">What does follow:</div><div class="support__premise">${explainLine(question.supportConclusion)}</div>`;
         s += `<div class="support__note">The conclusion shown is close to this but is not implied.</div>`;
     }
     s += '</div>';
@@ -212,14 +220,28 @@ function createSyllogismRuleHTML(question) {
     return `<div class="support"><div class="support__head">Form ${mood}-${question.rule[3]}: ${valid ? 'valid — the conclusion follows' : 'invalid — the conclusion does not follow'}</div></div>`;
 }
 
+// interrogate: each question with what followed, marked against what was answered
+function createQueryResultHTML(q) {
+    if (!Array.isArray(q.queries) || !Array.isArray(q.queryPicks)) return q.queryAnswers;
+    const label = v => AR_Q_LABEL[String(v)];
+    const hits = q.queries.filter((qq, i) => q.queryPicks[i] === qq.answer).length;
+    return `<div class="support xp-queries"><div class="support__note">${hits} of ${q.queries.length} right</div>` + q.queries.map((qq, i) => {
+        const ok = q.queryPicks[i] === qq.answer;
+        return `<div class="support__line xp-query"><span class="xp-query__mark ${ok ? 'ok' : 'no'}">${ok ? '✓' : '✗'}</span>`
+            + `<span>${explainLine(qq.html)}</span> <b>${label(qq.answer)}</b>`
+            + (ok ? '' : `<span class="xp-query__said">(you said ${label(q.queryPicks[i])})</span>`) + '</div>';
+    }).join('') + '</div>';
+}
+
 function createMissExplanationHTML(q) {
     const answer = q.isValid ? 'TRUE' : 'FALSE';
     let s = q.queryAnswers
-        ? `<div class="support__head">What was asked, and what followed:</div>${q.queryAnswers}`
+        ? `<div class="support__head">What was asked, and what followed:</div>${createQueryResultHTML(q)}`
         : `<div class="miss-explanation__answer">Answer: ${answer}</div>`
-          + `<div class="miss-explanation__conclusion">${q.conclusion}</div>`;
+          + `<div class="miss-explanation__conclusion">${explainLine(q.conclusion)}</div>`;
     if (q.explainHTML) return s + q.explainHTML;
-    s += createSupportHTML(q) + createSyllogismRuleHTML(q);
+    // an interrogated item never showed its own conclusion, so the premises behind it are beside the point
+    if (!q.queryAnswers) s += createSupportHTML(q) + createSyllogismRuleHTML(q);
     let model = '';
     try { model = createExplanationModel(q) || ''; } catch (e) { model = ''; }
     if (model) {

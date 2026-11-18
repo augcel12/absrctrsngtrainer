@@ -123,6 +123,11 @@ function arContextsFamily() {
             for (const [a1, b1, c1] of [[p, q, r], [q, p, r], [r, p, q]]) if (hh[a1] === hh[b1] || hh[a1] === hh[c1]) opts.push({ kind: 'matchOne', a: a1, b: b1, c: c1 });
             return opts.length ? arPick(opts) : null;
         }
+        if (a >= 5) {
+            const [p, ...rest] = arTerms(N, 5, used);
+            const n = rest.filter(r => hh[r] === hh[p]).length;
+            return n >= 1 && n <= 3 ? { kind: 'countN', a: p, rest, n } : null;
+        }
         const [w, x, y, z] = arTerms(N, 4, used);
         const s1 = coinFlip(), v1 = (hh[w] === hh[x]) === s1;
         const quads = [{ kind: 'iff', w, x, y, z, s1, s2: ((hh[y] === hh[z]) === v1) }];
@@ -160,6 +165,10 @@ function arContextsFamily() {
                     if (r < 0.5) out.push(mk({ kind: 'iff', w, x, y, z, s1: coinFlip(), s2: coinFlip() }, tag));
                     else if (r < 0.75) out.push(mk({ kind: 'countN', a: w, rest: [x, y, z], n: arPick([1, 2]) }, tag));
                     else out.push(mk({ kind: 'either', w, x, y, z, s1: coinFlip(), s2: coinFlip() }, tag));
+                }
+                if (k >= 5 && N >= 5) for (let i = 0; i < 16; i++) {
+                    const [p, ...rest] = shuffle(arRange(N)).slice(0, 5);
+                    out.push(mk({ kind: 'countN', a: p, rest, n: arPick([1, 2, 3]) }, tag));
                 }
             }
             return out;
@@ -433,7 +442,9 @@ function arBalanceFamily() {
     return {
         id: 'lin',
         engine: N => arLinEngine(N),
-        terms: (P, k) => Math.max(k + 1, Math.min(7, P + 1)),
+        // every premise has to be a new independent equation, and N weights carry at most N-1 of them:
+        // with the old cap of 7 an item of 7+ premises could never be built at any arity above 2
+        terms: (P, k) => Math.max(k + 1, Math.min(13, P + 1)),
         hidden(N) {
             for (;;) {
                 const h = arRange(N).map(() => 1 + Math.floor(Math.random() * 6));
