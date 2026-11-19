@@ -276,7 +276,7 @@ function renderJunkEmojis(question) {
     }
 
     if (question.subresults) {
-        question.subresults = question.subresults.map(s => renderJunkEmojis(s, opts));
+        question.subresults = question.subresults.map(s => renderJunkEmojis(s));
     }
 
     if (question.premises) {
@@ -304,7 +304,7 @@ function renderJunkEmojis(question) {
         question.queries = question.queries.map(q => ({ ...q, html: renderJunkEmojisText(q.html) }));
     }
     // drawn models: { head, rows: [[word, value], ...] }   (needs: value is a list of words)
-    for (const field of ['states', 'weights', 'needs']) {
+    for (const field of ['states', 'weights', 'needs', 'numberLine']) {
         const m = question[field];
         if (!m || !Array.isArray(m.rows)) continue;
         if (typeof m.head === 'string') m.head = renderJunkEmojisText(m.head);
@@ -312,6 +312,13 @@ function renderJunkEmojis(question) {
             renderJunkEmojisText(w),
             Array.isArray(v) ? v.map(renderJunkEmojisText) : v,
         ]);
+    }
+    if (question.facing && Array.isArray(question.facing.cells)) {
+        question.facing.cells = question.facing.cells.map(([w, ...rest]) => [renderJunkEmojisText(w), ...rest]);
+        if (typeof question.facing.head === 'string') question.facing.head = renderJunkEmojisText(question.facing.head);
+    }
+    if (question.bars && Array.isArray(question.bars.rows)) {
+        question.bars.rows = question.bars.rows.map(([w, a, b]) => [renderJunkEmojisText(w), a, b]);
     }
     if (question.lines && Array.isArray(question.lines.rows)) {
         question.lines.rows = question.lines.rows.map(([d, w]) => [d, renderJunkEmojisText(w)]);

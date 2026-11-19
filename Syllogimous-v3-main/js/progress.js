@@ -13,6 +13,9 @@ const TYPE_TO_OVERRIDES = {
     "balance" : [ "overrideBalancePremises", "overrideBalanceTime" ],
     "ring" : [ "overrideRingPremises", "overrideRingTime" ],
     "hierarchy" : [ "overrideHierarchyPremises", "overrideHierarchyTime" ],
+    "difference" : [ "overrideDifferencePremises", "overrideDifferenceTime" ],
+    "intervals" : [ "overrideIntervalsPremises", "overrideIntervalsTime" ],
+    "perspective" : [ "overridePerspectivePremises", "overridePerspectiveTime" ],
     "fmt-name" : [ "overrideFmtNamePremises", "overrideFmtNameTime" ],
     "fmt-missing" : [ "overrideFmtMissingPremises", "overrideFmtMissingTime" ],
     "fmt-repair" : [ "overrideFmtRepairPremises", "overrideFmtRepairTime" ],
@@ -25,6 +28,7 @@ const TYPE_ENABLE = {
     "space-time": "enableDirection4D", "anchor-space": "enableAnchorSpace", "mapping": "enableMapping",
     "influence": "enableInfluence", "requirement": "enableRequirement", "contexts": "enableContexts", "balance": "enableBalance",
     "ring": "enableRing", "hierarchy": "enableHierarchy",
+    "difference": "enableDifference", "intervals": "enableIntervals", "perspective": "enablePerspective",
     "fmt-name": "enableFmtName", "fmt-missing": "enableFmtMissing", "fmt-repair": "enableFmtRepair",
 };
 function unifiedEnabledTypes() {

@@ -2184,3 +2184,26 @@ table.distinction {
 .xp-query__mark.ok { color: #3fbf6f; }
 .xp-query__mark.no { color: #ee4411; }
 .xp-query__said { opacity: .65; font-size: .85em; }
+
+/* number line (Difference) */
+.xp-nl-wrap { overflow-x: auto; max-width: 100%; padding: 4px 28px 2px; }
+.xp-nl { position: relative; margin: 6px auto 4px; max-width: none; }
+.xp-nl__axis { position: absolute; left: 0; right: 0; bottom: 1.35em; height: 2px; background: currentColor; opacity: .35; }
+.xp-nl__unit { position: absolute; bottom: calc(1.35em - 3px); width: 1px; height: 8px; background: currentColor; opacity: .3; }
+.xp-nl__pt { position: absolute; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.xp-nl__words { display: flex; flex-direction: column-reverse; align-items: center; gap: 1px; margin-bottom: 3px; }
+.xp-nl__w { font-weight: 700; line-height: 1.25; white-space: nowrap; }
+.xp-nl__tick { width: 3px; height: 12px; background: currentColor; border-radius: 2px; }
+.xp-nl__v { font-size: .78em; opacity: .7; line-height: 1.3; margin-top: 1px; }
+
+/* spans in time (Intervals) */
+.xp-bars { display: grid; grid-template-columns: auto minmax(220px, 420px); gap: 5px 10px; align-items: center; margin: 6px auto; width: fit-content; }
+.xp-bar__w { font-weight: 700; text-align: right; }
+.xp-bar__track { position: relative; height: 14px; border-radius: 7px; background: rgba(127,127,127,.12); }
+.xp-bar { position: absolute; top: 0; bottom: 0; border-radius: 7px; background: currentColor; opacity: .7; }
+
+/* positions with the way each faces (Perspective) */
+.xp-face { display: grid; gap: 3px; margin: 6px auto; width: fit-content; }
+.xp-face__cell { min-width: 4.2em; min-height: 2.2em; padding: 3px 6px; border: 1px solid rgba(127,127,127,.35); border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.xp-face__item { font-weight: 700; white-space: nowrap; }
+.xp-face__arrow { display: inline-block; width: 1.1em; margin-right: 2px; font-weight: 400; opacity: .85; }

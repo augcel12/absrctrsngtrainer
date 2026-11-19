@@ -102,6 +102,8 @@ class ArEngine {
     bits(f) {
         let b = this.cache.get(f.key);
         if (b) return b;
+        // keys fix meanings, so the cache is good across items; only its size needs watching
+        if (this.cache.size > (this.cacheCap || 20000)) this.cache.clear();
         b = [];
         for (let a = 0; a < this.axes; a++) b.push(abFrom(this.models, m => f.truth(m, a)));
         this.cache.set(f.key, b);
@@ -766,7 +768,7 @@ function arQuestion(fam, P, extra) {
     const wantK = Math.max(minK, arityLevel());
     let r = null;
     for (let kk = wantK; kk >= minK && !r; kk--) {
-        const tries = kk === wantK ? 6 : 3;
+        const tries = kk === wantK ? (fam.tries || 6) : Math.min(3, fam.tries || 3);
         for (let t = 0; t < tries && !r; t++) r = arBuild(fam, P, kk, { analogy: extra.analogy });
     }
     if (!r) return null;

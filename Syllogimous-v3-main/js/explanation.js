@@ -169,6 +169,48 @@ function createExplanationNeeds(nd) {
     return s + '</div><div class="support__note">If the one on the left works, every one on the right has to as well.</div>';
 }
 
+// a number line: rows are [word, value]; words at the same value stack above one tick
+function createExplanationNumberLine(nl) {
+    const vals = nl.rows.map(r => r[1]);
+    const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(1, hi - lo);
+    const groups = new Map();
+    for (const [w, v] of nl.rows) { if (!groups.has(v)) groups.set(v, []); groups.get(v).push(w); }
+    const tall = Math.max(...[...groups.values()].map(g => g.length));
+    let s = `<div class="xp-head">${nl.head}</div><div class="xp-nl-wrap"><div class="xp-nl" style="width:${Math.max(260, span * 46)}px;height:${2.6 + tall * 1.35}em">`;
+    s += '<div class="xp-nl__axis"></div>';
+    for (let v = lo; v <= hi; v++) s += `<div class="xp-nl__unit" style="left:${(100 * (v - lo) / span).toFixed(3)}%"></div>`;
+    for (const [v, ws] of [...groups].sort((a, b) => a[0] - b[0])) {
+        const left = (100 * (v - lo) / span).toFixed(3);
+        s += `<div class="xp-nl__pt" style="left:${left}%"><div class="xp-nl__words">${ws.map(w => `<div class="xp-nl__w">${w}</div>`).join('')}</div>`
+           + `<div class="xp-nl__tick"></div><div class="xp-nl__v">${v}</div></div>`;
+    }
+    return s + '</div></div>';
+}
+
+// spans in time: rows are [word, start slot, end slot] on a track of `slots` endpoint positions
+function createExplanationBars(br) {
+    const n = br.slots, pct = v => (100 * (v + 0.5) / n).toFixed(2);
+    let s = `<div class="xp-head">${br.head}</div><div class="xp-bars">`;
+    for (const [w, a, b] of br.rows) {
+        s += `<div class="xp-bar__w">${w}</div><div class="xp-bar__track">`
+           + `<div class="xp-bar" style="left:${pct(a)}%;width:${(100 * (b - a) / n).toFixed(2)}%"></div></div>`;
+    }
+    return s + '</div>';
+}
+
+// a grid of positions with the way each one faces: cells are [word, x, y, heading 0..3 = up right down left]
+function createExplanationFacing(fc) {
+    const xs = fc.cells.map(c => c[1]), ys = fc.cells.map(c => c[2]);
+    const W = Math.max(...xs) + 1, H = Math.max(...ys) + 1;
+    const arrow = ['\u2191', '\u2192', '\u2193', '\u2190'];
+    let s = `<div class="xp-head">${fc.head}</div><div class="xp-face" style="grid-template-columns:repeat(${W}, auto)">`;
+    for (let y = H - 1; y >= 0; y--) for (let x = 0; x < W; x++) {
+        const here = fc.cells.filter(c => c[1] === x && c[2] === y);
+        s += '<div class="xp-face__cell">' + here.map(c => `<div class="xp-face__item"><span class="xp-face__arrow">${arrow[c[3]]}</span>${c[0]}</div>`).join('') + '</div>';
+    }
+    return s + '</div>';
+}
+
 // an indented listing: rows are [depth, word] (Hierarchy draws its tree with this)
 function createExplanationLines(ln) {
     let s = `<div class="xp-head">${ln.head}</div><div class="xp-states" style="flex-direction:column;align-items:flex-start">`;
@@ -238,7 +280,7 @@ function createMissExplanationHTML(q) {
     try { model = createExplanationModel(q) || ''; } catch (e) { model = ''; }
     if (model) {
         // the drawn models carry their own heading and are laid out with real elements, not spacing
-        const own = q.states || q.weights || q.regions || q.needs || q.lines || q.modelNote || (q.subresults && q.subresults.some(r => r.title));
+        const own = q.states || q.weights || q.numberLine || q.bars || q.facing || q.regions || q.needs || q.lines || q.modelNote || (q.subresults && q.subresults.some(r => r.title));
         s += own ? `<div class="miss-explanation__model is-drawn">${model}</div>`
                  : `<div class="support__head">Hidden arrangement:</div><pre class="miss-explanation__model">${model}</pre>`;
     }
@@ -267,6 +309,18 @@ function createExplanationModel(question) {
 
     if (question.weights) {
         return createExplanationWeights(question.weights);
+    }
+
+    if (question.numberLine) {
+        return createExplanationNumberLine(question.numberLine);
+    }
+
+    if (question.bars) {
+        return createExplanationBars(question.bars);
+    }
+
+    if (question.facing) {
+        return createExplanationFacing(question.facing);
     }
 
     if (question.regions) {
@@ -349,7 +403,7 @@ function createExplanationButton(question) {
     }
 
     if (question.wordCoordMap || question.bucket || question.buckets || question.subresults
-        || question.states || question.weights || question.regions || question.needs || question.lines || question.modelNote) {
+        || question.states || question.weights || question.numberLine || question.bars || question.facing || question.regions || question.needs || question.lines || question.modelNote) {
         return `<button class="explanation-button">Explanation</button>`;
     }
 

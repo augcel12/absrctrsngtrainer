@@ -518,6 +518,12 @@ function generateQuestion() {
             generators.push(createRingGenerator(quota));
         if (savedata.enableHierarchy)
             generators.push(createHierarchyGenerator(quota));
+        if (savedata.enableDifference)
+            generators.push(createDifferenceGenerator(quota));
+        if (savedata.enableIntervals)
+            generators.push(createIntervalsGenerator(quota));
+        if (savedata.enablePerspective)
+            generators.push(createPerspectiveGenerator(quota));
     }
     generators.push(...createFormatGenerators(quota));
 

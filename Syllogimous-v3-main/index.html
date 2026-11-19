@@ -746,6 +746,60 @@
 								</span>
 							</div>
 						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-124" type="checkbox">
+									<label class="switch" for="p-124"></label>
+								</div>
+								<label for="p-124">Enable Perspective</label>
+							</div>
+							<ul class="explainer">
+								<li>B is ahead and to the left of A (as A faces)</li>
+								<li>A faces a quarter turn right of B</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-124-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-124-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-125" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-122" type="checkbox">
+									<label class="switch" for="p-122"></label>
+								</div>
+								<label for="p-122">Enable Intervals</label>
+							</div>
+							<ul class="explainer">
+								<li>A overlaps the start of B</li>
+								<li>A lies within B</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-122-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-122-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-123" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
 						<hr class="divider"/>
 						<div class="mb-1">
 							<div class="ctrl__inner">
@@ -855,6 +909,33 @@
 								<span class="single-input">
 									Priority
 									<span class="inline-premise-spinner"><input id="p-77" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-120" type="checkbox">
+									<label class="switch" for="p-120"></label>
+								</div>
+								<label for="p-120">Enable Difference</label>
+							</div>
+							<ul class="explainer">
+								<li>A is 3 more than B</li>
+								<li>A and B together are 4 more than C</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-120-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-120-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-121" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
 								</span>
 							</div>
 						</div>
@@ -2645,6 +2726,9 @@
 		<script src="js/generators/formats.js"></script>
 		<script src="js/generators/arity-more.js"></script>
 		<script src="js/generators/arity-types.js"></script>
+		<script src="js/generators/difference.js"></script>
+		<script src="js/generators/intervals.js"></script>
+		<script src="js/generators/perspective.js"></script>
 		<script src="js/generators/probe.js"></script>
 		<script src="js/generators/interrogate.js"></script>
 		<script src="js/explanation.js"></script>
