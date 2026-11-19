@@ -796,7 +796,7 @@ function wowFeedback() {
     const explain = missed && !queued && savedata.explainOnMiss
         && (!question.format || question.format === 'interrogate');
     // renderJunkEmojis: the explanation must show the same shapes the item did, not the raw tags
-    const next = explain ? () => showMissExplanation(renderJunkEmojis(question)) : init;
+    const next = explain ? () => { xpPrepare(question); showMissExplanation(renderJunkEmojis(question)); } : init;
     if (!missed) {
         wowFeedbackRight(init);
     } else if (question.correctness === 'wrong') {
@@ -1063,11 +1063,9 @@ function createHQLI(question, i) {
     });
     const explanationButton = parent.querySelector(".explanation-button");
     if (explanationButton) {
-        explanationButton.addEventListener('mouseenter', (e) => {
-            createExplanationPopup(q, e);
-        });
-        explanationButton.addEventListener('mouseleave', () => {
-            removeExplanationPopup();
+        explanationButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showExplanationModal(question);
         });
     }
     return parent.firstElementChild;

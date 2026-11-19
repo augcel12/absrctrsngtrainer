@@ -106,9 +106,20 @@ function dfPair(x, y, d, N, opts) {
 }
 
 function arDifferenceFamily() {
+    const amount = (x, v, N) => {
+        const vec = Array(N + 1).fill(0);
+        vec[x] = 1; vec[N] = -v;
+        return { key: `U${x},${v}`, arity: 1, terms: [x], vec, pairs: [], html: W => `${arS(W[x])} ${arR('is exactly ' + v)}` };
+    };
     return {
         id: 'diff',
         engine: N => arDiffEngine(N),
+        simple(h, N) {
+            const out = [];
+            for (const x of arRange(N)) for (const y of arRange(N)) if (x < y) out.push(dfPair(x, y, h[x] - h[y], N));
+            for (const x of arRange(N)) out.push(amount(x, h[x], N));
+            return out.filter(Boolean);
+        },
         // every premise is a new independent equation, and differences alone can only pin N-1 of them, so
         // one more term than premises (the algebra is cheap, so the cap is only there to keep items readable)
         terms: (P, k) => Math.max(k + 1, Math.min(14, P + 1)),

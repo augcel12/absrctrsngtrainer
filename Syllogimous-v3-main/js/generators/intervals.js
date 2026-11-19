@@ -250,7 +250,7 @@ function arIntervalsQuestion(length) {
         countdown: savedata.overrideIntervalsTime || null,
         model: (r, W) => ({
             bars: {
-                head: 'One way they can lie in time (earlier to the left)',
+                head: '',
                 slots: 2 * r.N,
                 rows: arRange(r.N).sort((a, b) => ivS(r.h, a) - ivS(r.h, b)).map(i => [W[i], ivS(r.h, i), ivE(r.h, i)]),
             },

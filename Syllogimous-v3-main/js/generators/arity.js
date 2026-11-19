@@ -478,8 +478,29 @@ function arSpaceFamily(gen) {
         negHtml: (W, plain) => anaHTML(W, a, b, c, d, false, plain),
     });
     const sv = (h, x, y) => arRange(D).map(a => arSign(h[x][a] - h[y][a]));
+    // one axis at a time, for the steps of an explanation: what a between-statement gives is usually a
+    // side on one axis, not a whole direction
+    const AXW = [['further west than', 'further east than', 'east–west'], ['further south than', 'further north than', 'north–south'],
+                 ['lower than', 'higher than', 'above–below'], ['earlier than', 'later than', 'in time']];
+    const axisFact = (x, y, ax, s) => ({
+        key: `A${ax}:${x},${y},${s}`, arity: 2, terms: [x, y], pairs: [],
+        truth: (m, axis) => axis !== ax || arSign(m[x] - m[y]) === s,
+        html: (W) => s === 0
+            ? `${arS(W[x])} ${arR(ax === 3 ? 'is at the same time as' : 'is level with')} ${arS(W[y])}${ax === 3 ? '' : ' ' + arR(AXW[ax][2])}`
+            : `${arS(W[x])} ${arR('is ' + AXW[ax][s > 0 ? 1 : 0])} ${arS(W[y])}`,
+    });
     return {
         id: 'space' + D,
+        simple(h, N) {
+            const out = [];
+            for (const x of arRange(N)) for (const y of arRange(N)) {
+                if (x === y) continue;
+                const s = sv(h, x, y);
+                if (spatialOK(s)) out.push(dir(x, y, s));
+                for (let a = 0; a < D; a++) if (x < y || s[a] !== 0) out.push(axisFact(x, y, a, s[a]));
+            }
+            return out;
+        },
         engine: N => arEngine('weak', N, D),
         // Capped at 6 on purpose. A 7th term widens the pool for 4-ary spatial facts and does raise the
         // strict-tier hit rate, but weak-order enumeration over 7 terms on 3-4 axes pushed worst-case
@@ -802,6 +823,8 @@ function arQuestion(fam, P, extra) {
         const qs = arInterrogateQueries(fam, r, W, interrogateCount());
         if (qs) applyInterrogate(out, qs);
     }
+    // the facts stay behind (they carry functions); the steps are worked out if an explanation is wanted
+    if (!extra.analogy && !out.queries && typeof arDeriveKeep === 'function') out.deriveId = arDeriveKeep(fam, r, W);
     // a false conclusion that imitates one that follows: say which one does
     if (r.concl.base && !isValid) { out.syllogismNearMiss = true; out.supportConclusion = r.concl.base.html(W, true); }
     const cd = extra.countdown;

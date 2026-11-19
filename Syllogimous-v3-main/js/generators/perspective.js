@@ -233,6 +233,15 @@ function arPerspectiveFamily() {
     return {
         id: 'frame',
         engine: N => arFrameEngine(N),
+        simple(h, N) {
+            const out = [];
+            for (const r of arRange(N)) for (const o of arRange(N)) {
+                if (r === o) continue;
+                out.push(pos(r, o, ...trueDir(h, r, o)));
+                if (r < o) out.push(turn(r, o, (h.H[r] - h.H[o] + 4) % 4));
+            }
+            return out;
+        },
         // a build that fails here fails slowly (every heading assignment), and a second one rarely does better
         tries: 3,
         // 4^(N-1) headings times weak orders on two axes: five terms is the most that stays quick. A term
@@ -324,7 +333,7 @@ function arPerspectiveQuestion(length) {
         countdown: savedata.overridePerspectiveTime || null,
         model: (r, W) => ({
             facing: {
-                head: `One arrangement that fits, drawn with ${W[0]} facing up (only how they are turned to each other matters)`,
+                head: `Drawn with ${W[0]} facing up: only how they are turned to each other matters`,
                 cells: arRange(r.N).map(i => [W[i], r.h.p[0][i], r.h.p[1][i], r.h.H[i]]),
             },
         }),

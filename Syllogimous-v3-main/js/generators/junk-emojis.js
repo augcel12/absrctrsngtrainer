@@ -313,6 +313,13 @@ function renderJunkEmojis(question) {
             Array.isArray(v) ? v.map(renderJunkEmojisText) : v,
         ]);
     }
+    // the steps of an explanation, and the names round a ring
+    if (question.derivation && Array.isArray(question.derivation.steps)) {
+        const d = question.derivation, tr = u => ({ ...u, html: renderJunkEmojisText(u.html) });
+        d.steps = d.steps.map(st => ({ ...st, from: st.from.map(tr), to: renderJunkEmojisText(st.to) }));
+        if (d.last) d.last = { ...d.last, from: d.last.from.map(tr) };
+    }
+    if (question.ring && Array.isArray(question.ring.names)) question.ring.names = question.ring.names.map(renderJunkEmojisText);
     if (question.facing && Array.isArray(question.facing.cells)) {
         question.facing.cells = question.facing.cells.map(([w, ...rest]) => [renderJunkEmojisText(w), ...rest]);
         if (typeof question.facing.head === 'string') question.facing.head = renderJunkEmojisText(question.facing.head);

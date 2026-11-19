@@ -96,6 +96,14 @@ function arRingFamily() {
     return {
         id: 'ring',
         engine: N => arRingEngine(N),
+        simple(h, N) {
+            const F = mk(N), out = [];
+            for (const x of arRange(N)) for (const y of arRange(N)) if (x !== y && gap(h, y, x, N) === 1) out.push(F.next(x, y));
+            for (let a = 0; a < N; a++) for (let b = a + 1; b < N; b++) for (let c = b + 1; c < N; c++) {
+                out.push(gap(h, a, b, N) < gap(h, a, c, N) ? F.cyc(a, b, c) : F.cyc(a, c, b));
+            }
+            return out;
+        },
         // at least four seats even with two premises: on three, one adjacency fixes the whole ring
         terms: (P, k) => Math.max(k === 2 ? 4 : k + 1, Math.min(7, P + 1)),
         hidden: N => Int8Array.from(shuffle(arRange(N))),
@@ -153,8 +161,7 @@ function arRingQuestion(length) {
         explainer: 'A ring has no start: only the way round matters',
         countdown: savedata.overrideRingTime || null,
         model: (r, W) => ({
-            modelNote: 'Clockwise round the ring, carrying on from the last back to the first',
-            bucket: arRange(r.N).sort((a, b) => r.h[a] - r.h[b]).map(i => W[i]),
+            ring: { head: '', names: arRange(r.N).sort((a, b) => r.h[a] - r.h[b]).map(i => W[i]) },
         }),
     });
 }
