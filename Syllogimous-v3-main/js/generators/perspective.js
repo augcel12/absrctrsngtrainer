@@ -72,7 +72,7 @@ class ArFrameEngine {
         let M = this.maskCache.get(key);
         if (!M) {
             M = this.maskRaw(facts);
-            if (this.maskCache.size > 4000) this.maskCache.clear();
+            if (this.maskCache.size > 1500) this.maskCache.clear();
             this.maskCache.set(key, M);
         }
         return M;

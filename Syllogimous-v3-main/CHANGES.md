@@ -79,3 +79,56 @@ Analogy and Mapping stop at 4 and say so on the item.
 - The arity help still said the dial scales the time; it doesn't.
 
 `tests/browser/` holds the checks used for this pass (see its README).
+
+## Three new relation types, step-by-step explanations, symbol mode removed (Nov 2026)
+
+**Symbol relations are gone.** The setting, `notation.js`, its key and its styles are removed; premises
+are words again everywhere.
+
+**Three relation types**, each built on the arity engines, so each runs at every arity (2 to 5) and works
+with Interrogate and recall probes. Settings → Relation types, now grouped as *Order and space*,
+*Quantity* and *Logic and structure*.
+- **Difference** (`js/generators/difference.js`): amounts related by how much. "A is 3 more than B";
+  3: "A and B together are 4 more than C", "A is halfway between B and C"; 4: "A is as much more than B as C
+  is more than D", sums against sums; 5: three against two. Exact linear algebra (an equation per premise,
+  entailment = lying in their span). The additive partner of Balance, which multiplies.
+- **Intervals** (`js/generators/intervals.js`): stretches of time with a start and an end. "A is wholly
+  before B", "A overlaps the start / end of B", "A lies within B", "A covers all of B", plus endpoint facts
+  ("A starts before B starts", "A and B overlap"); 3: "A comes between B and C", "A overlaps B or C", "A, B
+  and C are never all going at once"; 4: "exactly when", counts; 5: counts over four, "exactly one of A, B
+  and C comes between D and E". Every endpoint order is enumerated (up to five spans).
+- **Perspective** (`js/generators/perspective.js`): every term faces its own way, and positions are given
+  from the named term's point of view: "B is ahead and to the left of A", "A faces a quarter turn right of
+  B"; 3: "From A: B and C are on the same side", "From A: B is further left than C"; 4: "From A: B is between
+  C and D, left to right", counts; 5: "From A: exactly 2 of B, C, D and E are on the left". The engine runs
+  one Space problem per way of turning the terms (the first fixed). Turn-only questions (pure quarter-turn
+  arithmetic) are never asked. Negation mirrors left and right.
+
+**Gaps filled in existing types**: Ring has "A sits directly across from B" (even rings); Hierarchy has "A is
+directly over B".
+
+**Explanations now show how the answer follows** (`js/generators/derive.js`). For every item built on the
+arity engines the explanation is a short proof: from the premises that settle the conclusion, each step
+adds a simple fact that follows from at most two things already known (three when a count needs its cases
+closed), until the conclusion follows; only the steps the last one leans on are kept. Every step is checked
+by the engine. When no short proof turns up in 350 ms the premises that settle it are listed instead.
+Classic two-term items show the chain of premises linking the two terms, in order.
+
+The drawings are labelled: orders say which end is which (left/right, top/bottom, least/most,
+earliest/latest, outermost/innermost); space grids carry the compass, 3D is drawn as flat layers
+(highest to lowest), space-time as moments; Ring is drawn as a circle with the clockwise arrow; Difference
+as a number line; Intervals as bars on a timeline; Perspective as a grid with each term's facing arrow.
+Engine-built arrangements are labelled "one arrangement that fits". The window scrolls, and the history's
+Explanation button now opens the same window on click (it used to be a hover pop-up that cut long ones off).
+
+**Settings** are grouped under section headings (Difficulty, Item modes, Progression, Stimuli, Premises,
+Relation types, Answer formats, Appearance) and set in one typeface.
+
+**Fixed**: removing the symbol hook had left `renderJunkEmojis` passing an undefined variable to Binary
+sub-items.
+
+Checks: `tests/browser/families.js` (new; wording read back and answers re-derived independently for the
+three new types — exact rational elimination, every endpoint order, every arrangement), `wording.js` now
+also reads Hierarchy and the new Ring wording (6.5 million checks, 0 wrong), `e2e.js`, `sweep.js`,
+`play.js`, `check-formats.js`, `check-extra-relations.js`.
+

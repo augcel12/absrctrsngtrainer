@@ -67,6 +67,7 @@
 								<div class="profile-copied" id="profile-copied">URL copied to clipboard</div>
 							</div>
 						</div>
+						<div class="set-sec">Difficulty</div>
 						<div class="mb-2">
 							<div class="inline-input__outer big-input">
 								Global Premises
@@ -108,6 +109,13 @@
 										Analogy and Mapping stop at<br>
 										4; the label shows the arity<br>
 										an item really has.<br>
+										<br>
+										Difference, Intervals and<br>
+										Perspective bring their own:<br>
+										sums against sums, spans<br>
+										between spans, and counts<br>
+										and orders seen from one<br>
+										term's point of view.<br>
 									</div>
 								</div>
 								<span class="inline-input__inner">
@@ -120,6 +128,7 @@
 								</span>
 							</div>
 						</div>
+						<div class="set-sec">Item modes</div>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -160,7 +169,7 @@
 								</div>
 							</div>
 							<ul class="explainer">
-								<li>Needs the arity engine, so it rides items at arity 3+, plus Ring, Hierarchy and Mapping at any setting</li>
+								<li>Rides items built on the arity engine: every type at arity 3+, and Ring, Hierarchy, Mapping, Difference, Intervals and Perspective at any setting</li>
 							</ul>
 							<div class="multi-input">
 								<span class="single-input">
@@ -287,6 +296,7 @@
 								</span>
 							</div>
 						</div>
+						<div class="set-sec">Progression</div>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -393,6 +403,7 @@
 						  </div>
 						</div>
 
+						<div class="set-sec">Stimuli</div>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -484,7 +495,7 @@
 								</span>
 							</div>
 						</div>
-						<hr class="divider"/>
+						<div class="set-sec">Premises</div>
 						<div class="mb-1">
 							<div class="inline-input__outer">
 								Scramble Factor
@@ -545,34 +556,8 @@
 								<label for="p-46">Spoiler Conclusion</label>
 							</div>
 						</div>
-						<hr class="divider"/>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
-									<input hidden id="p-1" type="checkbox" checked>
-									<label class="switch" for="p-1"></label>
-								</div>
-								<label for="p-1">Enable Distinction</label>
-							</div>
-							<ul class="explainer">
-								<li>A is the same as B</li>
-								<li>A is opposite to B</li>
-							</ul>
-							<div class="multi-input">
-								<span class="single-input">
-									Premises
-									<span class="inline-premise-spinner"><input id="p-1-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
-								</span>
-								<span class="single-input">
-									Time
-									<span class="inline-premise-spinner"><input id="p-1-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
-								</span>
-								<span class="single-input">
-									Priority
-									<span class="inline-premise-spinner"><input id="p-53" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
-								</span>
-							</div>
-						</div>
+						<div class="set-sec">Relation types</div>
+						<div class="set-sub">Order and space</div>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -656,7 +641,6 @@
 								</span>
 							</div>
 						</div>
-						<hr class="divider"/>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -706,44 +690,6 @@
 								<span class="single-input">
 									Priority
 									<span class="inline-premise-spinner"><input id="p-60" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
-								</span>
-							</div>
-						</div>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
-									<input hidden id="p-102" type="checkbox">
-									<label class="switch" for="p-102"></label>
-								</div>
-								<label for="p-102">Enable Mapping</label>
-								<span class="tooltip-container" tabindex="0">?
-									<div class="tooltip-text right">
-										Two sets with the same<br>
-										layout; the second may be<br>
-										turned or mirrored and is<br>
-										described through different<br>
-										pairs. Match by role in the<br>
-										whole layout, not by the<br>
-										compass words or the order<br>
-										of the premises. Time x2.<br>
-									</div>
-								</span>
-							</div>
-							<ul class="explainer">
-								<li>A has the same place as X</li>
-							</ul>
-							<div class="multi-input">
-								<span class="single-input">
-									Premises
-									<span class="inline-premise-spinner"><input id="p-102-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
-								</span>
-								<span class="single-input">
-									Time
-									<span class="inline-premise-spinner"><input id="p-102-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
-								</span>
-								<span class="single-input">
-									Priority
-									<span class="inline-premise-spinner"><input id="p-103" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
 								</span>
 							</div>
 						</div>
@@ -801,7 +747,154 @@
 								</span>
 							</div>
 						</div>
-						<hr class="divider"/>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-105" type="checkbox">
+									<label class="switch" for="p-105"></label>
+								</div>
+								<label for="p-105">Enable Ring</label>
+							</div>
+							<ul class="explainer">
+								<li>Going clockwise from A, B comes before C</li>
+								<li>A circle has no first or last, so the smallest premise that says anything binds three</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-105-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-105-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-106" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-102" type="checkbox">
+									<label class="switch" for="p-102"></label>
+								</div>
+								<label for="p-102">Enable Mapping</label>
+								<span class="tooltip-container" tabindex="0">?
+									<div class="tooltip-text right">
+										Two sets with the same<br>
+										layout; the second may be<br>
+										turned or mirrored and is<br>
+										described through different<br>
+										pairs. Match by role in the<br>
+										whole layout, not by the<br>
+										compass words or the order<br>
+										of the premises. Time x2.<br>
+									</div>
+								</span>
+							</div>
+							<ul class="explainer">
+								<li>A has the same place as X</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-102-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-102-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-103" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
+						<div class="set-sub">Quantity</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-76" type="checkbox">
+									<label class="switch" for="p-76"></label>
+								</div>
+								<label for="p-76">Enable Balance</label>
+							</div>
+							<ul class="explainer">
+								<li>1 A balances 3 B (A weighs 3 times B)</li>
+								<li>Asks: do p A balance q D?</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-76-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-76-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-77" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-120" type="checkbox">
+									<label class="switch" for="p-120"></label>
+								</div>
+								<label for="p-120">Enable Difference</label>
+							</div>
+							<ul class="explainer">
+								<li>A is 3 more than B</li>
+								<li>A and B together are 4 more than C</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-120-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-120-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-121" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
+						<div class="set-sub">Logic and structure</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-1" type="checkbox" checked>
+									<label class="switch" for="p-1"></label>
+								</div>
+								<label for="p-1">Enable Distinction</label>
+							</div>
+							<ul class="explainer">
+								<li>A is the same as B</li>
+								<li>A is opposite to B</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									Premises
+									<span class="inline-premise-spinner"><input id="p-1-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
+								</span>
+								<span class="single-input">
+									Time
+									<span class="inline-premise-spinner"><input id="p-1-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
+								</span>
+								<span class="single-input">
+									Priority
+									<span class="inline-premise-spinner"><input id="p-53" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
+								</span>
+							</div>
+						</div>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -889,87 +982,6 @@
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
-									<input hidden id="p-76" type="checkbox">
-									<label class="switch" for="p-76"></label>
-								</div>
-								<label for="p-76">Enable Balance</label>
-							</div>
-							<ul class="explainer">
-								<li>1 A balances 3 B (A weighs 3 times B)</li>
-								<li>Asks: do p A balance q D?</li>
-							</ul>
-							<div class="multi-input">
-								<span class="single-input">
-									Premises
-									<span class="inline-premise-spinner"><input id="p-76-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
-								</span>
-								<span class="single-input">
-									Time
-									<span class="inline-premise-spinner"><input id="p-76-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
-								</span>
-								<span class="single-input">
-									Priority
-									<span class="inline-premise-spinner"><input id="p-77" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
-								</span>
-							</div>
-						</div>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
-									<input hidden id="p-120" type="checkbox">
-									<label class="switch" for="p-120"></label>
-								</div>
-								<label for="p-120">Enable Difference</label>
-							</div>
-							<ul class="explainer">
-								<li>A is 3 more than B</li>
-								<li>A and B together are 4 more than C</li>
-							</ul>
-							<div class="multi-input">
-								<span class="single-input">
-									Premises
-									<span class="inline-premise-spinner"><input id="p-120-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
-								</span>
-								<span class="single-input">
-									Time
-									<span class="inline-premise-spinner"><input id="p-120-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
-								</span>
-								<span class="single-input">
-									Priority
-									<span class="inline-premise-spinner"><input id="p-121" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
-								</span>
-							</div>
-						</div>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
-									<input hidden id="p-105" type="checkbox">
-									<label class="switch" for="p-105"></label>
-								</div>
-								<label for="p-105">Enable Ring</label>
-							</div>
-							<ul class="explainer">
-								<li>Going clockwise from A, B comes before C</li>
-								<li>A circle has no first or last, so the smallest premise that says anything binds three</li>
-							</ul>
-							<div class="multi-input">
-								<span class="single-input">
-									Premises
-									<span class="inline-premise-spinner"><input id="p-105-premises" type="number" placeholder="" min="1" max="100" value="" style="width: 5ch">ps</span>
-								</span>
-								<span class="single-input">
-									Time
-									<span class="inline-premise-spinner"><input id="p-105-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
-								</span>
-								<span class="single-input">
-									Priority
-									<span class="inline-premise-spinner"><input id="p-106" type="number" placeholder="" min="1" max="9999" value="100" style="width: 6ch">%</span>
-								</span>
-							</div>
-						</div>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
 									<input hidden id="p-107" type="checkbox">
 									<label class="switch" for="p-107"></label>
 								</div>
@@ -994,8 +1006,8 @@
 								</span>
 							</div>
 						</div>
-						<hr class="divider"/>
-						<div class="mb-1"><div class="ctrl__inner" style="opacity:0.8">Answer formats use the relation types enabled above (not yet Syllogism, Binary, Analogy, 4D or Anchor)</div></div>
+						<div class="set-sec">Answer formats</div>
+						<div class="set-note">They use whichever of Linear, Space 2D, Space 3D, Distinction, Influence, Requirement, Contexts and Balance are on.</div>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -1085,7 +1097,7 @@
 								<label for="p-90">Only answer formats (no TRUE/FALSE items)</label>
 							</div>
 						</div>
-						<hr class="divider"/>
+						<div class="set-sec">Appearance</div>
 						<div class="mb-2">
 							<div class="inline-input__outer">
 								Image

@@ -11,7 +11,7 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
   await p.evaluate(({ ARITY }) => {
     Object.assign(savedata, {
       enableDistinction: true, enableLinear: true, linearWording: 'leftright,topunder,comparison,temporal,contains', enableDirection: true, enableDirection3D: true,
-      enableInfluence: true, enableRequirement: true, enableContexts: true, enableBalance: true, enableRing: true, enableHierarchy: true, enableMapping: true,
+      enableInfluence: true, enableRequirement: true, enableContexts: true, enableBalance: true, enableRing: true, enableHierarchy: true, enableMapping: true, enableDifference: true, enableIntervals: true, enablePerspective: true,
       enableFmtName: true, enableFmtMissing: true, enableFmtRepair: true, enableInterrogate: true, interrogateChance: 30, enableProbe: true, probeChance: 15,
       retryMissed: true, explainOnMiss: true, autoProgression: true, autoProgressionGrouping: 'all', autoProgressionTrailing: 10, enableNegation: true,
       arity: ARITY, premises: 3, timer: 120,

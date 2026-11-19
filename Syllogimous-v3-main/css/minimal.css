@@ -320,3 +320,91 @@ button:not(:disabled):hover {
 .light-mode .miss-explanation__inner {
     border-color: #e2e2de;
 }
+
+/* ---- settings panel: one typeface, labelled sections, quiet detail ---- */
+.offcanvas-body.ffmono,
+.offcanvas-body .ffmono,
+.offcanvas-body .inline-input__outer,
+.offcanvas-body select,
+.offcanvas-body input {
+    font-family: "Roboto", sans-serif;
+}
+
+.offcanvas-body {
+    font-size: 15px;
+    line-height: 1.35;
+}
+
+.set-sec {
+    margin: 30px 0 12px;
+    padding-bottom: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.5;
+    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+}
+
+.set-sub {
+    margin: 20px 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.75;
+}
+
+.set-note {
+    font-size: 13px;
+    opacity: 0.6;
+    margin: 0 0 14px;
+}
+
+.offcanvas-body .mb-1 { margin-bottom: 1.1rem; }
+.offcanvas-body .mb-2 { margin-bottom: 1.4rem; }
+
+.offcanvas-body .switch {
+    width: 1.55rem;
+    height: 1.55rem;
+    border-width: 1px;
+    border-radius: 5px;
+}
+
+.offcanvas-body .switch::after { border-radius: 2px; }
+
+.offcanvas-body .explainer {
+    font-style: normal;
+    font-size: 13px;
+    opacity: 0.58;
+    margin: 3px 0 6px;
+    padding-left: 2.2rem;
+}
+
+.offcanvas-body .explainer li { margin: 1px 0; }
+
+.offcanvas-body .multi-input {
+    margin: 6px 0 0 2.2rem;
+    padding: 4px 8px;
+    gap: 6px;
+    width: fit-content;
+    max-width: calc(100% - 2.2rem);
+    flex-wrap: wrap;
+    background: transparent;
+    border: 1px solid rgba(127, 127, 127, 0.2);
+    border-radius: 6px;
+}
+
+.offcanvas-body .single-input {
+    background: transparent;
+    font-size: 12px;
+}
+
+.offcanvas-body .inline-premise-spinner { background: transparent; }
+
+.offcanvas-body .inline-input__outer {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.offcanvas-body .divider { background-color: rgba(127, 127, 127, 0.25); }
+
+.offcanvas-body .folder { border-radius: 6px; }

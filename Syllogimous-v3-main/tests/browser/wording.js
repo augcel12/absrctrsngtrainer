@@ -104,7 +104,8 @@ const { chromium } = require('playwright');
       const gap = (v, x, y) => (v[y] - v[x] + N) % N;
       let m;
       const flip = (ph, yes) => { const red = ph.startsWith('~['); const raw = ph.replace(/^~\[|\]$/g, ''); let r = yes(raw); return red ? !r : r; };
-      if ((m = /^(T\d+) (~\[[^\]]+\]|is the next one clockwise after|is not the next one clockwise after) (T\d+)$/.exec(s))) { const nx = flip(m[2], r => !/not/.test(r)), a = T(m[1]), x = T(m[3]); return v => (gap(v, x, a) === 1) === nx; }
+      if ((m = /^(T\d+) (~\[(?:sits directly across from|does not sit directly across from)\]|sits directly across from|does not sit directly across from) (T\d+)$/.exec(s))) { const yes = flip(m[2], r => !/not/.test(r)), a = T(m[1]), x = T(m[3]); return v => (2 * gap(v, a, x) === N) === yes; }
+      if ((m = /^(T\d+) (~\[(?:is the next one clockwise after|is not the next one clockwise after)\]|is the next one clockwise after|is not the next one clockwise after) (T\d+)$/.exec(s))) { const nx = flip(m[2], r => !/not/.test(r)), a = T(m[1]), x = T(m[3]); return v => (gap(v, x, a) === 1) === nx; }
       if ((m = /^Going clockwise from (T\d+), (T\d+) (~\[[^\]]+\]|comes before|comes after) (T\d+)$/.exec(s))) { const bf = flip(m[3], r => r === 'comes before'), a = T(m[1]), x = T(m[2]), y = T(m[4]); return v => (gap(v, a, x) < gap(v, a, y)) === bf; }
       if ((m = /^(T\d+) sits closer to (T\d+) than to (T\d+)$/.exec(s))) { const a = T(m[1]), x = T(m[2]), y = T(m[3]); const dist = (v, p, q) => Math.min(gap(v, p, q), N - gap(v, p, q)); return v => dist(v, a, x) < dist(v, a, y); }
       if ((m = /^It is (~\[[^\]]+\]|the same number of steps|a different number of steps) clockwise from (T\d+) to (T\d+) as from (T\d+) to (T\d+)$/.exec(s))) { const same = flip(m[1], r => /same/.test(r)), a = T(m[2]), x = T(m[3]), c = T(m[4]), d = T(m[5]); return v => (gap(v, a, x) === gap(v, c, d)) === same; }
@@ -114,12 +115,47 @@ const { chromium } = require('playwright');
       }
       return null;
     }
+    // ---- hierarchy: v[i] = the one directly over i, -1 for a top
+    function readTree(s) {
+      let m;
+      const flip = (ph, yes) => { const red = ph.startsWith('~['); const raw = ph.replace(/^~\[|\]$/g, ''); let r = yes(raw); return red ? !r : r; };
+      const over = (v, x, y) => { for (let w = v[y]; w !== -1; w = v[w]) if (w === x) return true; return false; };
+      const line = (v, x, y) => over(v, x, y) || over(v, y, x);
+      if ((m = /^(T\d+) (~\[(?:is somewhere over|is not over)\]|is somewhere over|is not over) (T\d+)$/.exec(s))) { const yes = flip(m[2], r => r === 'is somewhere over'), a = T(m[1]), b = T(m[3]); return v => over(v, a, b) === yes; }
+      if ((m = /^(T\d+) (~\[(?:is directly over|is not directly over)\]|is directly over|is not directly over) (T\d+)$/.exec(s))) { const yes = flip(m[2], r => r === 'is directly over'), a = T(m[1]), b = T(m[3]); return v => (v[b] === a) === yes; }
+      if ((m = /^(T\d+) and (T\d+) (~\[(?:lie on different lines of descent|lie on one line of descent)\]|lie on different lines of descent|lie on one line of descent)$/.exec(s))) { const apart = flip(m[3], r => /different/.test(r)), a = T(m[1]), b = T(m[2]); return v => !line(v, a, b) === apart; }
+      if ((m = /^(T\d+) (~\[(?:is the lowest one over both|is not the lowest one over both)\]|is the lowest one over both|is not the lowest one over both) (T\d+) and (T\d+)$/.exec(s))) {
+        const yes = flip(m[2], r => !/not/.test(r)), a = T(m[1]), b = T(m[3]), c = T(m[4]);
+        // a is over both, and no one strictly between a and b is over c
+        return v => {
+          let lowest = over(v, a, b) && over(v, a, c);
+          if (lowest) for (let w = v[b]; w !== -1 && w !== a; w = v[w]) if (over(v, w, c)) lowest = false;
+          return lowest === yes;
+        };
+      }
+      if ((m = /^(T\d+) is over (T\d+) or (T\d+)$/.exec(s))) { const a = T(m[1]), b = T(m[2]), c = T(m[3]); return v => over(v, a, b) || over(v, a, c); }
+      if ((m = /^(T\d+), (T\d+) and (T\d+) (~\[(?:do not all lie on one line of descent|all lie on one line of descent)\]|do not all lie on one line of descent|all lie on one line of descent)$/.exec(s))) {
+        const notAll = flip(m[4], r => /not/.test(r)), a = T(m[1]), b = T(m[2]), c = T(m[3]);
+        return v => !(line(v, a, b) && line(v, b, c) && line(v, a, c)) === notAll;
+      }
+      if ((m = /^(T\d+) is over (T\d+) exactly when (T\d+) (~\[(?:is over|is not over)\]|is over|is not over) (T\d+)$/.exec(s))) {
+        const pos = flip(m[4], r => r === 'is over'), w = T(m[1]), x = T(m[2]), y = T(m[3]), z = T(m[5]);
+        return v => over(v, w, x) === (over(v, y, z) === pos);
+      }
+      if ((m = /^(None of|Exactly (\d+) of) (.+?) (sits under|sit under) (T\d+)$/.exec(s))) {
+        const n = m[1] === 'None of' ? 0 : +m[2], L = list(m[3]), a = T(m[5]);
+        return v => L.filter(x => over(v, a, x)).length === n;
+      }
+      return null;
+    }
+    const rndForest = n => { const v = new Int8Array(n); for (let i = 0; i < n; i++) v[i] = (i === 0 || Math.random() < 0.25) ? -1 : Math.floor(Math.random() * i); const p = rndPerm(n), w = new Int8Array(n); for (let i = 0; i < n; i++) w[p[i]] = v[i] === -1 ? -1 : p[v[i]]; return w; };
     const W = Array.from({ length: 12 }, (_, i) => 'T' + i);
     const rndPerm = n => { const a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return Int8Array.from(a); };
     const fams = [
       ...[LEFT_RIGHT, TOP_UNDER, MORE_LESS, BEFORE_AFTER, CONTAINS_WITHIN].map(g => ['order:' + g.getName(), arOrderFamily(g), 'order']),
       ['space2d', arSpaceFamily(new Direction2D()), 'space'], ['space3d', arSpaceFamily(new Direction3D()), 'space'],
       ['distinction', arBitsFamily(), 'bits'], ['influence', arBitsFamily(AR_LEX_INFLUENCE), 'bits'], ['ring', arRingFamily(), 'ring'],
+      ['hierarchy', arHierarchyFamily(), 'tree'],
     ];
     for (const neg of [false, true]) {
       savedata.enableNegation = neg;
@@ -127,11 +163,11 @@ const { chromium } = require('playwright');
         const P = 5, N = fam.terms(P, k), h = fam.hidden(N), eng = fam.engine(N);
         const facts = [];
         for (let t = 0; t < 12; t++) { const f = fam.fact(h, N, k, new Set(), []); if (f) facts.push(f); }
-        const cands = fam.conclusions(h, N, k, {}, { facts, M: eng.mask(facts), eng }).filter(c => c.arity >= 3 || kind === 'ring').slice(0, 25);
+        const cands = fam.conclusions(h, N, k, {}, { facts, M: eng.mask(facts), eng }).filter(c => c.arity >= 3 || kind === 'ring' || kind === 'tree').slice(0, 25);
         for (const f of [...facts, ...cands]) {
           for (const plain of [false, true]) {
             const s = txt(f.html(W, plain));
-            const rd = kind === 'order' ? readOrder(s) : kind === 'space' ? readSpace(s) : kind === 'bits' ? readBits(s) : readRing(s, N);
+            const rd = kind === 'order' ? readOrder(s) : kind === 'space' ? readSpace(s) : kind === 'bits' ? readBits(s) : kind === 'tree' ? readTree(s) : readRing(s, N);
             const key = name + ' ' + s.replace(/T\d+/g, 'T').replace(/\d+/g, '#');
             out.kinds[name + ':' + f.arity] = (out.kinds[name + ':' + f.arity] || 0) + 1;
             if (!rd) { out.unread++; if (out.samples.length < 25) out.samples.push('UNREAD ' + key); continue; }
@@ -144,11 +180,11 @@ const { chromium } = require('playwright');
                 truth = [...Array(D).keys()].every(a => !!f.truth(axes[a], a));
                 mine = !!rd(pts, D);
               } else {
-                m = kind === 'bits' ? Int8Array.from([...Array(N)].map(() => Math.random() < 0.5 ? 1 : 0)) : rndPerm(N);
+                m = kind === 'bits' ? Int8Array.from([...Array(N)].map(() => Math.random() < 0.5 ? 1 : 0)) : kind === 'tree' ? rndForest(N) : rndPerm(N);
                 truth = !!f.truth(m, 0); mine = !!rd(m);
               }
               out.checked++;
-              if (truth !== mine) { out.wrong++; if (out.samples.length < 25) out.samples.push(`WRONG ${key} truth=${truth}`); break; }
+              if (truth !== mine) { out.wrong++; out.wrongs = out.wrongs || []; if (out.wrongs.length < 20) out.wrongs.push(`WRONG ${key} truth=${truth}`); break; }
             }
           }
         }
@@ -158,7 +194,8 @@ const { chromium } = require('playwright');
   });
   console.log('checked', r.checked, 'unread', r.unread, 'wrong', r.wrong);
   console.log(Object.entries(r.kinds).map(e => e.join('=')).join(' '));
-  r.samples.forEach(x => console.log('  ', x));
+  (r.wrongs || []).forEach(x => console.log('  ', x));
+  r.samples.filter(x => !/^UNREAD space/.test(x)).forEach(x => console.log('  ', x));
   console.log('errors', errs);
   await b.close();
 })();

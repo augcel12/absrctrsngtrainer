@@ -9,6 +9,9 @@ These drive the real page in headless Chromium (Playwright). Serve the repo root
   off) is rendered, read back by a reader written from the English, and compared with the fact's own
   truth function on random arrangements. Should print `wrong 0`; `unread` is only the two-term compass
   directions, which it does not parse.
+- `families.js [reps]` — Difference, Intervals and Perspective: every shape's wording read back by an
+  independent reader, and answers re-derived independently (exact rational elimination, every endpoint
+  order, every arrangement with every way of facing). Should print zeros in every wrong column.
 - `e2e.js` — items built at every arity, answers re-derived by enumerating every arrangement; also
   checks the hidden arrangement satisfies the premises, the support contains a top-arity premise and
   no single premise settles the conclusion. Should print all zeros.

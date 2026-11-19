@@ -51,6 +51,12 @@ function arRingFamily() {
             truth: m => gap(m, b, a, N) !== 1,
             html: (W, plain) => `${arS(W[a])} ${arPhrase('is not the next one clockwise after', 'is the next one clockwise after', plain)} ${arS(W[b])}`,
         });
+        // "A sits directly across from B": half way round, either way (only on a ring with an even count)
+        const across = (a, b) => ({
+            key: `o${Math.min(a, b)},${Math.max(a, b)}`, arity: 2, terms: [a, b], pairs: [],
+            truth: m => 2 * gap(m, a, b, N) === N,
+            html: (W, plain) => `${arS(W[a])} ${arPhrase('sits directly across from', 'does not sit directly across from', plain)} ${arS(W[b])}`,
+        });
         // "going clockwise from A you reach B before C" — the smallest fact a ring can carry
         const cyc = (a, b, c) => ({
             key: `c${a},${b},${c}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [a, c, null]],
@@ -91,7 +97,7 @@ function arRingFamily() {
                 html: (W, plain) => `${arR(n === 1 ? 'Exactly one of' : 'Exactly ' + n + ' of')} ${movers.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[movers[movers.length - 1]])} ${arPhrase(n === 1 ? 'lies on' : 'lie on', n === 1 ? 'lies off' : 'lie off', plain)} ${arR('the clockwise way from')} ${arS(W[c])} ${arR('round to')} ${arS(W[d])}`,
             };
         };
-        return { next, notNext, cyc, nearer, sameGap, oneArc, arcN };
+        return { next, notNext, across, cyc, nearer, sameGap, oneArc, arcN };
     };
     return {
         id: 'ring',
@@ -99,6 +105,7 @@ function arRingFamily() {
         simple(h, N) {
             const F = mk(N), out = [];
             for (const x of arRange(N)) for (const y of arRange(N)) if (x !== y && gap(h, y, x, N) === 1) out.push(F.next(x, y));
+            if (N % 2 === 0) for (const x of arRange(N)) for (const y of arRange(N)) if (x < y && 2 * gap(h, x, y, N) === N) out.push(F.across(x, y));
             for (let a = 0; a < N; a++) for (let b = a + 1; b < N; b++) for (let c = b + 1; c < N; c++) {
                 out.push(gap(h, a, b, N) < gap(h, a, c, N) ? F.cyc(a, b, c) : F.cyc(a, c, b));
             }
@@ -111,6 +118,7 @@ function arRingFamily() {
             const F = mk(N);
             if (a === 2) {
                 const [x, y] = arTerms(N, 2, used);
+                if (N % 2 === 0 && 2 * gap(h, x, y, N) === N && Math.random() < 0.7) return F.across(x, y);
                 if ((h[x] - h[y] + N) % N === 1) return F.next(x, y);
                 if ((h[y] - h[x] + N) % N === 1) return F.next(y, x);
                 return Math.random() < 0.6 ? null : F.notNext(x, y);
@@ -139,6 +147,7 @@ function arRingFamily() {
         conclusions(h, N, k) {
             const F = mk(N), out = [];
             for (const x of arRange(N)) for (const y of arRange(N)) if (x !== y) out.push(F.next(x, y));
+            if (N % 2 === 0) for (const x of arRange(N)) for (const y of arRange(N)) if (x < y) out.push(F.across(x, y));
             if (k >= 3) for (let i = 0; i < 40; i++) {
                 const [a, b, c] = shuffle(arRange(N)).slice(0, 3);
                 out.push(coinFlip() ? F.cyc(a, b, c) : F.nearer(a, b, c));
@@ -214,6 +223,12 @@ function arHierarchyFamily() {
         truth: m => arOver(m, a, b),
         html: (W, plain) => `${arS(W[a])} ${arPhrase('is somewhere over', 'is not over', plain)} ${arS(W[b])}`,
     });
+    // "A is directly over B": the one right above, nothing in between
+    const direct = (a, b) => ({
+        key: `d${a},${b}`, arity: 2, terms: [a, b], pairs: [],
+        truth: m => m[b] === a,
+        html: (W, plain) => `${arS(W[a])} ${arPhrase('is directly over', 'is not directly over', plain)} ${arS(W[b])}`,
+    });
     const apart = (a, b) => ({
         key: `u${Math.min(a, b)},${Math.max(a, b)}`, arity: 2, terms: [a, b], pairs: [],
         truth: m => !arOver(m, a, b) && !arOver(m, b, a),
@@ -279,6 +294,8 @@ function arHierarchyFamily() {
         fact(h, N, a, used) {
             if (a === 2) {
                 const [x, y] = arTerms(N, 2, used);
+                if (h[y] === x && Math.random() < 0.4) return direct(x, y);
+                if (h[x] === y && Math.random() < 0.4) return direct(y, x);
                 if (arOver(h, x, y)) return over(x, y);
                 if (arOver(h, y, x)) return over(y, x);
                 return apart(x, y);
@@ -307,6 +324,7 @@ function arHierarchyFamily() {
             const out = [];
             for (const x of arRange(N)) for (const y of arRange(N)) if (x !== y) out.push(over(x, y));
             for (const x of arRange(N)) for (const y of arRange(N)) if (x < y) out.push(apart(x, y));
+            for (const x of arRange(N)) for (const y of arRange(N)) if (x !== y && (h[y] === x || Math.random() < 0.25)) out.push(direct(x, y));
             if (k >= 3) for (let i = 0; i < 40; i++) {
                 const [a, b, c] = shuffle(arRange(N)).slice(0, 3), r = Math.random();
                 out.push(r < 0.4 ? meet(a, b, c) : r < 0.75 ? overOne(a, b, c) : notaLine(a, b, c));

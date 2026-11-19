@@ -116,21 +116,25 @@ function createExplanationWeights(wt) {
     return s + '</div>';
 }
 
-// a number line: rows are [word, value]; words at the same value stack above one tick
+// a number line: rows are [word, value]; words at the same value stack above one tick, and neighbouring
+// values one unit apart take turns sitting a row higher so their names don't run together
 function createExplanationNumberLine(nl) {
     const vals = nl.rows.map(r => r[1]);
     const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(1, hi - lo);
     const groups = new Map();
     for (const [w, v] of nl.rows) { if (!groups.has(v)) groups.set(v, []); groups.get(v).push(w); }
-    const tall = Math.max(...[...groups.values()].map(g => g.length));
-    let s = `${xpHead(nl.head)}<div class="xp-nl-wrap"><div class="xp-nl" style="width:${Math.max(260, span * 46)}px;height:${2.6 + tall * 1.35}em">`;
+    const sorted = [...groups].sort((a, b) => a[0] - b[0]);
+    let lift = 0, prev = null;
+    const lifts = sorted.map(([v]) => { lift = (prev !== null && v - prev <= 1) ? 1 - lift : 0; prev = v; return lift; });
+    const tall = Math.max(...sorted.map(([, g], i) => g.length + lifts[i]));
+    let s = `${xpHead(nl.head)}<div class="xp-nl-wrap"><div class="xp-nl" style="width:min(100%, ${Math.max(260, span * 52)}px);min-width:${Math.min(300, span * 30)}px;height:${2.7 + tall * 1.35}em">`;
     s += '<div class="xp-nl__axis"></div>';
     for (let v = lo; v <= hi; v++) s += `<div class="xp-nl__unit" style="left:${(100 * (v - lo) / span).toFixed(3)}%"></div>`;
-    for (const [v, ws] of [...groups].sort((a, b) => a[0] - b[0])) {
+    sorted.forEach(([v, ws], i) => {
         const left = (100 * (v - lo) / span).toFixed(3);
-        s += `<div class="xp-nl__pt" style="left:${left}%"><div class="xp-nl__words">${ws.map(w => `<div class="xp-nl__w">${w}</div>`).join('')}</div>`
-           + `<div class="xp-nl__tick"></div><div class="xp-nl__v">${v}</div></div>`;
-    }
+        s += `<div class="xp-nl__pt" style="left:${left}%"><div class="xp-nl__words" style="margin-bottom:${3 + lifts[i] * 19}px">${ws.map(w => `<div class="xp-nl__w">${w}</div>`).join('')}</div>`
+           + `<div class="xp-nl__tick${lifts[i] ? ' is-lifted' : ''}"></div><div class="xp-nl__v">${v}</div></div>`;
+    });
     return s + '</div></div>';
 }
 
@@ -164,8 +168,9 @@ function createExplanationRing(rg) {
     const n = rg.names.length, R = 74, C = 110;
     let s = `${xpHead(rg.head)}<div class="xp-ring"><svg viewBox="0 0 220 220" width="220" height="220" aria-hidden="true">`
           + `<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/>`
-          + `<path d="M ${C + 26} ${C - 40} A 48 48 0 0 1 ${C + 46} ${C - 12}" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="2"/>`
-          + `<path d="M ${C + 46} ${C - 12} l -7 -3 m 7 3 l 2 -7" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="2"/>`
+          // a clockwise arrow inside the ring: an arc from just right of the top round to just above the right
+          + `<path d="M 117.6 66.7 A 44 44 0 0 1 153.3 102.4" fill="none" stroke="currentColor" stroke-opacity=".6" stroke-width="2.5" stroke-linecap="round"/>`
+          + `<polygon points="154.9,111.4 158.2,101.5 148.4,103.3" fill="currentColor" fill-opacity=".6"/>`
           + '</svg>';
     rg.names.forEach((w, i) => {
         const a = -Math.PI / 2 + 2 * Math.PI * i / n;
