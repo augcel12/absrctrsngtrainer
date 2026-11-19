@@ -254,10 +254,7 @@ function renderJunkEmojisText(text) {
     return text;
 }
 
-// Symbolised relations live in notation.js (renderRelationSymbols).
-
-function renderJunkEmojis(question, opts = {}) {
-    const S = t => (opts.symbols !== false && savedata.symbolRelations) ? renderRelationSymbols(t) : t;
+function renderJunkEmojis(question) {
     question = structuredClone(question);
     if (question.bucket) {
         question.bucket = question.bucket.map(renderJunkEmojisText);
@@ -283,15 +280,15 @@ function renderJunkEmojis(question, opts = {}) {
     }
 
     if (question.premises) {
-        question.premises = question.premises.map(p => S(renderJunkEmojisText(p)));
+        question.premises = question.premises.map(renderJunkEmojisText);
     }
 
     if (question.operations) {
-        question.operations = question.operations.map(p => S(renderJunkEmojisText(p)));
+        question.operations = question.operations.map(renderJunkEmojisText);
     }
 
     if (question.conclusion) {
-        question.conclusion = S(renderJunkEmojisText(question.conclusion));
+        question.conclusion = renderJunkEmojisText(question.conclusion);
     }
 
     // The explanation carries the same stimuli as the item. Without this the drawn models and the
@@ -304,7 +301,7 @@ function renderJunkEmojis(question, opts = {}) {
     }
     // interrogate: the queries themselves carry stimuli
     if (Array.isArray(question.queries)) {
-        question.queries = question.queries.map(q => ({ ...q, html: S(renderJunkEmojisText(q.html)) }));
+        question.queries = question.queries.map(q => ({ ...q, html: renderJunkEmojisText(q.html) }));
     }
     // drawn models: { head, rows: [[word, value], ...] }   (needs: value is a list of words)
     for (const field of ['states', 'weights', 'needs']) {

@@ -2162,27 +2162,6 @@ table.distinction {
 .xp-need__arrow { opacity: .55; }
 .xp-need__list { text-align: left; opacity: .85; }
 
-/* symbol relations (notation.js): each relation drawn as a picture of itself */
-.rs { display: inline-block; vertical-align: -0.3em; line-height: 0; margin: 0 0.1em; }
-.rs svg { display: block; overflow: visible; }
-.rs-inv { color: #f00; }
-.rs-op { font-weight: 600; margin: 0 0.15em; font-size: 1.12em; line-height: 1; }
-.rs-op.rs-inv, .rs-sep.rs-inv { color: #f00; }
-.rs-sep { margin-right: 0.32em; }
-.rs-dot { margin: 0 0.12em; font-weight: 700; }
-.rs-grp { display: inline-block; padding: 0.05em 0.35em 0.1em 0.2em; background: rgba(127,127,127,.16); border-radius: 0.45em; }
-.rs-ctx { display: inline-block; padding: 0 0.32em; border: 1px dashed rgba(127,127,127,.7); border-radius: 0.35em; margin-right: 0.3em; }
-.rs-num { font-weight: 600; margin-right: 0.12em; opacity: .9; }
-.rs-count { margin-right: 0.18em; }
-.rs-key-box { margin: 4px 0 0 30px; font-size: 13px; }
-.rs-key-box summary { cursor: pointer; opacity: .75; }
-.rs-key { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; margin-top: 8px; font-size: 15px; }
-.rs-key__head { grid-column: 1 / -1; margin-top: 8px; opacity: .6; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
-.rs-key__row { display: contents; }
-.rs-key__sign { white-space: nowrap; }
-.rs-key__words { font-size: 13px; opacity: .85; }
-.support__words { font-size: 0.78em; opacity: .6; margin: 1px 0 6px; }
-
 /* direction pad for answering with a direction */
 .fmt-pad { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
 .fmt-pad__layer { display: flex; flex-direction: column; align-items: center; gap: 4px; }

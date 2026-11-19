@@ -1,25 +1,25 @@
 // Plays the real page through its own buttons: every family, formats, interrogate, probes, retries,
-// explanations, auto progression, symbol mode. Reports errors, stalls and what the level did.
+// explanations, auto progression. Reports errors, stalls and what the level did.
 const { chromium } = require('playwright');
-const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = process.argv[4] || '3', SYM = process.argv[5] !== 'words';
+const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = process.argv[4] || '3';
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
   const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 5).join(' | '))); p.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
   await p.goto((process.env.URL || 'http://localhost:8771/Syllogimous-v3-main/'));
   await p.waitForTimeout(500);
-  await p.evaluate(({ ARITY, SYM }) => {
+  await p.evaluate(({ ARITY }) => {
     Object.assign(savedata, {
       enableDistinction: true, enableLinear: true, linearWording: 'leftright,topunder,comparison,temporal,contains', enableDirection: true, enableDirection3D: true,
       enableInfluence: true, enableRequirement: true, enableContexts: true, enableBalance: true, enableRing: true, enableHierarchy: true, enableMapping: true,
       enableFmtName: true, enableFmtMissing: true, enableFmtRepair: true, enableInterrogate: true, interrogateChance: 30, enableProbe: true, probeChance: 15,
       retryMissed: true, explainOnMiss: true, autoProgression: true, autoProgressionGrouping: 'all', autoProgressionTrailing: 10, enableNegation: true,
-      arity: ARITY, symbolRelations: SYM, premises: 3, timer: 120,
+      arity: ARITY, premises: 3, timer: 120,
     });
     appState.fastUi = true;
     refresh();
     const t = document.querySelector('#timer-toggle'); if (!t.checked) t.click();
-  }, { ARITY, SYM });
+  }, { ARITY });
   const kinds = {}, stats = { stalls: 0, levels: [] };
   let lastKey = '';
   for (let i = 0; i < N; i++) {

@@ -15,8 +15,6 @@ These drive the real page in headless Chromium (Playwright). Serve the repo root
 - `sweep.js [n]` — every family and answer format at arity 2–5 and 2–12 premises: items that fail to
   build (`:k`), throw (`T`), step down in arity (`d`, expected for Analogy, Mapping, Repair) or take
   over 500 ms. Should end with `errors []`.
-- `shapes.js` — every premise shape in symbol mode: terms survive the rewrite and no relation is left
-  in words. Should print `0 problems`.
-- `play.js [items] [accuracy] [arity] [sym|words]` — plays through the buttons with everything on
+- `play.js [items] [accuracy] [arity]` — plays through the buttons with everything on
   (formats, interrogate, probes, retries, explanations, auto progression). Should print `stalls 0`
   and `errors []`.

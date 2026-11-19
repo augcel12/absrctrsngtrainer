@@ -137,10 +137,6 @@ function load() {
     renderHQL();
     renderFolders();
     populateSettings();
-    const keyBox = document.getElementById('rs-key-box');
-    if (keyBox && typeof notationKeyHTML === 'function' && !keyBox.querySelector('.rs-key')) {
-        keyBox.insertAdjacentHTML('beforeend', notationKeyHTML());
-    }
 }
 
 function populateSettings() {
@@ -794,7 +790,7 @@ function wowFeedback() {
     const explain = missed && !queued && savedata.explainOnMiss
         && (!question.format || question.format === 'interrogate');
     // renderJunkEmojis: the explanation must show the same shapes the item did, not the raw tags
-    const next = explain ? () => showMissExplanation(renderJunkEmojis(question, { symbols: false })) : init;
+    const next = explain ? () => showMissExplanation(renderJunkEmojis(question)) : init;
     if (!missed) {
         wowFeedbackRight(init);
     } else if (question.correctness === 'wrong') {

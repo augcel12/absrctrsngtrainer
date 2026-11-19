@@ -16,14 +16,9 @@ function fmtTermHTML(word) {
     return `<span class="subject">${renderJunkEmojisText(word)}</span>`;
 }
 
-// what a relation chip shows: its sign in symbol mode, its words otherwise
+// what a relation chip shows
 function fmtRelChipHTML(rel) {
-    const words = rel.text.replace(/^is /, '');
-    if (savedata.symbolRelations && typeof ntRelIcon === 'function') {
-        const icon = ntRelIcon(rel.text, false);
-        if (icon) return icon;
-    }
-    return fmtEscape(words);
+    return fmtEscape(rel.text.replace(/^is /, ''));
 }
 
 // Directions are picked where they point: a 3×3 pad (the middle is the second term), and for 3D one pad
@@ -80,7 +75,7 @@ function askInterrogate(q, panel, finish) {
         row.className = 'fmt-row fmt-query';
         const claim = document.createElement('div');
         claim.className = 'fmt-query__claim';
-        claim.innerHTML = savedata.symbolRelations ? renderRelationSymbols(renderJunkEmojisText(query.html)) : renderJunkEmojisText(query.html);
+        claim.innerHTML = renderJunkEmojisText(query.html);
         const chips = document.createElement('div');
         chips.className = 'fmt-chips';
         for (const [value, label] of opts) {
