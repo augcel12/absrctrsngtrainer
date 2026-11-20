@@ -120,9 +120,12 @@ function mnOrder() {
     return MN_ORDER;
 }
 
+// Every arrow in Minimal Mode points from the first term to the second, as the stock signs do
+// ("A ➡ B": A is left of B). Perspective arrows are the same, read in the second term's own facing:
+// "B ⇘ A" — going from B to A is behind and to the right, as A faces — i.e. B is ahead-left of A.
 const MN_PV_DIR = {
-    'ahead and to the left of': '⇖', 'ahead and to the right of': '⇗', 'behind and to the left of': '⇙', 'behind and to the right of': '⇘',
-    'directly to the left of': '⇐', 'directly to the right of': '⇒', 'straight ahead of': '⇑', 'straight behind': '⇓',
+    'ahead and to the left of': '⇘', 'ahead and to the right of': '⇙', 'behind and to the left of': '⇗', 'behind and to the right of': '⇖',
+    'directly to the left of': '⇒', 'directly to the right of': '⇐', 'straight ahead of': '⇓', 'straight behind': '⇑',
 };
 
 // a relation phrase on its own -> its sign (null: unknown, keep the words)
@@ -198,12 +201,14 @@ function mnSign(text) {
         case 'faces the opposite way to': return '⇅';
         case 'faces a quarter turn right of': return '↷';
         case 'faces a quarter turn left of': return '↶';
-        case 'is further left than': return '⇠';
-        case 'is further right than': return '⇢';
-        case 'is further ahead than': return '⇡';
-        case 'is further back than': return '⇣';
-        case 'is on the left': case 'are on the left': return '⇐';
-        case 'is ahead': case 'are ahead': return '⇑';
+        // "B ⇢ C": going from B to C is to the right (as the frame's owner faces), so B is further left
+        case 'is further left than': return '⇢';
+        case 'is further right than': return '⇠';
+        case 'is further ahead than': return '⇣';
+        case 'is further back than': return '⇡';
+        // "@A: ②{…} ⇒ A": exactly 2 of these are left of A (the frame's owner is added after the sign)
+        case 'is on the left': case 'are on the left': return '⇒';
+        case 'is ahead': case 'are ahead': return '⇓';
         case ', left to right': return '⇄';
         case ', front to back': return '⇵';
     }
@@ -476,6 +481,14 @@ function mnRewrite(html) {
         for (const rule of MN_RULES) { hit = rule(toks, i); if (hit) break; }
         if (hit) { out += ' ' + hit[1] + ' '; i += hit[0]; continue; }
         const tk = toks[i];
+        if (tk.t === 'R' && /^(is|are) (on the left|ahead)$/.test(tk.text)) {
+            // the count is said against the frame's owner: put the owner after the arrow
+            let owner = null;
+            for (let k = i - 1; k >= 0; k--) if (mnIs(toks[k], 'R', /^From$/) && mnIs(toks[k + 1], 'S')) { owner = toks[k + 1]; break; }
+            out += ' ' + mnRelTok(tk) + (owner ? ' ' + owner.html : '') + ' ';
+            i++;
+            continue;
+        }
         if (tk.t === 'R') {
             const s = mnRelTok(tk);
             out += s === null ? ' ' + tk.html + ' ' : ' ' + s + ' ';
