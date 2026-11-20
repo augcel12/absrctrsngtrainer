@@ -77,7 +77,7 @@ function askInterrogate(q, panel, finish) {
         row.className = 'fmt-row fmt-query';
         const claim = document.createElement('div');
         claim.className = 'fmt-query__claim';
-        claim.innerHTML = renderJunkEmojisText(query.html);
+        claim.innerHTML = renderJunkEmojisText(minimalize(query.html));
         const chips = document.createElement('div');
         chips.className = 'fmt-chips';
         for (const [value, label] of opts) {

@@ -150,3 +150,12 @@ also reads Hierarchy and the new Ring wording (6.5 million checks, 0 wrong), `e2
   function on every enumerated arrangement (53k facts, 258M checks, 0 wrong); Possible-arrangements
   answers re-read from the drawn arrangement and re-checked against the premises (792 queries, 0 wrong,
   every impossible one breaks exactly one premise).
+
+## Minimal Mode for everything (Nov 19 2026)
+
+Minimal Mode used to cover only two-term premises. `js/generators/minimal.js` now rewrites every
+premise, conclusion and Interrogate query into signs at display time: every arity form (between ∈,
+at one end ∉, counts ②{…}, ⇔, ∨, ∧), every type (Space, Distinction, Influence, Requirement, Balance,
+Contexts, Ring, Hierarchy, Difference as equations, Intervals, Perspective, Syllogism as set
+notation). Red still means inverted. The key is in the Minimal Mode tooltip. `tests/browser/minimal.js`
+rewrites 10,590 premises across every type at arity 2–5 and counts what is left in words (0).

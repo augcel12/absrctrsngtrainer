@@ -63,3 +63,11 @@
 .fmt-query__claim .xp-order, .fmt-query__claim .xp-groups { margin: 0; }
 /* on a vertical line, level terms sit side by side (stacked would read as an order) */
 .pic-row--v .pic-tie { flex-direction: row; }
+
+/* Minimal Mode for everything: a longer form is one centred line instead of the three-column grid */
+.display_text.minimal .formatted-premise:has(> .mn-line),
+.display_text.minimal .formatted-conclusion:has(> .mn-line) { display: block; text-align: center; }
+.mn-line { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .35em; }
+.mn-line .relation { min-width: 0 !important; }
+.mn-p { opacity: .75; white-space: pre; }
+.fmt-query__claim .mn-line { justify-content: flex-start; }

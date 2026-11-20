@@ -195,15 +195,15 @@ function displayInit() {
     const easy = savedata.scrambleFactor < 12 ? ' (easy)' : '';
     displayText.innerHTML = [
         `<div class="preamble">${q.isProbe ? 'Earlier' : `Premises${easy}`}</div>`,
-        ...q.premises.map(p => `<div class="formatted-premise">${p}</div>`),
+        ...q.premises.map(p => `<div class="formatted-premise">${minimalize(p)}</div>`),
         ...((q.operations && q.operations.length > 0) ? ['<div class="transform-header">Transformations</div>'] : []),
         ...(q.operations ? q.operations.map(o => `<div class="formatted-operation">${o}</div>`) : []),
         `<div class="postamble">${q.isProbe ? 'Is this true?' : (q.format ? FMT_PROMPT_LABEL[q.format] : 'Conclusion')}</div>`,
-        '<div class="formatted-conclusion">'+q.conclusion+'</div>',
+        '<div class="formatted-conclusion">'+minimalize(q.conclusion)+'</div>',
     ].join('');
     const isAnalogy = question?.tags?.includes('analogy');
     const isBinary = question.type === 'binary';
-    if (savedata.minimalMode && question.type !== 'syllogism') {
+    if (savedata.minimalMode) {
         displayText.classList.add('minimal');
     } else {
         displayText.classList.remove('minimal');
