@@ -8,18 +8,19 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
   const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 5).join(' | '))); p.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
   await p.goto((process.env.URL || 'http://localhost:8771/Syllogimous-v3-main/'));
   await p.waitForTimeout(500);
-  await p.evaluate(({ ARITY }) => {
+  await p.evaluate(({ ARITY, PICS }) => {
     Object.assign(savedata, {
       enableDistinction: true, enableLinear: true, linearWording: 'leftright,topunder,comparison,temporal,contains', enableDirection: true, enableDirection3D: true,
       enableInfluence: true, enableRequirement: true, enableContexts: true, enableBalance: true, enableRing: true, enableHierarchy: true, enableMapping: true, enableDifference: true, enableIntervals: true, enablePerspective: true,
       enableFmtName: true, enableFmtMissing: true, enableFmtRepair: true, enableInterrogate: true, interrogateChance: 30, enableProbe: true, probeChance: 15,
+      enablePictures: PICS, enablePossible: true, possibleChance: 25,
       retryMissed: true, explainOnMiss: true, autoProgression: true, autoProgressionGrouping: 'all', autoProgressionTrailing: 10, enableNegation: true,
       arity: ARITY, premises: 3, timer: 120,
     });
     appState.fastUi = true;
     refresh();
     const t = document.querySelector('#timer-toggle'); if (!t.checked) t.click();
-  }, { ARITY });
+  }, { ARITY, PICS: !!process.env.PICS });
   const kinds = {}, stats = { stalls: 0, levels: [] };
   let lastKey = '';
   for (let i = 0; i < N; i++) {
@@ -41,7 +42,8 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
         const rows = await p.$$('.fmt-query');
         for (let r = 0; r < rows.length; r++) {
           const chips = await rows[r].$$('.fmt-chip');
-          const want = Math.random() < ACC ? answers[r] : [true, false, null][Math.floor(Math.random() * 3)];
+          const opts = chips.length === 2 ? [true, false] : [true, false, null];
+          const want = Math.random() < ACC ? answers[r] : opts[Math.floor(Math.random() * opts.length)];
           await chips[want === true ? 0 : want === false ? 1 : 2].click();
         }
         await p.click('.fmt-panel .fmt-choices .fmt-submit');

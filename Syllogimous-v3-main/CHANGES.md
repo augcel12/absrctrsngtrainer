@@ -132,3 +132,21 @@ three new types — exact rational elimination, every endpoint order, every arra
 also reads Hierarchy and the new Ring wording (6.5 million checks, 0 wrong), `e2e.js`, `sweep.js`,
 `play.js`, `check-formats.js`, `check-extra-relations.js`.
 
+
+## Pictures and Possible arrangements (Nov 19 2026)
+
+- **Pictures** (Item modes): every premise and the conclusion are drawn as the arrangements they allow,
+  with the terms placed in them — rows along the relation's own line (left–right, top–bottom, rising
+  steps for more, a time arrow, boxes inside boxes for contains, W–E / N–S / ▲▼ for compass lines), a
+  dashed box for "any order", a number on it for "exactly that many here", panels side by side for "any
+  one of these", a crossed panel for "can't be", a 3×3 grid for directions, two halves for same /
+  opposite, two dotted arrows for "the same way". Covers Linear (all five wordings), Space 2D/3D/space-
+  time, Distinction and Influence at every arity; with it on, arity 2 is built by the arity engine too
+  so it can be drawn. Families without pictures keep their words.
+- **Possible arrangements** (Item modes): study, hide the premises, then judge drawn arrangements of
+  every term as possible or impossible. Every impossible one breaks exactly one premise. Linear, Space,
+  Distinction, Influence, Ring, Hierarchy.
+- `tests/browser/pictures.js`: every picture read back as a rule and compared with its fact's truth
+  function on every enumerated arrangement (53k facts, 258M checks, 0 wrong); Possible-arrangements
+  answers re-read from the drawn arrangement and re-checked against the premises (792 queries, 0 wrong,
+  every impossible one breaks exactly one premise).

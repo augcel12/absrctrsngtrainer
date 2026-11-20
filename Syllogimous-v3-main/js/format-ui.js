@@ -69,7 +69,9 @@ function fmtDirPad(fam, onPick) {
 // you have to know what every arrangement that fits agrees on.
 function askInterrogate(q, panel, finish) {
     const answers = new Array(q.queries.length).fill(undefined);
-    const opts = [[true, 'Must be true'], [false, "Can't be true"], [null, "Can't tell"]];
+    const opts = q.queryMode === 'possible'
+        ? [[true, 'Possible'], [false, 'Impossible']]
+        : [[true, 'Must be true'], [false, "Can't be true"], [null, "Can't tell"]];
     q.queries.forEach((query, i) => {
         const row = document.createElement('div');
         row.className = 'fmt-row fmt-query';

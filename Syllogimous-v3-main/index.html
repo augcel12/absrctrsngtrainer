@@ -23,6 +23,7 @@
 		<link rel="stylesheet" href="css/arity.css">
 		<link rel="stylesheet" href="css/minimal.css">
 		<link rel="stylesheet" href="css/explain.css">
+		<link rel="stylesheet" href="css/pictures.css">
 		<style id="live-styles"></style>
 	</head>
 	<body>
@@ -129,6 +130,78 @@
 							</div>
 						</div>
 						<div class="set-sec">Item modes</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-126" type="checkbox">
+									<label class="switch" for="p-126"></label>
+								</div>
+								<label for="p-126" style="max-width: 170px;">Pictures</label>
+								<div class="tooltip-container" tabindex="0">
+									?
+									<div class="tooltip-text">
+										Every premise is drawn as the<br>
+										arrangements it allows, with<br>
+										the terms placed in them.<br>
+										<br>
+										A row: their order along the<br>
+										line the relation lives on.<br>
+										Rising steps: more. An arrow<br>
+										under: time. Boxes in boxes:<br>
+										contains. W–E, N–S, ▲▼:<br>
+										which compass line.<br>
+										Stacked in one place: level.<br>
+										Dashed box: these, any order.<br>
+										Number on it: exactly that<br>
+										many of them are here.<br>
+										Panels side by side: any one<br>
+										of these. Crossed: can't be.<br>
+										3×3 grid: where the first is,<br>
+										seen from the one in the middle.<br>
+										Two halves: same side = same.<br>
+										Two arrows: same way.<br>
+									</div>
+								</div>
+							</div>
+							<ul class="explainer">
+								<li>Linear (every wording), Space 2D/3D/space-time, Distinction and Influence, at every arity</li>
+							</ul>
+						</div>
+						<div class="mb-1">
+							<div class="ctrl__inner">
+								<div>
+									<input hidden id="p-127" type="checkbox">
+									<label class="switch" for="p-127"></label>
+								</div>
+								<label for="p-127" style="max-width: 170px;">Possible arrangements</label>
+								<div class="tooltip-container" tabindex="0">
+									?
+									<div class="tooltip-text">
+										Study the premises, hide them,<br>
+										then judge drawn arrangements<br>
+										of every term: possible or<br>
+										impossible. An impossible one<br>
+										breaks exactly one premise,<br>
+										so only the whole structure<br>
+										catches it. Every answer has<br>
+										to be right.<br>
+									</div>
+								</div>
+							</div>
+							<ul class="explainer">
+								<li>Linear, Space, Distinction, Influence, Ring and Hierarchy</li>
+							</ul>
+							<div class="multi-input">
+								<span class="single-input">
+									How often
+									<span class="inline-premise-spinner"><input id="p-128" type="number" placeholder="" min="0" max="100" value="35" style="width: 5ch">%</span>
+								</span>
+								<span class="single-input">
+									Arrangements
+									<span class="inline-premise-spinner"><input id="p-129" type="number" placeholder="" min="2" max="6" value="4" style="width: 5ch">each</span>
+								</span>
+							</div>
+						</div>
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
@@ -2744,6 +2817,7 @@
 		<script src="js/generators/perspective.js"></script>
 		<script src="js/generators/derive.js"></script>
 		<script src="js/generators/probe.js"></script>
+		<script src="js/generators/pictures.js"></script>
 		<script src="js/generators/interrogate.js"></script>
 		<script src="js/explanation.js"></script>
 		<script src="js/backwards-compatibility.js"></script>
