@@ -199,3 +199,15 @@ premise was only added once the whole item fit near a flat 10 s goal, which capp
   than the old 20/20 rule on a single type (~84% observed, ~68% solved).
 
 `tests/browser/progression.js` drives the rule directly.
+
+## Duplicate frames removed (Nov 24 2026)
+
+A frame stays only if it trains an operation no other frame does. Removed as duplicates:
+- **Linear** — one-dimensional order, a strict subset of Space 2D; its comparison / temporal / contains
+  wordings were the same structure in other words. (Its wording dropdown and weights are gone too.)
+- **Influence** — the same same/opposite composition as Distinction.
+- **Space-time** — Space 3D plus one more axis; 3D stays as the load step.
+
+Their toggles, settings and progression levels are gone and nothing generates them any more (Analogy,
+Binary and the answer formats draw only from the types that remain). The engines they shared with other
+types are kept. Defaults: Distinction and Space 2D on.

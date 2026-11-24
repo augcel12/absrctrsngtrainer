@@ -111,11 +111,7 @@ function fmtFamilyById(id) {
 function fmtEnabledFamilies() {
     const on = [];
     if (savedata.enableDistinction) on.push('distinction');
-    if (savedata.enableInfluence) on.push('influence');
     if (savedata.enableContexts) on.push('contexts');
-    if (savedata.enableLinear) {
-        for (const w of getEnabledLinearWordings()) on.push('linear-' + w);
-    }
     if (savedata.enableDirection) on.push('space2d');
     if (savedata.enableDirection3D) on.push('space3d');
     if (savedata.enableRequirement) on.push('requirement');

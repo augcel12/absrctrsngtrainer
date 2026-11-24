@@ -10,8 +10,8 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
   await p.waitForTimeout(500);
   await p.evaluate(({ ARITY }) => {
     Object.assign(savedata, {
-      enableDistinction: true, enableLinear: true, linearWording: 'leftright,topunder,comparison,temporal,contains', enableDirection: true, enableDirection3D: true,
-      enableInfluence: true, enableRequirement: true, enableContexts: true, enableBalance: true, enableRing: true, enableHierarchy: true, enableMapping: true, enableDifference: true, enableIntervals: true, enablePerspective: true,
+      enableDistinction: true, enableDirection: true, enableDirection3D: true,
+      enableRequirement: true, enableContexts: true, enableBalance: true, enableRing: true, enableHierarchy: true, enableMapping: true, enableDifference: true, enableIntervals: true, enablePerspective: true,
       enableFmtName: true, enableFmtMissing: true, enableFmtRepair: true, enableInterrogate: true, interrogateChance: 30,
       explainOnMiss: true, autoProgression: true, autoProgressionTrailing: 10, enableNegation: true,
       arity: ARITY, premises: 3, timer: 120,
@@ -68,7 +68,7 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
     } catch (e) { errs.push('drive: ' + kind + ' ' + e.message.split('\n')[0]); await p.evaluate(() => timeElapsed()).catch(() => {}); }
     await p.waitForTimeout(450);
     if (await p.$('.miss-explanation')) { kinds.explained = (kinds.explained || 0) + 1; await p.click('.miss-explanation__continue'); await p.waitForTimeout(150); }
-    if (i % 20 === 19) stats.levels.push(await p.evaluate(() => ({ P: savedata.overrideLinearPremises, T: savedata.overrideLinearTime })));
+    if (i % 20 === 19) stats.levels.push(await p.evaluate(() => ({ P: savedata.overrideDirectionPremises, T: savedata.overrideDirectionTime })));
   }
   const tail = await p.evaluate(() => ({ score: appState.score, stored: appState.questions.length, run: appState.run && appState.run.streak, levels: Object.fromEntries(Object.entries(TYPE_TO_OVERRIDES).filter(([t, [pk]]) => savedata[pk]).map(([t, [pk, tk]]) => [t, savedata[pk] + 'p/' + savedata[tk] + 's'])) }));
   console.log('kinds', JSON.stringify(kinds));

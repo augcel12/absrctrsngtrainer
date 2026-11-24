@@ -1,13 +1,10 @@
 const TYPE_TO_OVERRIDES = {
     "distinction"  : [ "overrideDistinctionPremises", "overrideDistinctionTime" ],
-    "linear"       : [ "overrideLinearPremises"     , "overrideLinearTime" ],
     "syllogism"    : [ "overrideSyllogismPremises"  , "overrideSyllogismTime" ],
     "binary"       : [ "overrideBinaryPremises"     , "overrideBinaryTime" ],
     "space-two-d"  : [ "overrideDirectionPremises"  , "overrideDirectionTime" ],
     "space-three-d": [ "overrideDirection3DPremises", "overrideDirection3DTime" ],
-    "space-time"   : [ "overrideDirection4DPremises", "overrideDirection4DTime" ],
     "anchor-space" : [ "overrideAnchorSpacePremises", "overrideAnchorSpaceTime" ],
-    "influence" : [ "overrideInfluencePremises", "overrideInfluenceTime" ],
     "requirement" : [ "overrideRequirementPremises", "overrideRequirementTime" ],
     "contexts" : [ "overrideContextsPremises", "overrideContextsTime" ],
     "balance" : [ "overrideBalancePremises", "overrideBalanceTime" ],

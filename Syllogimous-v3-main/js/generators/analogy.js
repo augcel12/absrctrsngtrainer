@@ -39,14 +39,10 @@ class AnalogyQuestion {
         let generators = [];
         if (savedata.enableDistinction)
             generators.push(createDistinctionGenerator(length));
-        if (savedata.enableLinear)
-            generators.push(...createLinearGenerators(length));
         if (savedata.enableDirection)
             generators.push(createDirectionGenerator(length));
         if (savedata.enableDirection3D)
             generators.push(createDirection3DGenerator(length));
-        if (savedata.enableDirection4D)
-            generators.push(createDirection4DGenerator(length));
         if (savedata.enableAnchorSpace)
             generators.push(createAnchorSpaceGenerator(length));
 

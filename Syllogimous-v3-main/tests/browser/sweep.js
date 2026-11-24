@@ -1,17 +1,17 @@
 // How often does each family hand back no item, by arity and premise count? (no item = the app stalls)
 const { chromium } = require('playwright');
-const OFF = { enableDistinction: false, enableLinear: false, enableSyllogism: false, enableAnalogy: false, enableDirection: false, enableDirection3D: false, enableDirection4D: false, enableAnchorSpace: false, enableBinary: false, onlyAnalogy: false, onlyBinary: false, enableMapping: false, enableInfluence: false, enableRequirement: false, enableContexts: false, enableBalance: false, enableRing: false, enableHierarchy: false, enableDifference: false, enableIntervals: false, enablePerspective: false, enableFmtName: false, enableFmtMissing: false, enableFmtRepair: false, onlyFormats: false, enableInterrogate: false };
+const OFF = { enableDistinction: false, enableSyllogism: false, enableAnalogy: false, enableDirection: false, enableDirection3D: false, enableAnchorSpace: false, enableBinary: false, onlyAnalogy: false, onlyBinary: false, enableMapping: false, enableRequirement: false, enableContexts: false, enableBalance: false, enableRing: false, enableHierarchy: false, enableDifference: false, enableIntervals: false, enablePerspective: false, enableFmtName: false, enableFmtMissing: false, enableFmtRepair: false, onlyFormats: false, enableInterrogate: false };
 const FAM = {
-  distinction: { enableDistinction: true }, linear: { enableLinear: true, linearWording: 'leftright,topunder,comparison,temporal,contains' },
-  syllogism: { enableSyllogism: true }, space2d: { enableDirection: true }, space3d: { enableDirection3D: true }, spacetime: { enableDirection4D: true },
-  anchor: { enableAnchorSpace: true }, mapping: { enableMapping: true }, influence: { enableInfluence: true }, requirement: { enableRequirement: true },
+  distinction: { enableDistinction: true },
+  syllogism: { enableSyllogism: true }, space2d: { enableDirection: true }, space3d: { enableDirection3D: true },
+  anchor: { enableAnchorSpace: true }, mapping: { enableMapping: true }, requirement: { enableRequirement: true },
   contexts: { enableContexts: true }, balance: { enableBalance: true }, ring: { enableRing: true }, hierarchy: { enableHierarchy: true },
   difference: { enableDifference: true }, intervals: { enableIntervals: true }, perspective: { enablePerspective: true },
-  analogy: { enableDistinction: true, enableLinear: true, linearWording: 'leftright', enableDirection: true, enableAnalogy: true, onlyAnalogy: true },
-  binary: { enableDistinction: true, enableLinear: true, linearWording: 'leftright', enableDirection: true, enableBinary: true, onlyBinary: true },
-  'fmt-name': { enableDistinction: true, enableLinear: true, linearWording: 'leftright,contains', enableDirection: true, enableRequirement: true, enableBalance: true, enableContexts: true, enableInfluence: true, enableFmtName: true, onlyFormats: true },
-  'fmt-missing': { enableDistinction: true, enableLinear: true, linearWording: 'leftright,contains', enableDirection: true, enableDirection3D: true, enableRequirement: true, enableBalance: true, enableInfluence: true, enableFmtMissing: true, onlyFormats: true },
-  'fmt-repair': { enableDistinction: true, enableLinear: true, linearWording: 'leftright,contains', enableDirection: true, enableDirection3D: true, enableBalance: true, enableInfluence: true, enableFmtRepair: true, onlyFormats: true },
+  analogy: { enableDistinction: true, enableDirection: true, enableAnalogy: true, onlyAnalogy: true },
+  binary: { enableDistinction: true, enableDirection: true, enableBinary: true, onlyBinary: true },
+  'fmt-name': { enableDistinction: true, enableDirection: true, enableRequirement: true, enableBalance: true, enableContexts: true, enableFmtName: true, onlyFormats: true },
+  'fmt-missing': { enableDistinction: true, enableDirection: true, enableDirection3D: true, enableRequirement: true, enableBalance: true, enableFmtMissing: true, onlyFormats: true },
+  'fmt-repair': { enableDistinction: true, enableDirection: true, enableDirection3D: true, enableBalance: true, enableFmtRepair: true, onlyFormats: true },
 };
 const K = +process.argv[2] || 12;
 const ONLY = process.argv[3] ? process.argv[3].split(',') : null;

@@ -2,16 +2,12 @@ function createBinaryGeneratorPool(length) {
     let generators = [];
     if (savedata.enableDistinction)
         generators.push(createDistinctionGenerator(length));
-    if (savedata.enableLinear)
-        generators.push(...createLinearGenerators(length));
     if (savedata.enableSyllogism)
         generators.push(createSyllogismGenerator(length));
     if (savedata.enableDirection)
         generators.push(createDirectionGenerator(length));
     if (savedata.enableDirection3D)
         generators.push(createDirection3DGenerator(length));
-    if (savedata.enableDirection4D)
-        generators.push(createDirection4DGenerator(length));
     return generators;
 }
 

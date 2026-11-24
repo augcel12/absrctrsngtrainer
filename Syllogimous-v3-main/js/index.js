@@ -166,7 +166,6 @@ function populateSettings() {
         }
     }
 
-    populateLinearDropdown();
     populateAppearanceSettings();
 
     timerInput.value = savedata.timer;
@@ -452,19 +451,15 @@ function findStartingTimerState() {
 function generateQuestion() {
     const analogyEnable = [
         savedata.enableDistinction,
-        savedata.enableLinear,
         savedata.enableDirection,
         savedata.enableDirection3D,
-        savedata.enableDirection4D,
         savedata.enableAnchorSpace
     ].reduce((a, c) => a + +c, 0) > 0;
 
     const binaryEnable = [
         savedata.enableDistinction,
-        savedata.enableLinear,
         savedata.enableDirection,
         savedata.enableDirection3D,
-        savedata.enableDirection4D,
         savedata.enableSyllogism
     ].reduce((a, c) => a + +c, 0) > 1;
 
@@ -477,22 +472,16 @@ function generateQuestion() {
     if (!banNormalModes) {
         if (savedata.enableDistinction)
             generators.push(createDistinctionGenerator(quota));
-        if (savedata.enableLinear)
-            generators.push(...createLinearGenerators(quota));
         if (savedata.enableSyllogism)
             generators.push(createSyllogismGenerator(quota));
         if (savedata.enableDirection)
             generators.push(createDirectionGenerator(quota));
         if (savedata.enableDirection3D)
             generators.push(createDirection3DGenerator(quota));
-        if (savedata.enableDirection4D)
-            generators.push(createDirection4DGenerator(quota));
         if (savedata.enableAnchorSpace)
             generators.push(createAnchorSpaceGenerator(quota));
         if (savedata.enableMapping)
             generators.push(createMappingGenerator(quota));
-        if (savedata.enableInfluence)
-            generators.push(createInfluenceGenerator(quota));
         if (savedata.enableRequirement)
             generators.push(createRequirementGenerator(quota));
         if (savedata.enableContexts)
