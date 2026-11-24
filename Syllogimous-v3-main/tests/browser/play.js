@@ -13,7 +13,7 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
       enableDistinction: true, enableLinear: true, linearWording: 'leftright,topunder,comparison,temporal,contains', enableDirection: true, enableDirection3D: true,
       enableInfluence: true, enableRequirement: true, enableContexts: true, enableBalance: true, enableRing: true, enableHierarchy: true, enableMapping: true, enableDifference: true, enableIntervals: true, enablePerspective: true,
       enableFmtName: true, enableFmtMissing: true, enableFmtRepair: true, enableInterrogate: true, interrogateChance: 30,
-      explainOnMiss: true, autoProgression: true, autoProgressionGrouping: 'all', autoProgressionTrailing: 10, enableNegation: true,
+      explainOnMiss: true, autoProgression: true, autoProgressionTrailing: 10, enableNegation: true,
       arity: ARITY, premises: 3, timer: 120,
     });
     appState.fastUi = true;
@@ -70,10 +70,10 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
     if (await p.$('.miss-explanation')) { kinds.explained = (kinds.explained || 0) + 1; await p.click('.miss-explanation__continue'); await p.waitForTimeout(150); }
     if (i % 20 === 19) stats.levels.push(await p.evaluate(() => ({ P: savedata.overrideLinearPremises, T: savedata.overrideLinearTime })));
   }
-  const tail = await p.evaluate(() => ({ score: appState.score, stored: appState.questions.length, unified: appState.unifiedProgress }));
+  const tail = await p.evaluate(() => ({ score: appState.score, stored: appState.questions.length, run: appState.run && appState.run.streak, levels: Object.fromEntries(Object.entries(TYPE_TO_OVERRIDES).filter(([t, [pk]]) => savedata[pk]).map(([t, [pk, tk]]) => [t, savedata[pk] + 'p/' + savedata[tk] + 's'])) }));
   console.log('kinds', JSON.stringify(kinds));
   console.log('stalls', stats.stalls, 'levels', JSON.stringify(stats.levels));
-  console.log('score', tail.score, 'stored', tail.stored, 'last change', JSON.stringify(tail.unified && tail.unified.lastChange));
+  console.log('score', tail.score, 'stored', tail.stored, 'run', tail.run, 'levels', JSON.stringify(tail.levels));
   console.log('errors', [...new Set(errs)].slice(0, 15));
   await b.close();
 })();

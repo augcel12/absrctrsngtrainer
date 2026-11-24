@@ -214,11 +214,27 @@
 								<div class="tooltip-container" tabindex="0">
 									?
 									<div class="tooltip-text">
-										Track any questions answered<br>
-										with the timer, and<br>
-										automatically update the<br>
-										timer and premises based on<br>
-										accuracy.<br>
+										Every type has its own level<br>
+										(premises and time) at each<br>
+										arity.<br>
+										<br>
+										Up: a run of right answers in<br>
+										a row (20) across everything,<br>
+										each item at its own type's<br>
+										level. One miss breaks it. The<br>
+										types in the run that were<br>
+										right 3+ times in a row at<br>
+										their level go up.<br>
+										<br>
+										Down: 2 misses in a type's<br>
+										last 8 items step that type<br>
+										down, and only that type.<br>
+										<br>
+										Up adds a premise once the<br>
+										time is within the budget per<br>
+										premise; until then it takes<br>
+										time off. Down adds time, then<br>
+										drops a premise.<br>
 										<br>
 										Only applies when the<br>
 										timer is active.<br>
@@ -228,50 +244,25 @@
 									<a style="margin-left: 0.5rem;" id="progression-settings-button" class="settings-gear"><img src="img/gear-solid.svg" alt="Settings Icon" width="20" height="20"></a>
 									<div id="progression-dropdown" class="dropdown">
 										<div class="dropdown-item">
-											Goal
-											<span class="inline-premise-spinner">
-												<input id="p-42" type="number" placeholder="" value="10" min="1" max="25" style="width: 5ch">sec
-											</span>
-										</div>
-										<div class="dropdown-item">
-											Questions to track
+											Right in a row to level up
 											<span class="inline-premise-spinner">
 												<input id="p-49" type="number" placeholder="" value="20" min="5" max="50" style="width: 5ch">q
 											</span>
 										</div>
 										<div class="dropdown-item">
-											Success criteria
+											Time budget per premise
 											<span class="inline-premise-spinner">
-												<input id="p-50" type="number" placeholder="" value="90" min="50" max="100" style="width: 6ch">%
+												<input id="p-42" type="number" placeholder="" value="10" min="1" max="60" style="width: 5ch">sec
 											</span>
 										</div>
 										<div class="dropdown-item">
-											Failure criteria
-											<span class="inline-premise-spinner">
-												<input id="p-51" type="number" placeholder="" value="65" min="0" max="99" style="width: 6ch">%
-											</span>
-										</div>
-										<div class="dropdown-item">
-											<select id="p-52" name="progression-grouping" class="form-select ffmono">
-											  <option value="all">Progress every type together (same steps)</option>
-											  <option value="simple">Progress distinction and linear together</option>
-											  <option value="separate">Only progress linear questions together</option>
-											</select>
-										</div>
-										<div class="dropdown-item">
-											<select id="p-67" name="progression-change-mode" class="form-select ffmono">
-											  <option value="auto">Automatically adjust timer on level up</option>
-											  <option value="custom">Customize timer shifts</option>
-											</select>
-										</div>
-										<div id="time-dropper" class="dropdown-item" style="display: none;">
-											Decrease on level up
+											Speed-up step
 											<span class="inline-premise-spinner">
 												<input id="p-68" type="number" placeholder="" value="5" min="1" max="50" style="width: 5ch">sec
 											</span>
 										</div>
-										<div id="time-bumper" class="dropdown-item" style="display: none;">
-											Increase on failure
+										<div class="dropdown-item">
+											Slow-down step
 											<span class="inline-premise-spinner">
 												<input id="p-69" type="number" placeholder="" value="5" min="1" max="50" style="width: 5ch">sec
 											</span>

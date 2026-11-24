@@ -21,3 +21,6 @@ These drive the real page in headless Chromium (Playwright). Serve the repo root
 - `play.js [items] [accuracy] [arity]` — plays through the buttons with everything on
   (formats, interrogate, explanations, auto progression). Should print `stalls 0`
   and `errors []`.
+- `progression.js` — drives the progression rule directly: a perfect run lifts the types in it that
+  have their own evidence, misses step down only the type that made them, load before speed, levels kept
+  per arity. Every line should start with `ok`.

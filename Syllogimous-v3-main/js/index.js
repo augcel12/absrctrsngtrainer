@@ -133,6 +133,7 @@ function appStateStartup() {
 function load() {
     appStateStartup();
     PROFILE_STORE.startup();
+    syncArityLevels();
 
     renderHQL();
     renderFolders();
@@ -166,7 +167,6 @@ function populateSettings() {
     }
 
     populateLinearDropdown();
-    populateProgressionDropdown();
     populateAppearanceSettings();
 
     timerInput.value = savedata.timer;
@@ -174,6 +174,7 @@ function populateSettings() {
 }
 
 function refresh() {
+    syncArityLevels();
     save();
     populateSettings();
     init();
@@ -266,14 +267,6 @@ function populateAppearanceSettings() {
     document.getElementById('p-dark-mode').checked = appState.darkMode;
 }
 
-function populateProgressionDropdown() {
-    const timeBumper = document.getElementById('time-bumper');
-    const timeDropper = document.getElementById('time-dropper');
-    const isAuto = savedata.autoProgressionChange === 'auto';
-
-    timeBumper.style.display = isAuto ? 'none' : 'flex';
-    timeDropper.style.display = isAuto ? 'none' : 'flex';
-}
 
 
 function handleColorChange(event) {

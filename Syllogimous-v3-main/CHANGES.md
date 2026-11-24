@@ -177,3 +177,25 @@ rewrites 10,590 premises across every type at arity 2–5 and counts what is lef
   jump. Now every item gets the same clock. Interrogate's clock covers the study and freezes when
   the premises are hidden; answering is untimed, and the progression records the study time. Its
   separate time override is gone (it uses its type's clock, which the progression moves).
+
+## Auto progression rebuilt: per-type levels, perfect runs kept (Nov 24 2026)
+
+The old default moved every type together on one pooled 20-item score, so easy types carried hard ones
+(in a simulation, the hardest of five types was really solved 13% of the time, the easiest 92%), and a
+premise was only added once the whole item fit near a flat 10 s goal, which capped load by speed.
+
+- **Each type has its own level** (premises and time) **at each arity**. Moving the arity dial stores the
+  levels under the old arity and brings back the new arity's; an arity met for the first time starts from
+  the levels you had.
+- **Up takes a perfect run**: 20 right in a row (setting) across the mixed stream, each item at its own
+  type's level; one miss anywhere breaks it. When a run completes, every type in it that was right 3+ times
+  in a row at its level goes up; the rest keep their count for a later run.
+- **Down is charged to the type that missed**: 2 misses in its last 8 items step that type down, only it.
+- **Load first**: up adds a premise (and its time) once the time limit is within the budget per premise
+  (setting, 10 s); until then it takes time off. Down adds time while it stays under 1.5× the budget per
+  premise, then drops a premise.
+- Removed: success/failure %, grouping and timer-mode settings. The bar under the item shows the run.
+- In simulation every type settles at the same accuracy (~87% observed, ~74% really solved), stricter
+  than the old 20/20 rule on a single type (~84% observed, ~68% solved).
+
+`tests/browser/progression.js` drives the rule directly.

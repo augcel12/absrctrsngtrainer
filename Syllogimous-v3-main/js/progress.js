@@ -22,51 +22,74 @@ const TYPE_TO_OVERRIDES = {
     "mapping"      : [ "overrideMappingPremises"    , "overrideMappingTime" ],
 };
 
-const TYPE_ENABLE = {
-    "distinction": "enableDistinction", "linear": "enableLinear", "syllogism": "enableSyllogism",
-    "binary": "enableBinary", "space-two-d": "enableDirection", "space-three-d": "enableDirection3D",
-    "space-time": "enableDirection4D", "anchor-space": "enableAnchorSpace", "mapping": "enableMapping",
-    "influence": "enableInfluence", "requirement": "enableRequirement", "contexts": "enableContexts", "balance": "enableBalance",
-    "ring": "enableRing", "hierarchy": "enableHierarchy",
-    "difference": "enableDifference", "intervals": "enableIntervals", "perspective": "enablePerspective",
-    "fmt-name": "enableFmtName", "fmt-missing": "enableFmtMissing", "fmt-repair": "enableFmtRepair",
-};
-function unifiedEnabledTypes() {
-    return Object.keys(TYPE_TO_OVERRIDES).filter(t => savedata[TYPE_ENABLE[t]]);
-}
-
-const COMMON_TYPES = [
-    ["linear", "distinction", "syllogism"],
-]
-
-const COMMON_TYPES_TABLE = COMMON_TYPES.reduce((acc, types) => {
-    for (let i = 0; i < types.length; i++) {
-        for (let j = i+1; j < types.length; j++) {
-            acc[types[i]] = acc[types[i]] || [types[i]];
-            acc[types[j]] = acc[types[j]] || [types[j]];
-            acc[types[i]].push(types[j]);
-            acc[types[j]].push(types[i]);
-        }
-    }
-    return acc;
-}, {});
-
-
 const progressTracker = document.getElementById("progress-tracker");
 const dailyProgressTracker = document.getElementById("daily-progress-container");
 const weeklyProgressTracker = document.getElementById("weekly-progress-container");
 
-function findSuccessCriteria() {
-    return Math.max(50, Math.min(savedata.autoProgressionPercentSuccess, 100));
-}
-
-function findFailureCriteria() {
-    const failureCriteria = Math.max(0, Math.min(savedata.autoProgressionPercentFail, 99));
-    return Math.min(failureCriteria, findSuccessCriteria());
-}
-
 function findAutoProgressionTrailing() {
-    return Math.max(5, Math.min(savedata.autoProgressionTrailing, 50));
+    return Math.max(5, Math.min(savedata.autoProgressionTrailing || 20, 50));
+}
+
+// ---------------------------------------------------------------- the progression
+// Each type has its own level (premises and time) at each arity, so every type sits at its own edge
+// instead of the easy ones carrying the hard ones on a pooled score.
+//
+// Going UP still takes a perfect run: N right in a row (20 by default) across the mixed stream,
+// every item at its own type's level. One miss anywhere breaks it. When a run completes, every type
+// that took part in it and has been right at least RUN_EVIDENCE times in a row at its current level
+// goes up a step; the others keep their count and go up on a later run.
+// Going DOWN is charged to the type that missed: DEMOTE_MISSES misses among its last DEMOTE_WINDOW
+// items at its level step that type down, and only that type.
+//
+// A step up is load first: if the time limit is within the budget (seconds per premise), add a
+// premise and that premise's time; if not, take time off toward the budget. A step down is time
+// first: add time while it stays under 1.5x the budget per premise, then drop a premise.
+const RUN_EVIDENCE = 3, DEMOTE_MISSES = 2, DEMOTE_WINDOW = 8;
+
+function levelArity() {
+    const a = +savedata.arity || 2;
+    return a >= 3 ? Math.min(5, a) : 2;
+}
+function levelKey(type) { return type + '@' + levelArity(); }
+
+// The overrides always hold the levels of the CURRENT arity (the generators read them). When the
+// arity dial moves, they are stored under the old arity and the new arity's levels are put back.
+// An arity met for the first time starts from the levels you had.
+function syncArityLevels() {
+    const a = levelArity(), from = savedata.levelsArity;
+    if (from === a) return;
+    const levels = { ...(savedata.levels || {}) };
+    for (const [type, [pKey, tKey]] of Object.entries(TYPE_TO_OVERRIDES)) {
+        if (from != null && (savedata[pKey] || savedata[tKey])) levels[type + '@' + from] = { P: savedata[pKey], T: savedata[tKey] };
+        const L = levels[type + '@' + a];
+        if (L) { savedata[pKey] = L.P; savedata[tKey] = L.T; }
+    }
+    savedata.levels = levels;
+    savedata.levelsArity = a;
+}
+
+function runState() {
+    const st = appState.run || (appState.run = { streak: 0, inRun: [], own: {}, recent: {} });
+    st.own = st.own || {}; st.recent = st.recent || {}; st.inRun = st.inRun || [];
+    return st;
+}
+
+function stepLevel(type, dir) {
+    const [pKey, tKey] = TYPE_TO_OVERRIDES[type];
+    let P = savedata[pKey] || savedata.premises, T = savedata[tKey] || +savedata.timer;
+    const b = Math.max(1, +savedata.autoProgressionGoal || 10);
+    const drop = savedata.autoProgressionTimeDrop || 5, bump = savedata.autoProgressionTimeBump || 5;
+    if (dir > 0) {
+        if (T <= b * P) { P += 1; T += b; }
+        else T = Math.max(Math.round(b * P), T - drop);
+    } else {
+        if (T + bump <= 1.5 * b * P || P <= 2) T += bump;
+        else P -= 1;
+    }
+    savedata[pKey] = Math.max(2, Math.min(30, P));
+    savedata[tKey] = Math.max(5, Math.min(600, Math.round(T)));
+    savedata.levels = { ...(savedata.levels || {}), [levelKey(type)]: { P: savedata[pKey], T: savedata[tKey] } };
+    savedata.levelsArity = levelArity();
 }
 
 class ProgressStore {
@@ -82,20 +105,6 @@ class ProgressStore {
             key += `-${question.modifiers.join('-')}`
         }
         return key;
-    }
-
-    findCommonTypes(question) {
-        if (savedata.autoProgressionGrouping === 'simple') {
-            return COMMON_TYPES_TABLE[question.type] || [question.type];
-        } else {
-            return [question.type];
-        }
-    }
-
-    calculateCommonKeys(question) {
-        const types = this.findCommonTypes(question);
-        types.sort();
-        return types.map(type => this.calculateKeyFromCustomType(question, type));
     }
 
     convertForDatabase(question) {
@@ -125,140 +134,50 @@ class ProgressStore {
 
     async storeCompletedQuestion(question) {
         const q = this.convertForDatabase(question);
-        if (savedata.autoProgression) {
-            if (savedata.autoProgressionGrouping === 'all') {
-                this.unifiedLevelChange(q);
-            } else {
-                await this.determineLevelChange(q);
-            }
-        }
+        if (savedata.autoProgression) this.levelChange(q);
         await storeProgressData(q);
     }
 
-    // 'all' grouping: one trailing window over every question, whatever its type. When it passes or
-    // fails, every enabled type moves by the SAME step (premises and time), from its own current value.
-    // The window restarts after each change, so the next decision is made at the new level.
-    unifiedLevelChange(q) {
-        const st = appState.unifiedProgress || (appState.unifiedProgress = { results: [] });
-        // credit: 1 or 0 for an ordinary item, the share of answers right for an interrogated one
-        const credit = typeof q.credit === 'number' ? q.credit : (q.correctness === 'right' ? 1 : 0);
-        st.results.push({ right: q.correctness === 'right', credit, t: q.timeElapsed / 1000 });
-        const n = findAutoProgressionTrailing();
-        if (st.results.length > n) st.results.shift();
-        const rights = st.results.filter(r => r.right);
-        const creditOf = r => (typeof r.credit === 'number' ? r.credit : (r.right ? 1 : 0));
-        const earned = st.results.reduce((a, r) => a + creditOf(r), 0);
-        const lost = st.results.length - earned;
-        const bestPossible = 100 * (n - lost) / n;
-        let dir = 0;
-        if (bestPossible <= findFailureCriteria()) dir = -1;
-        else if (st.results.length >= n) {
-            const pct = 100 * earned / n;
-            if (pct >= findSuccessCriteria()) dir = 1;
-            else if (pct <= findFailureCriteria()) dir = -1;
-        }
-        if (!dir) return;
-        const enabled = unifiedEnabledTypes();
-        const cur = enabled.map(type => {
-            const [pKey, tKey] = TYPE_TO_OVERRIDES[type];
-            return { pKey, tKey, p: savedata[pKey] || savedata.premises, t: savedata[tKey] || +savedata.timer };
-        });
-        const drop = savedata.autoProgressionTimeDrop || 5, bump = savedata.autoProgressionTimeBump || 5;
-        const goal = savedata.autoProgressionGoal;
-        const avg = arr => arr.reduce((a, b) => a + b, 0) / Math.max(1, arr.length);
-        const avgTime = avg(cur.map(c => c.t));
-        let dP = 0, dT = 0;
-        if (dir > 0) {
-            const answerTime = avg(rights.map(r => r.t));
-            if (answerTime <= goal || avgTime - drop <= goal) { dP = 1; dT = 10; }
-            else dT = -drop;
-        } else {
-            if (avgTime + bump > goal + 25 && cur.every(c => c.p > 2)) { dP = -1; dT = 0; }
-            else dT = bump;
-        }
-        for (const c of cur) {
-            savedata[c.pKey] = Math.max(2, c.p + dP);
-            savedata[c.tKey] = Math.max(5, Math.min(600, c.t + dT));
-        }
-        st.results = [];
-        st.lastChange = { dP, dT, at: Date.now() };
-        q.didTriggerProgress = true;
-        populateSettings();
-    }
-
-    success(q, trailingProgress, successes, type) {
-        const [overridePremiseSetting, overrideTimerSetting] = TYPE_TO_OVERRIDES[type];
-        let newTimerValue;
-        if (savedata.autoProgressionChange === 'auto' && successes.length >= 3) {
-            const minUpgrade = q.countdown - 1;
-            const left = successes[successes.length - 3].timeElapsed / 1000;
-            const right = successes[successes.length - 2].timeElapsed / 1000;
-            const percentile90ish = Math.floor((left + right) / 2) + 1;
-            newTimerValue = Math.min(minUpgrade, percentile90ish);
-        } else {
-            newTimerValue = q.countdown - savedata.autoProgressionTimeDrop;
-        }
-        newTimerValue = Math.max(1, newTimerValue);
-        const averageTime = successes.map(s => s.timeElapsed / 1000).reduce((a, b) => a + b) / successes.length;
-        if (averageTime <= savedata.autoProgressionGoal || newTimerValue <= savedata.autoProgressionGoal) {
-            savedata[overridePremiseSetting] = q.premises + 1;
-            savedata[overrideTimerSetting] = savedata.autoProgressionGoal + 15;
-        } else {
-            savedata[overrideTimerSetting] = newTimerValue;
-        }
-    }
-
-    fail(q, trailingProgress, successes, type) {
-        const [overridePremiseSetting, overrideTimerSetting] = TYPE_TO_OVERRIDES[type];
-        let newTimerValue;
-        if (savedata.autoProgressionChange === 'auto') {
-            newTimerValue = q.countdown + 5;
-        } else {
-            newTimerValue = q.countdown + savedata.autoProgressionTimeBump;
-        }
-        if (newTimerValue > savedata.autoProgressionGoal + 25) {
-            if (q.premises > 2) {
-                savedata[overridePremiseSetting] = q.premises - 1;
-                savedata[overrideTimerSetting] = savedata.autoProgressionGoal + 20;
-            } else {
-                savedata[overrideTimerSetting] = Math.min(newTimerValue, 60);
+    levelChange(q) {
+        syncArityLevels();
+        const st = runState();
+        const type = TYPE_TO_OVERRIDES[q.type] ? q.type : null;
+        const key = type && levelKey(type);
+        const right = q.correctness === 'right';
+        let changed = false;
+        if (key) st.recent[key] = [...(st.recent[key] || []), right].slice(-DEMOTE_WINDOW);
+        if (right) {
+            st.streak++;
+            if (key) {
+                st.own[key] = (st.own[key] || 0) + 1;
+                if (!st.inRun.includes(type)) st.inRun.push(type);
             }
-        } else {
-            savedata[overrideTimerSetting] = newTimerValue;
-        }
-    }
-
-    async determineLevelChange(q) {
-        let trailingProgress = await getTopRRTProgress(this.calculateCommonKeys(q), findAutoProgressionTrailing() - 1);
-        trailingProgress.push(q);
-        trailingProgress.sort((a, b) => a.timeElapsed - b.timeElapsed);
-        const successes = trailingProgress.filter(p => p.correctness === 'right');
-        // was findCommonTypes(question) — the module-level current question, not the one being scored.
-        // It happened to agree most of the time and would silently level the wrong type when it didn't.
-        const commonTypes = this.findCommonTypes(q);
-        if (trailingProgress.length < findAutoProgressionTrailing()) {
-            const numFailures = trailingProgress.length - successes.length;
-            const bestPercentagePossible = 100 * (findAutoProgressionTrailing() - numFailures) / findAutoProgressionTrailing();
-            if (bestPercentagePossible <= findFailureCriteria()) {
-                for (const type of commonTypes) {
-                    this.fail(q, trailingProgress, successes, type);
+            if (st.streak >= findAutoProgressionTrailing()) {
+                for (const t of st.inRun) {
+                    const k = levelKey(t);
+                    if ((st.own[k] || 0) >= RUN_EVIDENCE) {
+                        stepLevel(t, 1);
+                        st.own[k] = 0; st.recent[k] = [];
+                        changed = true;
+                    }
                 }
-                q.didTriggerProgress = true;
+                st.streak = 0; st.inRun = [];
             }
+        } else {
+            st.streak = 0; st.inRun = [];
+            if (key) {
+                st.own[key] = 0;
+                if (st.recent[key].filter(r => !r).length >= DEMOTE_MISSES) {
+                    stepLevel(type, -1);
+                    st.recent[key] = [];
+                    changed = true;
+                }
+            }
+        }
+        if (changed) {
+            q.didTriggerProgress = true;
             populateSettings();
-            return;
         }
-        for (const type of commonTypes) {
-            const percentageRight = 100 * successes.length / findAutoProgressionTrailing();
-            if (percentageRight >= findSuccessCriteria()) {
-                this.success(q, trailingProgress, successes, type);
-                q.didTriggerProgress = true;
-            } else if (percentageRight <= findFailureCriteria()) {
-                this.fail(q, trailingProgress, successes, type);
-                q.didTriggerProgress = true;
-            }
-        }
-        populateSettings();
     }
 
     async renderCurrentProgress(question) {
@@ -268,25 +187,21 @@ class ProgressStore {
     }
 
     async renderAutoProgressionTrailing(question) {
-        const q = this.convertForDatabase(question);
-        let trailingProgress = savedata.autoProgressionGrouping === 'all'
-            ? ((appState.unifiedProgress && appState.unifiedProgress.results) || []).map(r => ({ correctness: r.right ? 'right' : (r.credit > 0 ? 'partial' : 'wrong') }))
-            : await getTopRRTProgress(this.calculateCommonKeys(q), findAutoProgressionTrailing());
         progressTracker.innerHTML = '';
         if (!savedata.autoProgression) {
             progressTracker.classList.remove('visible');
             return;
-        } 
+        }
         progressTracker.classList.add('visible');
-        const width = 100 / findAutoProgressionTrailing();
-        trailingProgress.forEach(q => {
-            const isSuccess = q.correctness === 'right';
+        // the current run: filled for each right answer in a row, empty for what is left
+        const n = findAutoProgressionTrailing(), streak = runState().streak;
+        const width = 100 / n;
+        for (let i = 0; i < n; i++) {
             const span = document.createElement('span');
-            span.classList.add('trailing-dot');
+            span.classList.add('trailing-dot', i < streak ? 'success' : 'empty');
             span.style.width = `${width.toFixed(2)}%`;
-            span.classList.add(isSuccess ? 'success' : q.correctness === 'partial' ? 'partial' : 'fail');
             progressTracker.appendChild(span);
-        });
+        }
     }
 
     async renderDailyProgress() {
