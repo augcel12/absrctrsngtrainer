@@ -252,25 +252,20 @@ class SpaceHardMode {
 }
 
 function createMirrorTemplate(a, b, dimension) {
-    const relation = savedata.minimalMode ? (dimension + '🪞') : `is <span class="highlight">${dimension}</span>-mirrored across`;
+    const relation = `is <span class="highlight">${dimension}</span>-mirrored across`;
     return `<span class="subject">${b}</span> <span class="relation">${relation}</span> <span class="subject">${a}</span>`;
 }
 
 function createScaleTemplate(a, b, dimension, scale) {
-    const relation = savedata.minimalMode ? (dimension + '↔️') : `is <span class="highlight">${dimension}</span>-scaled <span class="highlight">${scale}×</span> from`;
+    const relation = `is <span class="highlight">${dimension}</span>-scaled <span class="highlight">${scale}×</span> from`;
     return `<span class="subject">${b}</span> <span class="relation">${relation}</span> <span class="subject">${a}</span>`;
 }
 
 function createSetTemplate(a, b, dimension) {
-    if (savedata.minimalMode) {
-        const relation = dimension + ' :=';
-        return `<span class="subject">${b}</span> <span class="relation">${relation}</span> <span class="subject">${a}</span>`;
-    } else {
-        return `<span class="highlight">${dimension}</span> of <span class="subject">${b}</span> is set to <span class="highlight">${dimension}</span> of <span class="subject">${a}</span>`;
-    }
+    return `<span class="highlight">${dimension}</span> of <span class="subject">${b}</span> is set to <span class="highlight">${dimension}</span> of <span class="subject">${a}</span>`;
 }
 
 function createRotationTemplate(a, b, planeOp, planeName, degree) {
-    const relation = savedata.minimalMode ? `${planeName} ${degree}` : `is ${planeOp} ${degree} around`;
+    const relation = `is ${planeOp} ${degree} around`;
     return `<span class="subject">${b}</span> <span class="relation">${relation}</span> <span class="subject">${a}</span>`;
 }

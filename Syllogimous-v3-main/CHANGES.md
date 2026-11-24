@@ -159,3 +159,21 @@ at one end ∉, counts ②{…}, ⇔, ∨, ∧), every type (Space, Distinction,
 Contexts, Ring, Hierarchy, Difference as equations, Intervals, Perspective, Syllogism as set
 notation). Red still means inverted. The key is in the Minimal Mode tooltip. `tests/browser/minimal.js`
 rewrites 10,590 premises across every type at arity 2–5 and counts what is left in words (0).
+
+## Removed: anything that could weaken the core training (Nov 24 2026)
+
+- **Pictures** — a drawn arrangement hands you the model you are supposed to build from the premises.
+- **Possible arrangements** — each impossible arrangement broke exactly one premise, so it could be
+  answered by checking premises one at a time, without ever integrating them.
+- **Minimal Mode** (the stock two-term version and the extension to everything) — signs cut the
+  decoding cost while the progression stayed tuned to word items, so the level could climb while
+  the real load fell.
+- **Recall probes** — knowing an earlier item may be asked about splits attention between holding
+  old arrangements and building the current one.
+- **Retry missed items** (was on by default) — a returning true/false item can be answered by
+  recognising it and flipping your last answer. A miss now goes straight to the explanation.
+- **Time multipliers** — Interrogate stretched the clock by its number of questions (×2 at 3) and
+  Mapping doubled it. Interrogate only rides arity-engine items, so raising arity to 3 made the clock
+  jump. Now every item gets the same clock. Interrogate's clock covers the study and freezes when
+  the premises are hidden; answering is untimed, and the progression records the study time. Its
+  separate time override is gone (it uses its type's clock, which the progression moves).

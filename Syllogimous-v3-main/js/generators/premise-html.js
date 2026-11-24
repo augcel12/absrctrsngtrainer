@@ -10,8 +10,8 @@ function createPremiseHTML(premise, allowReversal=true) {
 }
 
 function createBasicPremiseHTML(premise, allowReversal=true) {
-    const relation = savedata.minimalMode ? premise.relationMinimal : premise.relation;
-    const reverse = savedata.minimalMode ? premise.reverseMinimal : premise.reverse;
+    const relation = premise.relation;
+    const reverse = premise.reverse;
     let ps;
     if (!allowReversal || coinFlip()) {
       ps = [
@@ -36,10 +36,10 @@ function createWidePremiseHTML(premise, allowReversal=true) {
     if (right.end === left.start) {
         [left, right] = [right, left];
     }
-    const leftRelation = savedata.minimalMode ? left.relationMinimal : left.relation;
-    const leftReverse = savedata.minimalMode ? left.reverseMinimal : left.reverse;
-    const rightRelation = savedata.minimalMode ? right.relationMinimal : right.relation;
-    const rightReverse = savedata.minimalMode ? right.reverseMinimal : right.reverse;
+    const leftRelation = left.relation;
+    const leftReverse = left.reverse;
+    const rightRelation = right.relation;
+    const rightReverse = right.reverse;
     let a, b, c, ab, bc, abRev, bcRev;
     if (left.end === right.start) {
         a = left.start;

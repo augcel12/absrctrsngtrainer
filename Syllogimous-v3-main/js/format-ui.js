@@ -69,15 +69,13 @@ function fmtDirPad(fam, onPick) {
 // you have to know what every arrangement that fits agrees on.
 function askInterrogate(q, panel, finish) {
     const answers = new Array(q.queries.length).fill(undefined);
-    const opts = q.queryMode === 'possible'
-        ? [[true, 'Possible'], [false, 'Impossible']]
-        : [[true, 'Must be true'], [false, "Can't be true"], [null, "Can't tell"]];
+    const opts = [[true, 'Must be true'], [false, "Can't be true"], [null, "Can't tell"]];
     q.queries.forEach((query, i) => {
         const row = document.createElement('div');
         row.className = 'fmt-row fmt-query';
         const claim = document.createElement('div');
         claim.className = 'fmt-query__claim';
-        claim.innerHTML = renderJunkEmojisText(minimalize(query.html));
+        claim.innerHTML = renderJunkEmojisText(query.html);
         const chips = document.createElement('div');
         chips.className = 'fmt-chips';
         for (const [value, label] of opts) {
@@ -186,13 +184,18 @@ function renderFormatPanel(q) {
 
     const terms = (q.words || []).map(w => ({ html: fmtTermHTML(w), value: w }));
 
-    // Study, then the premises are taken away and the questions arrive. Two phases, one clock: time
-    // spent learning the arrangement is time not spent answering.
+    // Study, then the premises are taken away and the questions arrive. The clock (the same one every
+    // item gets) covers the study and stops when the premises go: what is timed is building the
+    // arrangement, so the number of questions never changes the time limit.
     if (q.format === 'interrogate') {
         const start = document.createElement('div');
         start.className = 'fmt-choices';
         start.appendChild(submitButton(() => {
             start.remove();
+            q.hiddenAt = Date.now();
+            // freeze the clock where it is (stopCountDown would refill the bar)
+            timerRunning = false;
+            clearTimeout(timerInstance);
             displayText.querySelectorAll('.formatted-premise, .formatted-operation, .transform-header,'
                 + ' .preamble, .postamble, .formatted-conclusion').forEach(el => el.remove());
             const gone = document.createElement('div');

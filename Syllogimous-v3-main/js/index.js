@@ -187,27 +187,21 @@ function carouselInit() {
 function displayInit() {
     const q = renderJunkEmojis(question);
     displayLabelType.textContent = q.category.split(":")[0];
-    // show the arity the item ACTUALLY has, not the one the dial asked for, and mark a second attempt
-    const label = q.isProbe ? ["recall"] : [(q.plen || q.premises.length) + "p"];
+    // show the arity the item ACTUALLY has, not the one the dial asked for
+    const label = [(q.plen || q.premises.length) + "p"];
     if (q.arity > 2) label.push(q.arity + "-ary");
-    if (q.isRetry) label.push("retry");
     displayLabelLevel.textContent = label.join(" · ");
     const easy = savedata.scrambleFactor < 12 ? ' (easy)' : '';
     displayText.innerHTML = [
-        `<div class="preamble">${q.isProbe ? 'Earlier' : `Premises${easy}`}</div>`,
-        ...q.premises.map(p => `<div class="formatted-premise">${minimalize(p)}</div>`),
+        `<div class="preamble">Premises${easy}</div>`,
+        ...q.premises.map(p => `<div class="formatted-premise">${p}</div>`),
         ...((q.operations && q.operations.length > 0) ? ['<div class="transform-header">Transformations</div>'] : []),
         ...(q.operations ? q.operations.map(o => `<div class="formatted-operation">${o}</div>`) : []),
-        `<div class="postamble">${q.isProbe ? 'Is this true?' : (q.format ? FMT_PROMPT_LABEL[q.format] : 'Conclusion')}</div>`,
-        '<div class="formatted-conclusion">'+minimalize(q.conclusion)+'</div>',
+        `<div class="postamble">${q.format ? FMT_PROMPT_LABEL[q.format] : 'Conclusion'}</div>`,
+        '<div class="formatted-conclusion">'+q.conclusion+'</div>',
     ].join('');
     const isAnalogy = question?.tags?.includes('analogy');
     const isBinary = question.type === 'binary';
-    if (savedata.minimalMode) {
-        displayText.classList.add('minimal');
-    } else {
-        displayText.classList.remove('minimal');
-    }
 
     if (savedata.widePremises && question.type !== 'syllogism') {
         displayText.classList.add('wide-premises');
@@ -451,14 +445,12 @@ function findStartingTimerCount() {
 }
 
 function findStartingTimerState() {
-    const mult = (question && question.arityTimeMult) || 1;
+    // one clock: nothing about the item (arity, format) stretches it
     if (question) {
         if (question.countdown) {
-            return ['override', Math.max(1, Math.round(question.countdown * mult))];
+            return ['override', Math.max(1, Math.round(question.countdown))];
         } else if (question.timeOffset) {
-            return ['override', Math.max(1, Math.round((+timerTime + question.timeOffset) * mult))];
-        } else if (mult !== 1) {
-            return ['override', Math.max(1, Math.round(+timerTime * mult))];
+            return ['override', Math.max(1, Math.round(+timerTime + question.timeOffset))];
         }
     }
     return ['default', Math.max(1, +timerTime)];
@@ -594,50 +586,9 @@ function generateQuestion() {
     return q;
 }
 
-// ---------------------------------------------------------------- retry queue
-// A missed item comes back once, a few items later, with the clock reset. The gap is the point: by the
-// time it returns the surface has faded, so getting it right means deriving it again rather than
-// recalling "I said TRUE last time, so it must be FALSE".
-//
-// Retries are deliberately UNSCORED. A repeated item is easier the second time whatever you do, so
-// feeding it to the progression would ratchet difficulty on familiarity instead of ability — the same
-// reason retest gains on a reused test say little about the ability it measures. A retry is drill;
-// only first attempts are measurement.
-let retryQueue = [];
-let itemsServed = 0;
-
-function retryDelay() {
-    return Math.max(1, Math.min(20, savedata.retryDelay || 3));
-}
-
-function queueRetry(q) {
-    if (!savedata.retryMissed || q.isRetry || q.isProbe) return false;
-    if (q.format && q.format !== 'interrogate') return false;
-    const clone = { ...q };
-    delete clone.correctness;
-    delete clone.answerUser;
-    delete clone.answeredAt;
-    delete clone.didTriggerProgress;
-    delete clone.credit;
-    delete clone.queryPicks;
-    clone.isRetry = true;
-    retryQueue.push({ q: clone, due: itemsServed + retryDelay() });
-    return true;
-}
-
-function takeDueRetry() {
-    if (!savedata.retryMissed) {
-        retryQueue = [];
-        return null;
-    }
-    const i = retryQueue.findIndex(r => r.due <= itemsServed);
-    return i < 0 ? null : retryQueue.splice(i, 1)[0].q;
-}
-
 function init() {
     stopCountDown();
-    const retry = takeDueRetry();
-    question = retry || probeMake() || generateQuestion();
+    question = generateQuestion();
     if (!question) {
         // nothing in the current settings can make an item (e.g. only Contexts with Missing link):
         // say so instead of leaving the last item up with its clock stopped
@@ -648,8 +599,6 @@ function init() {
         renderFormatPanel(null);
         return;
     }
-    itemsServed++;
-    probeNote(question);
     question.startedAt = new Date().getTime();
 
     stopCountDown();
@@ -787,13 +736,9 @@ function wowFeedbackMissed(cb) {
 
 function wowFeedback() {
     const missed = question.correctness !== 'right';
-    // A missed item goes back in the queue instead of being explained on the spot. Deriving it again
-    // yourself is worth more than reading why you were wrong, so the explanation waits until after the
-    // retry — and is skipped entirely if the retry lands.
-    const queued = missed && queueRetry(question);
     // Interrogate is the exception among formats: what you missed is the arrangement itself, so the
     // drawn explanation is the whole value of getting it wrong.
-    const explain = missed && !queued && savedata.explainOnMiss
+    const explain = missed && savedata.explainOnMiss
         && (!question.format || question.format === 'interrogate');
     // renderJunkEmojis: the explanation must show the same shapes the item did, not the raw tags
     const next = explain ? () => { xpPrepare(question); showMissExplanation(renderJunkEmojis(question)); } : init;
@@ -827,8 +772,7 @@ function closeMissExplanation() {
 
 function storeQuestionAndSave() {
     appState.questions.push(question);
-    // a probe measures what stayed, not how hard the reasoning was — it must not move the dials
-    if (timerToggle.checked && !question.isRetry && !question.isProbe) {
+    if (timerToggle.checked) {
         PROGRESS_STORE.storeCompletedQuestion(question)
     }
     save();

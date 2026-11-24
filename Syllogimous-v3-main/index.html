@@ -23,7 +23,6 @@
 		<link rel="stylesheet" href="css/arity.css">
 		<link rel="stylesheet" href="css/minimal.css">
 		<link rel="stylesheet" href="css/explain.css">
-		<link rel="stylesheet" href="css/pictures.css">
 		<style id="live-styles"></style>
 	</head>
 	<body>
@@ -133,78 +132,6 @@
 						<div class="mb-1">
 							<div class="ctrl__inner">
 								<div>
-									<input hidden id="p-126" type="checkbox">
-									<label class="switch" for="p-126"></label>
-								</div>
-								<label for="p-126" style="max-width: 170px;">Pictures</label>
-								<div class="tooltip-container" tabindex="0">
-									?
-									<div class="tooltip-text">
-										Every premise is drawn as the<br>
-										arrangements it allows, with<br>
-										the terms placed in them.<br>
-										<br>
-										A row: their order along the<br>
-										line the relation lives on.<br>
-										Rising steps: more. An arrow<br>
-										under: time. Boxes in boxes:<br>
-										contains. W–E, N–S, ▲▼:<br>
-										which compass line.<br>
-										Stacked in one place: level.<br>
-										Dashed box: these, any order.<br>
-										Number on it: exactly that<br>
-										many of them are here.<br>
-										Panels side by side: any one<br>
-										of these. Crossed: can't be.<br>
-										3×3 grid: where the first is,<br>
-										seen from the one in the middle.<br>
-										Two halves: same side = same.<br>
-										Two arrows: same way.<br>
-									</div>
-								</div>
-							</div>
-							<ul class="explainer">
-								<li>Linear (every wording), Space 2D/3D/space-time, Distinction and Influence, at every arity</li>
-							</ul>
-						</div>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
-									<input hidden id="p-127" type="checkbox">
-									<label class="switch" for="p-127"></label>
-								</div>
-								<label for="p-127" style="max-width: 170px;">Possible arrangements</label>
-								<div class="tooltip-container" tabindex="0">
-									?
-									<div class="tooltip-text">
-										Study the premises, hide them,<br>
-										then judge drawn arrangements<br>
-										of every term: possible or<br>
-										impossible. An impossible one<br>
-										breaks exactly one premise,<br>
-										so only the whole structure<br>
-										catches it. Every answer has<br>
-										to be right.<br>
-									</div>
-								</div>
-							</div>
-							<ul class="explainer">
-								<li>Linear, Space, Distinction, Influence, Ring and Hierarchy</li>
-							</ul>
-							<div class="multi-input">
-								<span class="single-input">
-									How often
-									<span class="inline-premise-spinner"><input id="p-128" type="number" placeholder="" min="0" max="100" value="35" style="width: 5ch">%</span>
-								</span>
-								<span class="single-input">
-									Arrangements
-									<span class="inline-premise-spinner"><input id="p-129" type="number" placeholder="" min="2" max="6" value="4" style="width: 5ch">each</span>
-								</span>
-							</div>
-						</div>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
 									<input hidden id="p-113" type="checkbox">
 									<label class="switch" for="p-113"></label>
 								</div>
@@ -236,8 +163,10 @@
 										worth two thirds. Only a clean<br>
 										sweep counts as right.<br>
 										<br>
-										One clock covers studying and<br>
-										answering.<br>
+										The clock is the item's usual<br>
+										one. It covers the study and<br>
+										stops when you hide the<br>
+										premises.<br>
 									</div>
 								</div>
 							</div>
@@ -252,62 +181,6 @@
 								<span class="single-input">
 									Questions
 									<span class="inline-premise-spinner"><input id="p-115" type="number" placeholder="" min="2" max="6" value="3" style="width: 5ch">each</span>
-								</span>
-								<span class="single-input">
-									Time
-									<span class="inline-premise-spinner"><input id="p-113-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
-								</span>
-							</div>
-						</div>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
-									<input hidden id="p-110" type="checkbox">
-									<label class="switch" for="p-110"></label>
-								</div>
-								<label for="p-110" style="max-width: 170px;">Recall probes</label>
-								<div class="tooltip-container" tabindex="0">
-									?
-									<div class="tooltip-text">
-										Now and then, in place of an<br>
-										item, a question about one<br>
-										you saw a few items ago.<br>
-										<br>
-										It is gone from the screen,<br>
-										so nothing can be worked out<br>
-										again, and you are never told<br>
-										beforehand which item will<br>
-										be asked about.<br>
-										<br>
-										The strongest kind asks about<br>
-										a relation that was true of<br>
-										that item but never stated<br>
-										and never needed: you have it<br>
-										only if you built the whole<br>
-										arrangement, not just the<br>
-										chain the conclusion asked<br>
-										for.<br>
-										<br>
-										Probes never move the<br>
-										auto-progression dials.<br>
-									</div>
-								</div>
-							</div>
-							<ul class="explainer">
-								<li>Shapes or other hard-to-name stimuli make these much harder to rehearse in words</li>
-							</ul>
-							<div class="multi-input">
-								<span class="single-input">
-									How often
-									<span class="inline-premise-spinner"><input id="p-111" type="number" placeholder="" min="0" max="100" value="20" style="width: 5ch">%</span>
-								</span>
-								<span class="single-input">
-									Look back
-									<span class="inline-premise-spinner"><input id="p-112" type="number" placeholder="" min="2" max="12" value="6" style="width: 5ch">items</span>
-								</span>
-								<span class="single-input">
-									Time
-									<span class="inline-premise-spinner"><input id="p-110-time" type="number" placeholder="" min="1" max="600" value="" style="width: 5ch">sec</span>
 								</span>
 							</div>
 						</div>
@@ -326,47 +199,8 @@
 										that settle it and the<br>
 										hidden arrangement before<br>
 										moving on.<br>
-										<br>
-										With retries on, this waits<br>
-										until after the retry.<br>
 									</div>
 								</div>
-							</div>
-						</div>
-						<div class="mb-1">
-							<div class="ctrl__inner">
-								<div>
-									<input hidden id="p-104" type="checkbox">
-									<label class="switch" for="p-104"></label>
-								</div>
-								<label for="p-104" style="max-width: 170px;">Retry missed items</label>
-								<div class="tooltip-container" tabindex="0">
-									?
-									<div class="tooltip-text">
-										A missed item comes back<br>
-										once, a few items later,<br>
-										with the clock reset.<br>
-										<br>
-										The gap is the point: the<br>
-										surface has faded, so a<br>
-										correct answer means you<br>
-										derived it again instead of<br>
-										recalling your last guess.<br>
-										<br>
-										Retries are never scored and<br>
-										never move progression. A<br>
-										repeat is easier whatever you<br>
-										do, so counting it would<br>
-										raise difficulty on<br>
-										familiarity, not ability.<br>
-									</div>
-								</div>
-							</div>
-							<div class="inline-premise-wrapper">
-								Items in between
-								<span class="inline-premise-spinner">
-									<input id="p-104-delay" type="number" min="1" max="20" value="3" style="width: 6ch">
-								</span>
 							</div>
 						</div>
 						<div class="set-sec">Progression</div>
@@ -1223,56 +1057,6 @@
 							<span id="experimental-folder-arrow" class="folder-arrow">▶</span><span>Experimental</span>
 						</div>
 						<div id="experimental-folder-content" class="folder-content">
-							<div class="mb-1">
-								<div class="ctrl__inner">
-									<div>
-										<input hidden id="p-48" type="checkbox">
-										<label class="switch" for="p-48"></label>
-									</div>
-									<label for="p-48">Minimal Mode</label>
-									<div class="tooltip-container" tabindex="0">
-										?
-										<div class="tooltip-text">
-											Every relation as a sign, in<br>
-											every type and at every arity.<br>
-											Red still means inverted.<br>
-											<br>
-											∈ (B, C): between B and C<br>
-											∉ (B, C, D): beyond all of them<br>
-											(at one end)<br>
-											②{A, B, C}: exactly 2 of these<br>
-											∨ or · ∧ and · ⇔ exactly when<br>
-											¬ not · → requires<br>
-											≡ level with · ↔ ↕ ⇕ ⏱ on the<br>
-											E–W / N–S / up–down / time line<br>
-											A·B ⇉ C·D: A from B the same<br>
-											way as C from D (⇄ opposite)<br>
-											A = B = C all the same<br>
-											∝ moves with · ∝1/ against<br>
-											↻₁ next clockwise · ⌀ across<br>
-											A↻B ≺ C: going clockwise from<br>
-											A, B before C · |AB| distance<br>
-											≻ over · ≻₁ directly over<br>
-											⊔(B, C) lowest over both<br>
-											⊥ different lines · ~ one line<br>
-											≪ ≫ wholly before / after<br>
-											≺∩ ≻∩ overlaps start / end<br>
-											⊂ ⊃ within / covers · ∩ overlap<br>
-											⊢A start · A⊣ end<br>
-											Every arrow points from the<br>
-											first term to the second:<br>
-											A ➡ B = A is left of B<br>
-											@A: in A's own frame (arrows<br>
-											read as A faces)<br>
-											┃ A's forward line (sides)<br>
-											⇈ ⇅ ↷ ↶ facing same / opposite /<br>
-											quarter turn right / left<br>
-											⊆ all · ∩…= ∅ no · ∩…≠ ∅ some<br>
-											⊄ some not<br>
-										</div>
-									</div>
-								</div>
-							</div>
 							<div class="mb-1">
 								<div class="ctrl__inner">
 									<div>
@@ -2857,9 +2641,6 @@
 		<script src="js/generators/intervals.js"></script>
 		<script src="js/generators/perspective.js"></script>
 		<script src="js/generators/derive.js"></script>
-		<script src="js/generators/probe.js"></script>
-		<script src="js/generators/pictures.js"></script>
-		<script src="js/generators/minimal.js"></script>
 		<script src="js/generators/interrogate.js"></script>
 		<script src="js/explanation.js"></script>
 		<script src="js/backwards-compatibility.js"></script>

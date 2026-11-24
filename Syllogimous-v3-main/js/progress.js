@@ -101,7 +101,9 @@ class ProgressStore {
     convertForDatabase(question) {
         const q = {...question};
         q.timestamp = q.answeredAt;
-        q.timeElapsed = q.answeredAt - q.startedAt;
+        // interrogate: the clock stopped when the premises were hidden, so the time is the study time
+        q.timeElapsed = (q.hiddenAt || q.answeredAt) - q.startedAt;
+        delete q.hiddenAt;
         q.premises = q.plen || q.premises.length;
         q.countdown = q.tlen || q.countdown || savedata.timer;
         q.key = this.calculateKey(q);
@@ -138,10 +140,9 @@ class ProgressStore {
     // The window restarts after each change, so the next decision is made at the new level.
     unifiedLevelChange(q) {
         const st = appState.unifiedProgress || (appState.unifiedProgress = { results: [] });
-        const mult = q.arityTimeMult || 1;
         // credit: 1 or 0 for an ordinary item, the share of answers right for an interrogated one
         const credit = typeof q.credit === 'number' ? q.credit : (q.correctness === 'right' ? 1 : 0);
-        st.results.push({ right: q.correctness === 'right', credit, t: q.timeElapsed / 1000 / mult });
+        st.results.push({ right: q.correctness === 'right', credit, t: q.timeElapsed / 1000 });
         const n = findAutoProgressionTrailing();
         if (st.results.length > n) st.results.shift();
         const rights = st.results.filter(r => r.right);

@@ -1,4 +1,4 @@
-// Plays the real page through its own buttons: every family, formats, interrogate, probes, retries,
+// Plays the real page through its own buttons: every family, formats, interrogate,
 // explanations, auto progression. Reports errors, stalls and what the level did.
 const { chromium } = require('playwright');
 const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = process.argv[4] || '3';
@@ -8,27 +8,26 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
   const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 5).join(' | '))); p.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
   await p.goto((process.env.URL || 'http://localhost:8771/Syllogimous-v3-main/'));
   await p.waitForTimeout(500);
-  await p.evaluate(({ ARITY, PICS }) => {
+  await p.evaluate(({ ARITY }) => {
     Object.assign(savedata, {
       enableDistinction: true, enableLinear: true, linearWording: 'leftright,topunder,comparison,temporal,contains', enableDirection: true, enableDirection3D: true,
       enableInfluence: true, enableRequirement: true, enableContexts: true, enableBalance: true, enableRing: true, enableHierarchy: true, enableMapping: true, enableDifference: true, enableIntervals: true, enablePerspective: true,
-      enableFmtName: true, enableFmtMissing: true, enableFmtRepair: true, enableInterrogate: true, interrogateChance: 30, enableProbe: true, probeChance: 15,
-      enablePictures: PICS, enablePossible: true, possibleChance: 25,
-      retryMissed: true, explainOnMiss: true, autoProgression: true, autoProgressionGrouping: 'all', autoProgressionTrailing: 10, enableNegation: true,
+      enableFmtName: true, enableFmtMissing: true, enableFmtRepair: true, enableInterrogate: true, interrogateChance: 30,
+      explainOnMiss: true, autoProgression: true, autoProgressionGrouping: 'all', autoProgressionTrailing: 10, enableNegation: true,
       arity: ARITY, premises: 3, timer: 120,
     });
     appState.fastUi = true;
     refresh();
     const t = document.querySelector('#timer-toggle'); if (!t.checked) t.click();
-  }, { ARITY, PICS: !!process.env.PICS });
+  }, { ARITY });
   const kinds = {}, stats = { stalls: 0, levels: [] };
   let lastKey = '';
   for (let i = 0; i < N; i++) {
-    const info = await p.evaluate(() => ({ fmt: question && question.format, valid: question && question.isValid, cat: question && question.category, probe: !!(question && question.isProbe), retry: !!(question && question.isRetry), ar: question && question.arity, started: question && question.startedAt, P: question && (question.plen || question.premises.length) }));
+    const info = await p.evaluate(() => ({ fmt: question && question.format, valid: question && question.isValid, cat: question && question.category, ar: question && question.arity, started: question && question.startedAt, P: question && (question.plen || question.premises.length) }));
     const key = info.started + info.cat;
     if (key === lastKey) { stats.stalls++; }
     lastKey = key;
-    const kind = info.probe ? 'probe' : info.retry ? 'retry' : (info.fmt || 'tf');
+    const kind = info.fmt || 'tf';
     if (process.env.TRACE) console.log(i, kind, info.cat, 'a' + info.ar, 'P' + info.P, new Date().toISOString().slice(14, 23));
     kinds[kind] = (kinds[kind] || 0) + 1;
     const right = Math.random() < ACC;
@@ -42,7 +41,7 @@ const N = +process.argv[2] || 120, ACC = +(process.argv[3] || 0.8), ARITY = proc
         const rows = await p.$$('.fmt-query');
         for (let r = 0; r < rows.length; r++) {
           const chips = await rows[r].$$('.fmt-chip');
-          const opts = chips.length === 2 ? [true, false] : [true, false, null];
+          const opts = [true, false, null];
           const want = Math.random() < ACC ? answers[r] : opts[Math.floor(Math.random() * opts.length)];
           await chips[want === true ? 0 : want === false ? 1 : 2].click();
         }

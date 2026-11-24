@@ -718,38 +718,6 @@ input[type="number"]::-moz-inner-spin-button {
     margin-bottom: 0.2rem;
 }
 
-.display_text.minimal .formatted-premise,
-.display_text.minimal .formatted-operation,
-.display_text.minimal:not(.complicated-conclusion) .formatted-conclusion {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    justify-items: center;
-    gap: 1.2rem;
-}
-
-.display_text.minimal .formatted-premise > span:nth-child(1),
-.display_text.minimal .formatted-operation > span:nth-child(1),
-.display_text.minimal:not(.complicated-conclusion) .formatted-conclusion > span:nth-child(1) {
-    justify-self: end;
-}
-
-.display_text.minimal .formatted-premise > span:nth-child(2),
-.display_text.minimal .formatted-operation > span:nth-child(2),
-.display_text.minimal:not(.complicated-conclusion) .formatted-conclusion > span:nth-child(2) {
-    min-width: 2rem;
-    justify-self: center;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.display_text.minimal .formatted-premise > span:nth-child(3),
-.display_text.minimal .formatted-operation > span:nth-child(3),
-.display_text.minimal:not(.complicated-conclusion) .formatted-conclusion > span:nth-child(3) {
-    justify-self: start;
-}
-
 .game-area.wide-premises {
     max-width: 900px;
 }
@@ -759,11 +727,6 @@ input[type="number"]::-moz-inner-spin-button {
     grid-template-columns: 1fr 2.5fr 1fr 2.5fr 1fr;
     justify-items: center;
     gap: 0.7rem;
-}
-
-.display_text.wide-premises.minimal .formatted-premise {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1.2rem;
 }
 
 .display_text.wide-premises .formatted-premise > span:nth-child(1) {
@@ -2083,10 +2046,6 @@ table.distinction {
 
     .carousel_display_label-wrapper h2, .display-inner h2 {
         gap: 0.2rem;
-    }
-
-    .display_text.minimal {
-        font-size: var(--step-1);
     }
 
     svg.junk, svg.noise, svg.anchor {

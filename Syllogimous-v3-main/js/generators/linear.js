@@ -1,11 +1,4 @@
-function pickLinearPremise(a, b, comparison, reverseComparison, min, minRev) {
-    if (savedata.minimalMode) {
-        comparison = min;
-        reverseComparison = minRev;
-    } else {
-        comparison = comparison;
-        reverseComparison = reverseComparison;
-    }
+function pickLinearPremise(a, b, comparison, reverseComparison) {
     const ps = [
     `<span class="subject">${a}</span> <span class="relation">${comparison}</span> <span class="subject">${b}</span>`,
     `<span class="subject">${a}</span> <span class="relation"><span class="is-negated">${reverseComparison}</span></span> <span class="subject">${b}</span>`,
@@ -127,7 +120,7 @@ class LinearQuestion {
         premises = scramble(premises);
         premises = premises.map(p => createPremiseHTML(p));
 
-        if (savedata.enableMeta && !savedata.minimalMode && !savedata.widePremises) {
+        if (savedata.enableMeta && !savedata.widePremises) {
             premises = applyMeta(premises, p => p.match(/<span class="relation">(?:<span class="is-negated">)?(.*?)<\/span>/)[1]);
         }
 

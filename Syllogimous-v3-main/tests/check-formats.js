@@ -131,7 +131,7 @@ function checkRendering(fam, item) {
 const stats = {};
 const settings = [{}, { enableNegation: true }, { enableNegation: true, scrambleFactor: 100 }];
 for (const cfg of settings) {
-  Object.assign(C.savedata, { enableNegation: false, scrambleFactor: 80, minimalMode: false, enableConnectionBranching: true }, cfg);
+  Object.assign(C.savedata, { enableNegation: false, scrambleFactor: 80, enableConnectionBranching: true }, cfg);
   for (const fam of fams) for (const format of Object.keys(C.FMT_MAKERS)) {
     if (!C.fmtSupports(format, fam)) continue;
     for (let L = 2; L <= 10; L++) for (let i = 0; i < Math.ceil(N / 9); i++) {

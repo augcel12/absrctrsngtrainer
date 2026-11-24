@@ -141,10 +141,10 @@ function checkBalance(item,L){
   rec('balance',item.isValid);
 }
 
-const configs=[{},{enableNegation:true},{enableMeta:true},{enableNegation:true,enableMeta:true},{minimalMode:false,scrambleFactor:100},{enableConnectionBranching:false}];
+const configs=[{},{enableNegation:true},{enableMeta:true},{enableNegation:true,enableMeta:true},{scrambleFactor:100},{enableConnectionBranching:false}];
 const N=+process.argv[3]||400;
 for(const cfg of configs){
-  Object.assign(ctx.savedata,{enableNegation:false,enableMeta:false,minimalMode:false,scrambleFactor:80,enableConnectionBranching:true},cfg);
+  Object.assign(ctx.savedata,{enableNegation:false,enableMeta:false,scrambleFactor:80,enableConnectionBranching:true},cfg);
   for(let L=2;L<=12;L++) for(let i=0;i<N;i++){
     let it;
     it=new ctx.InfluenceQuestion().create(L); it.premises=stripExplainer(it.premises); checkInfluence(it,L);

@@ -106,7 +106,7 @@ class InfluenceQuestion {
         // Meta rewrites a premise into "same as (X to Y) to Z", dropping that premise's own wording —
         // including any "sharply". The magnitude question needs every edge on the path legible, so it
         // only gets asked on the items where meta hasn't swallowed that information.
-        const metaOn = savedata.enableMeta && !savedata.minimalMode;
+        const metaOn = savedata.enableMeta;
         if (metaOn) {
             // strip "sharply and " before comparing: applyMeta decides same/opposite by string equality,
             // and it needs to compare on sign alone — the magnitude word would make two same-signed

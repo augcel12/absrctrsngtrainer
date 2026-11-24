@@ -9,8 +9,6 @@ These drive the real page in headless Chromium (Playwright). Serve the repo root
   off) is rendered, read back by a reader written from the English, and compared with the fact's own
   truth function on random arrangements. Should print `wrong 0`; `unread` is only the two-term compass
   directions, which it does not parse.
-- `pictures.js` — every picture read back as a rule and compared with its fact on every arrangement;
-  Possible-arrangements answers re-read from the drawing and re-checked. Should print `wrong 0` throughout.
 - `families.js [reps]` — Difference, Intervals and Perspective: every shape's wording read back by an
   independent reader, and answers re-derived independently (exact rational elimination, every endpoint
   order, every arrangement with every way of facing). Should print zeros in every wrong column.
@@ -21,5 +19,5 @@ These drive the real page in headless Chromium (Playwright). Serve the repo root
   build (`:k`), throw (`T`), step down in arity (`d`, expected for Analogy, Mapping, Repair) or take
   over 500 ms. Should end with `errors []`.
 - `play.js [items] [accuracy] [arity]` — plays through the buttons with everything on
-  (formats, interrogate, probes, retries, explanations, auto progression). Should print `stalls 0`
+  (formats, interrogate, explanations, auto progression). Should print `stalls 0`
   and `errors []`.

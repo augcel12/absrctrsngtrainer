@@ -134,7 +134,6 @@ class MappingQuestion {
             isValid,
             plen: length,
             modifiers: [ti ? 'turned' : 'straight'],
-            arityTimeMult: 2,
             explainHTML,
             _mp: { Wa, Wb, pts, ptsB, x, y },      // for arity-more.js, removed there
             ...(countdown && { countdown }),

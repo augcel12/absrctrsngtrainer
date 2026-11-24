@@ -267,7 +267,6 @@ function arOrderFamily(g) {
     const bin = (x, y) => ({
         key: `b${x},${y}`, arity: 2, terms: [x, y], pairs: [],
         truth: m => m[x] < m[y],
-        get pic() { return picR([x, y]); },
         html: (W, plain) => plain ? `${arS(W[x])} ${arR(g.prev)} ${arS(W[y])}` : createBasicPremiseHTML(g.forwards(W[x], W[y])),
     });
     const between = (a, b, c, inside) => {
@@ -275,7 +274,6 @@ function arOrderFamily(g) {
         return {
             key: `t${inside ? 'i' : 'o'}${a},${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [a, c, null]],
             truth: m => (((m[b] < m[a] && m[a] < m[c]) || (m[c] < m[a] && m[a] < m[b])) === inside),
-            get pic() { return inside ? picAlt(picR([b, a, c]), picR([c, a, b])) : picAlt(picR([a, { g: [b, c] }]), picR([{ g: [b, c] }, a])); },
             html: (W, plain) => `${arS(W[a])} ${inside ? arPhrase('is between', 'is not between', plain) : arPhrase('is not between', 'is between', plain)} ${arS(W[b])} ${arR('and')} ${arS(W[c])}`,
         };
     };
@@ -283,10 +281,6 @@ function arOrderFamily(g) {
     const iff = (w, x, y, z, o1, o2) => ({
         key: arPairKey('q', o1 ? [w, x] : [x, w], o2 ? [y, z] : [z, y]), arity: 4, terms: [w, x, y, z], pairs: [[w, x, null], [y, z, null]],
         truth: m => ((m[w] < m[x]) === o1) === ((m[y] < m[z]) === o2),
-        get pic() {
-            const p = (u, v, o) => picR(o ? [u, v] : [v, u]);
-            return picAlt(picAnd(p(w, x, o1), p(y, z, o2)), picAnd(p(w, x, !o1), p(y, z, !o2)));
-        },
         html: (W, plain) => `${arS(W[w])} ${arR(o1 ? g.prev : g.next)} ${arS(W[x])} ${arR('exactly when')} ${arS(W[y])} ${arPhrase(o2 ? g.prev : g.next, o2 ? g.next : g.prev, plain)} ${arS(W[z])}`,
     });
     // "A is left of B or C" — true when at least one holds, so it cannot be read off either pair alone
@@ -295,7 +289,6 @@ function arOrderFamily(g) {
         return {
             key: `o${a};${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [a, c, null]],
             truth: m => m[a] < m[b] || m[a] < m[c],
-            get pic() { return picNot(picR([{ g: [b, c] }, a])); },
             html: (W, plain) => (plain || !savedata.enableNegation || coinFlip())
                 ? `${arS(W[a])} ${arR(g.prev)} ${arS(W[b])} ${arR('or')} ${arS(W[c])}`
                 : `${arS(W[a])} ${arR(arNeg(g.next + ' both'))} ${arS(W[b])} ${arR('and')} ${arS(W[c])}`,
@@ -308,7 +301,6 @@ function arOrderFamily(g) {
         return {
             key: `x${mid},${ends}`, arity: 4, terms: [a, b, c, d], pairs: [[a, c, null], [a, d, null], [b, c, null], [b, d, null]],
             truth: m => inside(m, a) !== inside(m, b),
-            get pic() { return picAlt(picR([c, { g: [a, b], n: 1 }, d]), picR([d, { g: [a, b], n: 1 }, c])); },
             html: (W, plain) => `${arR('Exactly one of')} ${arS(W[a])} ${arR('and')} ${arS(W[b])} ${arPhrase('is between', 'is not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])}`,
         };
     };
@@ -318,14 +310,12 @@ function arOrderFamily(g) {
         return {
             key: `e${a};${rest.slice().sort((p, q) => p - q)}`, arity: all.length, terms: all, pairs: rest.map(r => [a, r, null]),
             truth: m => rest.every(r => m[a] < m[r]) || rest.every(r => m[a] > m[r]),
-            get pic() { return picAlt(picR([a, { g: rest }]), picR([{ g: rest }, a])); },
             html: (W, plain) => `${arR('Among')} ${all.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[all[all.length - 1]])}, ${arS(W[a])} ${arPhrase('is at one end', 'is not at one end', plain)}`,
         };
     };
     const ana = (a, b, c, d, same) => ({
         key: `a${a},${b},${c},${d},${+same}`, arity: 4, terms: [a, b, c, d], pairs: [],
         truth: m => ((m[a] < m[b]) === (m[c] < m[d])) === same,
-        get pic() { return picAlt(picAnd(picR([a, b]), picR(same ? [c, d] : [d, c])), picAnd(picR([b, a]), picR(same ? [d, c] : [c, d]))); },
         html: (W, plain) => analogyTo(W[a], W[b]) + (plain ? `<div class="analogy-statement">${same ? 'has the same relation as' : 'has a different relation from'}</div>` : (same ? pickAnalogyStatementSame() : pickAnalogyStatementDifferent())) + analogyTo(W[c], W[d]),
     });
     // five terms. "Exactly one of A, B and C is between D and E": a count over three, so no pair of
@@ -337,7 +327,6 @@ function arOrderFamily(g) {
         return {
             key: `X${ms};${ends};${n}`, arity: movers.length + 2, terms: [...movers, c, d], pairs: movers.flatMap(x => [[x, c, null], [x, d, null]]),
             truth: m => movers.filter(x => inside(m, x)).length === n,
-            get pic() { return picAlt(picR([c, { g: movers, n }, d]), picR([d, { g: movers, n }, c])); },
             html: (W, plain) => `${arR(n === 1 ? 'Exactly one of' : 'Exactly ' + n + ' of')} ${list(W, movers)} ${arPhrase(n === 1 ? 'is between' : 'are between', n === 1 ? 'is not between' : 'are not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])}`,
         };
     };
@@ -345,12 +334,10 @@ function arOrderFamily(g) {
     const countPrev = (a, rest, n) => ({
         key: `k${a};${rest.slice().sort((p, q) => p - q)};${n}`, arity: rest.length + 1, terms: [a, ...rest], pairs: rest.map(r => [a, r, null]),
         truth: m => rest.filter(r => m[r] < m[a]).length === n,
-        get pic() { return picR([{ g: rest, n }, a]); },
         html: (W, plain) => `${arR('Exactly ' + n + ' of')} ${list(W, rest)} ${arPhrase(n === 1 ? g.prev : plural(g.prev), n === 1 ? g.next : plural(g.next), plain)} ${arS(W[a])}`,
     });
     return {
         id: 'order',
-        picAxis: g.name,
         engine: N => arEngine('order', N, 1),
         terms: (P, k) => Math.max(k + 1, Math.min(7, P + 1)),
         hidden: N => { const pos = shuffle(arRange(N)); return Int8Array.from(pos); },
@@ -423,7 +410,6 @@ function arSpaceFamily(gen) {
     const dir = (x, y, s) => ({
         key: x < y ? `d${x},${y},${s.join('')}` : `d${y},${x},${s.map(v => -v).join('')}`, arity: 2, terms: [x, y], pairs: [],
         truth: (m, a) => arSign(m[x] - m[y]) === s[a],
-        get pic() { return { k: 'cmp', x, y, s }; },
         html: (W, plain) => {
             const st = gen.createDirectionStatement(W[y], W[x], s);
             return plain ? `${arS(st.start)} ${arR(st.relation)} ${arS(st.end)}` : createBasicPremiseHTML(st);
@@ -435,7 +421,6 @@ function arSpaceFamily(gen) {
             key: `t${inside ? 'i' : 'o'}${ax}:${a},${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, ax], [a, c, ax]],
             truth: (m, axis) => axis !== ax || (((m[b] < m[a] && m[a] < m[c]) || (m[c] < m[a] && m[a] < m[b])) === inside),
             // ties are allowed in space, so "not between" also covers level with an end: drawn as neither order
-            get pic() { const e = 'e' + ax; return inside ? picAlt(picR([b, a, c], e), picR([c, a, b], e)) : picAnd(picNot(picR([b, a, c], e)), picNot(picR([c, a, b], e))); },
             html: (W, plain) => `${arS(W[a])} ${inside ? arPhrase('is between', 'is not between', plain) : arPhrase('is not between', 'is between', plain)} ${arS(W[b])} ${arR('and')} ${arS(W[c])} ${arR(AR_AXIS[ax])}`,
         };
     };
@@ -445,7 +430,6 @@ function arSpaceFamily(gen) {
         return {
             key: `l${ax}:${a};${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, ax], [a, c, ax]],
             truth: (m, axis) => axis !== ax || m[a] === m[b] || m[a] === m[c],
-            get pic() { const e = 'e' + ax; return picAlt(picR([{ tie: [a, b] }], e), picR([{ tie: [a, c] }], e)); },
             html: (W, plain) => `${arS(W[a])} ${arPhrase('is level with', 'is not level with', plain)} ${arS(W[b])} ${arR('or')} ${arS(W[c])} ${arR(AR_AXIS[ax])}`,
         };
     };
@@ -456,7 +440,6 @@ function arSpaceFamily(gen) {
         return {
             key: `X${ax}:${mid},${ends}`, arity: 4, terms: [a, b, c, d], pairs: [[a, c, ax], [a, d, ax], [b, c, ax], [b, d, ax]],
             truth: (m, axis) => axis !== ax || inside(m, a) !== inside(m, b),
-            get pic() { const e = 'e' + ax; return picAlt(picR([c, { g: [a, b], n: 1 }, d], e), picR([d, { g: [a, b], n: 1 }, c], e)); },
             html: (W, plain) => `${arR('Exactly one of')} ${arS(W[a])} ${arR('and')} ${arS(W[b])} ${arPhrase('is between', 'is not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])} ${arR(AR_AXIS[ax])}`,
         };
     };
@@ -468,7 +451,6 @@ function arSpaceFamily(gen) {
         return {
             key: `Y${ax}:${ms};${ends};${n}`, arity: movers.length + 2, terms: [...movers, c, d], pairs: movers.flatMap(x => [[x, c, ax], [x, d, ax]]),
             truth: (m, axis) => axis !== ax || movers.filter(x => inside(m, x)).length === n,
-            get pic() { const e = 'e' + ax; return picAlt(picR([c, { g: movers, n }, d], e), picR([d, { g: movers, n }, c], e)); },
             html: (W, plain) => `${arR(n === 1 ? 'Exactly one of' : 'Exactly ' + n + ' of')} ${movers.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[movers[movers.length - 1]])} ${arPhrase(n === 1 ? 'is between' : 'are between', n === 1 ? 'is not between' : 'are not between', plain)} ${arS(W[c])} ${arR('and')} ${arS(W[d])} ${arR(AR_AXIS[ax])}`,
         };
     };
@@ -477,14 +459,12 @@ function arSpaceFamily(gen) {
         return {
             key: `E${ax}:${a};${rest.slice().sort((p, q) => p - q)}`, arity: all.length, terms: all, pairs: rest.map(r => [a, r, ax]),
             truth: (m, axis) => axis !== ax || rest.every(r => m[a] < m[r]) || rest.every(r => m[a] > m[r]),
-            get pic() { const e = 'e' + ax; return picAlt(picR([a, { g: rest }], e), picR([{ g: rest }, a], e)); },
             html: (W, plain) => `${arR('Among')} ${all.slice(0, -1).map(i => arS(W[i])).join(', ')} ${arR('and')} ${arS(W[all[all.length - 1]])}, ${arS(W[a])} ${arPhrase('is at one end', 'is not at one end', plain)} ${arR(AR_AXIS[ax])}`,
         };
     };
     const way = (a, b, c, d, same) => ({
         key: arPairKey('w', [a, b], same ? [c, d] : [d, c]), arity: 4, terms: [a, b, c, d], pairs: [[a, b, null], [c, d, null]],
         truth: (m, ax) => arSign(m[a] - m[b]) === (same ? 1 : -1) * arSign(m[c] - m[d]),
-        get pic() { return { k: 'way', a: [b, a], b: same ? [d, c] : [c, d] }; },
         html: (W, plain) => same
             ? `${arS(W[a])} ${arPhrase('is the same way from', 'is the opposite way from', plain)} ${arS(W[b])} ${arR('as')} ${arS(W[c])} ${arR('is from')} ${arS(W[d])}`
             : `${arS(W[a])} ${arPhrase('is the opposite way from', 'is the same way from', plain)} ${arS(W[b])} ${arR('as')} ${arS(W[c])} ${arR('is from')} ${arS(W[d])}`,
@@ -495,8 +475,6 @@ function arSpaceFamily(gen) {
     const ana = (a, b, c, d) => ({
         key: `a${a},${b},${c},${d}`, arity: 4, terms: [a, b, c, d], pairs: [],
         truth: (m, ax) => arSign(m[a] - m[b]) === arSign(m[c] - m[d]),
-        get pic() { return { k: 'way', a: [b, a], b: [d, c] }; },
-        get negPic() { return picNot({ k: 'way', a: [b, a], b: [d, c] }); },
         html: (W, plain) => anaHTML(W, a, b, c, d, true, plain),
         negHtml: (W, plain) => anaHTML(W, a, b, c, d, false, plain),
     });
@@ -664,7 +642,6 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
     const pair = (x, y, same) => ({
         key: `s${Math.min(x, y)},${Math.max(x, y)},${+same}`, arity: 2, terms: [x, y], pairs: [],
         truth: m => (m[x] === m[y]) === same,
-        get pic() { return picSd(x, y, same); },
         html: (W, plain) => lex.pair(W, x, y, same, plain),
     });
     // a two-term conclusion may be worded differently from a two-term premise (influence asks "if A
@@ -679,7 +656,6 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
         return {
             key: `n${t}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [b, c, null], [a, c, null]],
             truth: m => !(m[a] === m[b] && m[b] === m[c]),
-            get pic() { return picNot({ k: 'sides', a: [a, b, c], b: [] }); },
             html: (W, plain) => lex.notAll(W, a, b, c, plain),
         };
     };
@@ -688,14 +664,12 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
         return {
             key: `m${a};${lo},${hi}`, arity: 3, terms: [a, b, c], pairs: [[a, b, null], [a, c, null]],
             truth: m => m[a] === m[b] || m[a] === m[c],
-            get pic() { return picNot({ k: 'sides', a: [a], b: [b, c] }); },
             html: (W, plain) => lex.matchOne(W, a, b, c, plain),
         };
     };
     const iff = (w, x, y, z, s1, s2) => ({
         key: (() => { const p = [[Math.min(w, x), Math.max(w, x)], [Math.min(y, z), Math.max(y, z)]].map(q => q.join(',')).sort().join('|'); return 'q' + p + (s1 === s2 ? 'e' : 'n'); })(), arity: 4, terms: [w, x, y, z], pairs: [[w, x, null], [y, z, null]],
         truth: m => ((m[w] === m[x]) === s1) === ((m[y] === m[z]) === s2),
-        get pic() { return picAlt(picAnd(picSd(w, x, s1), picSd(y, z, s2)), picAnd(picSd(w, x, !s1), picSd(y, z, !s2))); },
         html: (W, plain) => lex.iff(W, w, x, y, z, s1, s2, plain),
     });
     // "Exactly 2 of B, C and D are the same as A" — a count, so no pair of them settles it
@@ -703,7 +677,6 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
         key: `c${a};${rest.slice().sort((p, q) => p - q)};${n}`, arity: rest.length + 1, terms: [a, ...rest],
         pairs: rest.map(r => [a, r, null]),
         truth: m => rest.filter(r => m[r] === m[a]).length === n,
-        get pic() { return { k: 'sides', a: [a, { g: rest, n }], b: [{ g: rest, n: rest.length - n }] }; },
         html: (W, plain) => lex.countN(W, a, rest, n, plain),
     });
     // "Either A is same as B, or C is opposite of D, or both"
@@ -711,18 +684,15 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
         key: (() => { const q = [[Math.min(w, x), Math.max(w, x), +s1], [Math.min(y, z), Math.max(y, z), +s2]].map(v => v.join(',')).sort().join('|'); return 'E' + q; })(),
         arity: 4, terms: [w, x, y, z], pairs: [[w, x, null], [y, z, null]],
         truth: m => ((m[w] === m[x]) === s1) || ((m[y] === m[z]) === s2),
-        get pic() { return picNot(picAnd(picSd(w, x, !s1), picSd(y, z, !s2))); },
         html: (W, plain) => lex.either(W, w, x, y, z, s1, s2, plain),
     });
     const ana = (a, b, c, d, same) => ({
         key: `a${a},${b},${c},${d},${+same}`, arity: 4, terms: [a, b, c, d], pairs: [],
         truth: m => ((m[a] === m[b]) === (m[c] === m[d])) === same,
-        get pic() { return picAlt(picAnd(picSd(a, b, true), picSd(c, d, same)), picAnd(picSd(a, b, false), picSd(c, d, !same))); },
         html: (W, plain) => analogyTo(W[a], W[b]) + (plain ? `<div class="analogy-statement">${same ? 'is the same as' : 'is different from'}</div>` : (same ? pickAnalogyStatementSameTwoOptions() : pickAnalogyStatementDifferentTwoOptions())) + analogyTo(W[c], W[d]),
     });
     return {
         id: 'bits',
-        picSides: lex === AR_LEX_DISTINCTION ? 'distinction' : 'influence',
         engine: N => arEngine('bits', N, 1),
         terms: (P, k) => Math.max(k + 1, Math.min(11, P + 1)),
         hidden: N => Int8Array.from(arRange(N).map(i => (i === 0 ? 0 : Math.random() < 0.5 ? 1 : 0))),
@@ -770,7 +740,7 @@ function arBitsFamily(lex = AR_LEX_DISTINCTION) {
 
 // ---------------------------------------------------------------- question assembly (shared)
 function arMetaApply(binHTML) {
-    if (!savedata.enableMeta || savedata.minimalMode || binHTML.length < 2) return binHTML;
+    if (!savedata.enableMeta || binHTML.length < 2) return binHTML;
     try {
         return applyMeta(binHTML, p => p.match(/<span class="relation">(?:<span class="is-negated">)?(.*?)<\/span>/)[1]);
     } catch (e) { return binHTML; }
@@ -786,29 +756,6 @@ function arAssemble(r, W, extra) {
     if (extra.explainer) premises.unshift(`<span class="negation-explainer">${extra.explainer}</span>`);
     return premises;
 }
-// Facts that were TRUE of the arrangement, never stated as a premise and never asked about. Recall
-// probes use these: you only have one if you built the whole arrangement instead of the single chain
-// the conclusion needed. They are worded plain (no negation) because a probe shows no explainer, and
-// they come out of the family's own candidate pool, so the direction they are stated in is whatever
-// the pool gives rather than whatever the premises happened to say.
-function arProbeFacts(fam, r, W, opts) {
-    try {
-        const eng = fam.engine(r.N);
-        const M = eng.mask(r.facts);
-        const skip = new Set([r.concl.key, ...r.facts.map(f => f.key)]);
-        const out = [];
-        for (const c of shuffle(fam.conclusions(r.h, r.N, r.k, opts, { facts: r.facts, M, eng }))) {
-            if (skip.has(c.key)) continue;
-            skip.add(c.key);
-            const v = eng.valueM(M, c);
-            if (v === null) continue;
-            out.push({ html: c.html(W, true), truth: v });
-            if (out.length >= 3) break;
-        }
-        return out;
-    } catch (e) { return []; }
-}
-
 function arQuestion(fam, P, extra) {
     // Try the arity the dial asks for, hard. If this family genuinely cannot build it at this premise
     // count, step DOWN one level and label the item with the arity it actually has — never hand back a
@@ -816,8 +763,7 @@ function arQuestion(fam, P, extra) {
     // reading, and the progression that depends on it, from drifting away from reality.
     // minK 2: a family that is native to this module (not a patch over a classic generator) and so has
     // to produce an item at the classic setting too, with two-term premises only.
-    const pics = typeof picturesActive === 'function' && picturesActive();
-    const minK = extra.minK || (pics ? 2 : 3);
+    const minK = extra.minK || 3;
     const wantK = Math.max(minK, arityLevel());
     let r = null;
     for (let kk = wantK; kk >= minK && !r; kk--) {
@@ -827,25 +773,10 @@ function arQuestion(fam, P, extra) {
     if (!r) return null;
     const k = r.k;
     const W = createStimuli(r.N + (fam.extraStimuli || 0));   // contexts names ride after the terms
-    let premises = arAssemble(r, W, extra);
+    const premises = arAssemble(r, W, extra);
     let conclusion = r.concl.html(W, false), isValid = r.isValid;
     let plainConcl = r.concl.html(W, true);
-    let flipped = false;
-    if (r.concl.negHtml && coinFlip()) { conclusion = r.concl.negHtml(W, false); plainConcl = r.concl.negHtml(W, true); isValid = !isValid; flipped = true; }
-    // Pictures: every premise drawn as the arrangements it allows, the conclusion too. Only when every
-    // one of them has a picture; a half-drawn item would be worse than words.
-    let drawn = false;
-    if (pics) {
-        const cPic = flipped ? r.concl.negPic : r.concl.pic;
-        if (cPic && r.facts.every(f => f.pic)) {
-            const ctx = { axis: fam.picAxis, sides: fam.picSides };
-            premises = shuffle(r.facts.map(f => picHTML(f.pic, W, ctx)));
-            // the compass grid still only says which way, not how far
-            if (fam.id.startsWith('space') && extra.explainer) premises.unshift(`<span class="negation-explainer">${extra.explainer}</span>`);
-            conclusion = picHTML(cPic, W, ctx);
-            drawn = true;
-        }
-    }
+    if (r.concl.negHtml && coinFlip()) { conclusion = r.concl.negHtml(W, false); plainConcl = r.concl.negHtml(W, true); isValid = !isValid; }
     const out = {
         category: extra.category,
         type: extra.type,
@@ -857,23 +788,15 @@ function arQuestion(fam, P, extra) {
         ...(k >= 3 ? { modifiers: ['ar' + k], arity: k } : {}),
         arityAsked: wantK,
         arTier: AR_TIERS.indexOf(r.tier),
-        ...(drawn ? { pictures: true } : {}),
         support: arSupportHTML(r, W),
         supportConclusion: plainConcl,
         ...extra.model(r, W),
     };
     if (extra.analogy) out.tags = ['analogy'];
-    if (typeof probeActive === 'function' && probeActive()) {
-        out.probeFacts = arProbeFacts(fam, r, W, { analogy: extra.analogy });
-    }
     // analogy items read as a pair of pairs, so the single stated conclusion IS the item — leave them
     if (!extra.analogy && typeof interrogateRoll === 'function' && interrogateRoll()) {
         const qs = arInterrogateQueries(fam, r, W, interrogateCount());
         if (qs) applyInterrogate(out, qs);
-    }
-    if (!extra.analogy && !out.queries && typeof possibleRoll === 'function' && possibleRoll()) {
-        const qs = arPossibleQueries(fam, r, W, possibleCount(), extra);
-        if (qs) applyPossible(out, qs);
     }
     // the facts stay behind (they carry functions); the steps are worked out if an explanation is wanted
     if (!extra.analogy && !out.queries && typeof arDeriveKeep === 'function') out.deriveId = arDeriveKeep(fam, r, W);
@@ -1043,11 +966,10 @@ function arSyllogismQuestion(sq, length) {
 
 // ---------------------------------------------------------------- wiring: every frame reads the dial
 (function wireArity() {
-    // with Pictures on, the classic setting is built here too (as two-term facts), so that it can be drawn
-    const wrap = (cls, method, fn, drawable = true) => {
+    const wrap = (cls, method, fn) => {
         const orig = cls.prototype[method];
         cls.prototype[method] = function (length) {
-            if (arityActive() || (drawable && typeof picturesActive === 'function' && picturesActive())) {
+            if (arityActive()) {
                 const q = fn(this, length);
                 if (q) return q;
             }
@@ -1060,5 +982,5 @@ function arSyllogismQuestion(sq, length) {
     wrap(DistinctionQuestion, 'createAnalogy', (q, n) => arDistinctionQuestion(q, n, true));
     wrap(DirectionQuestion, 'create', (q, n) => arSpaceQuestion(q, n, false));
     wrap(DirectionQuestion, 'createAnalogy', (q, n) => arSpaceQuestion(q, n, true));
-    wrap(SyllogismQuestion, 'create', (q, n) => arSyllogismQuestion(q, n), false);
+    wrap(SyllogismQuestion, 'create', (q, n) => arSyllogismQuestion(q, n));
 })();
